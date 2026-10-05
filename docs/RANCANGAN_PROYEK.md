@@ -49,7 +49,7 @@ Tombol mengambang (overlay)                      FastAPI
   <- kartu hasil (overlay) <---------------------- -> logika tingkat indikasi (kode sendiri) -> JSON
 ```
 
-Koneksi HP ke laptop: saat pengembangan, keduanya berada di jaringan Wi-Fi yang sama. Saat showcase, gunakan hotspot sendiri atau tunnel (ngrok atau Cloudflare Tunnel), jangan bergantung pada Wi-Fi kampus.
+Koneksi HP ke laptop bisa lewat tiga cara: USB dengan `adb reverse`, Wi-Fi yang sama, atau hotspot dari HP. Alamat server diatur di layar utama aplikasi. Saat showcase, gunakan hotspot sendiri, USB, atau tunnel (ngrok atau Cloudflare Tunnel), dan jangan bergantung pada Wi-Fi kampus. Langkah untuk setiap cara ada di `server/README.md`.
 
 ## 6. Komponen aplikasi Android
 
@@ -72,34 +72,13 @@ Koneksi HP ke laptop: saat pengembangan, keduanya berada di jaringan Wi-Fi yang 
 - **Penjelasan ciri:** teks template yang ditulis sendiri untuk setiap ciri, bukan dibuat oleh LLM.
 - **Privasi:** gambar diproses di memori dan tidak disimpan maupun dicatat di log.
 
-### Draf format respons
+### Format respons
 
-Format final ditetapkan di tahap 5.
-
-```json
-{
-  "tingkat_indikasi": "perlu_hati_hati",
-  "teks_terbaca": "VIRAL! Air keran sebabkan penyakit misterius... SEBARKAN!",
-  "klaim_utama": "Air keran menyebabkan penyakit misterius dalam semalam",
-  "ciri_terdeteksi": [
-    {
-      "id": "ajakan_menyebarkan",
-      "bukti": "SEBARKAN!",
-      "sumber_deteksi": ["aturan", "qwen"],
-      "keyakinan": "tinggi"
-    }
-  ],
-  "artikel_cek_fakta": [
-    {
-      "judul": "Judul artikel cek fakta",
-      "sumber": "turnbackhoax.id",
-      "url": "https://...",
-      "skor_kemiripan": 0.82
-    }
-  ],
-  "catatan": "Hasil ini bukan jaminan benar atau salah."
-}
-```
+Kontrak API (endpoint, field, dan kode galat) ditetapkan di tahap 4 dan didokumentasikan di `docs/API.md`. Tahap 5 mengisi kontrak yang sama dengan hasil analisis sungguhan. Perbedaan dari draf awal:
+- `bukti` berupa daftar, karena satu ciri bisa muncul lebih dari sekali.
+- Setiap artikel cek fakta punya `label` (kesimpulan artikel) dan `tanggal` terbit.
+- Gambar tanpa teks yang terbaca dijawab dengan galat `teks_tidak_terbaca`, bukan tingkat "tidak ditemukan".
+- Teks peringatan "bukan jaminan kebenaran" ada di aplikasi (`strings.xml`), tidak dikirim server.
 
 ## 8. Daftar ciri hoaks (draf)
 
@@ -139,7 +118,7 @@ Keyakinan ciri dianggap tinggi jika terdeteksi oleh aturan, atau oleh minimal du
 - **Tombol mengambang:** lingkaran 56dp berwarna utama dengan opacity sekitar 93%, ikon perisai centang putih 26dp, bayangan halus, menempel di tepi kanan dengan jarak 14dp, posisi awal sekitar 40% tinggi layar.
 - **Layar pilih area:** kilatan putih 150 ms saat layar diambil, lalu gambar layar beku dengan lapisan gelap `#080F1A` opacity sekitar 68% di luar seleksi. Kotak seleksi bergaris putih 3dp dengan sudut membulat 8dp dan cincin hijau muda tipis di luarnya. Kotak awal berada di tengah (80% lebar, 40% tinggi layar), dan ukuran minimumnya 96dp. Pegangan sudut berupa titik putih 16dp bergaris warna utama. Pegangan sisi berupa garis pendek putih yang lebih samar. Area sentuh semua pegangan 48dp. Panel bawah berisi kotak instruksi gelap, tombol teks "Pilih seluruh layar", lalu tombol "Batal" (sekunder) dan "Cek Sekarang" (warna aksen) setinggi 52dp. Panel memudar selama jari mengatur kotak dan muncul lagi setelah jari diangkat.
 - **Perilaku layar pilih area:** seret di luar kotak untuk menggambar kotak baru, seret di dalam kotak untuk memindahkannya, dan seret sudut atau sisi untuk mengubah ukurannya. Kotak tidak bisa keluar dari batas layar. Tombol Back sama dengan Batal. Kalau layar diputar, pemilihan dibatalkan.
-- **Kartu status:** latar putih, sudut membulat 20dp, thumbnail potongan 72dp, indikator loading, teks "Sedang menganalisis...", tombol "Tutup".
+- **Kartu status:** latar putih, sudut membulat 20dp, thumbnail potongan 72dp, indikator loading, teks "Sedang menganalisis...", tombol "Batal" yang benar-benar membatalkan permintaan ke server. Prototipe memakai label "Tutup", tetapi diganti "Batal" agar sesuai dengan tindakannya. Setelah hasil atau galat tampil, tombol yang sama berlabel "Tutup". Galat yang berkaitan dengan alamat server (belum diatur atau tidak terjangkau) punya tombol tambahan "Buka pengaturan".
 - **Font:** Plus Jakarta Sans; untuk sementara boleh memakai sans-serif bawaan sistem.
 - **Prototipe interaktif:** https://claude.ai/artifact/WQgUGxKrXNEvJrbqK3w7kj (hanya bisa dibuka oleh pemilik akun; jika tidak bisa diakses, gunakan spesifikasi di atas).
 
@@ -200,6 +179,47 @@ Pengumpulan data dan fine-tuning classifier dikerjakan paralel mulai minggu 2 di
     - [x] Ketuk tombol mengambang sekitar 5 kali dengan cepat: hanya satu layar pilih area yang muncul.
     - [x] Proses cek diulang 10 kali (campuran Cek dan Batal): tanpa crash, dan grafik memori di Profiler tidak terus naik.
     - [x] Tombol cek dimatikan dari notifikasi saat overlay terbuka: overlay ikut tertutup tanpa crash.
+- **Tahap 4 (selesai):**
+  - Kontrak API ada di `docs/API.md`. Server dummy ada di `server/`, dengan cara menjalankan dan tiga cara koneksi di `server/README.md`.
+  - Server membaca body sendiri (maksimal 8 MB) lalu mem-parse multipart di memori dengan python-multipart, karena `UploadFile` bawaan Starlette menulis unggahan di atas 1 MB ke file sementara. Ada pytest yang memastikan tidak ada file yang ditulis. Jeda buatan 1-3 detik memeriksa apakah klien memutus koneksi, sehingga Batal di HP terlihat di log server.
+  - Hasil bisa dipaksa lewat `PAKSA_TINGKAT` (termasuk `teks_tidak_terbaca`). Kalau kosong, hasil bergiliran.
+  - Alamat server disimpan di SharedPreferences (`PengaturanServer.kt`), bawaannya kosong. Alamat divalidasi dan dirapikan ke bentuk `http://host:port`. Bagian "Pengaturan server" di layar utama berisi tombol Uji koneksi (`/health`) dan pilihan cepat USB (`http://127.0.0.1:8000`).
+  - HTTP tanpa TLS hanya diizinkan di build debug, lewat `app/src/debug/res/xml/network_security_config.xml` yang dipasang oleh `app/src/debug/AndroidManifest.xml`. Build release tetap memblokirnya dan menampilkan pesan galat.
+  - Alur setelah "Cek Sekarang": salinan kecil potongan dibuat untuk thumbnail kartu, lalu kartu "Sedang menganalisis…" tampil dan status berubah menjadi `MENGIRIM` (ketukan tombol mengambang diabaikan tanpa pesan). Potongan disandikan ke JPEG di `Dispatchers.Default` (sisi terpanjang maksimal 2000 px, kualitas 90) lalu langsung di-`recycle()`, kemudian dikirim dengan OkHttp. Batal memanggil `Call.cancel()`. Potongan juga dibuang jika pekerjaan dibatalkan sebelum sempat berjalan (`invokeOnCompletion`). Thumbnail dibuang saat kartu ditutup.
+  - Kartu hasil sementara hanya menampilkan tingkat dan jumlah ciri. Kartu hasil lengkap dikerjakan di tahap 6. Thumbnail 1,5 detik dari tahap 3 sudah dihapus.
+  - Timeout koneksi dibedakan menjadi dua: gagal menyambung dalam 5 detik berarti "server tidak terjangkau", sedangkan sudah tersambung tetapi tidak dijawab dalam 60 detik berarti "server terlalu lama menjawab". Pembedanya adalah `EventListener` OkHttp.
+  - **Hasil verifikasi otomatis:** `assembleDebug` dan `assembleRelease` berhasil. 51 unit test Android lulus (`KlienApiTest` dengan MockWebServer, `KontrakApiTest`, `PengaturanServerTest`, `PenyandiJpegTest`, dan 27 test lama). 24 pytest server lulus. Lint tidak menemukan peringatan baru. Merged manifest release tidak memuat `networkSecurityConfig`.
+  - **Hasil uji manual:** Samsung Galaxy A55 5G, Android 16, navigasi 3 tombol.
+    - USB (`adb reverse`): uji koneksi berhasil; giliran kuat → hati_hati → tidak_ditemukan sesuai; keempat nilai `PAKSA_TINGKAT` berhasil, termasuk `teks_tidak_terbaca` (422); Batal tercatat "dibatalkan klien" di log server; ketukan berulang saat `MENGIRIM` diabaikan; kartu hasil tertutup dan tidak ikut tertangkap saat tombol mengambang diketuk lagi.
+    - Galat: alamat kosong (diuji setelah `pm clear`, karena kolom URL menolak disimpan kosong) memunculkan kartu dengan tombol "Buka pengaturan"; server mati dan port salah memunculkan "server tidak bisa dihubungi"; `PAKSA_TINGKAT` salah ketik (500) memunculkan pesan galat ramah tanpa crash.
+    - Hotspot HP dan Wi-Fi rumah: uji koneksi dan cek berhasil; IP salah memunculkan "tidak terjangkau", bukan "terlalu lama menjawab".
+    - Memori (Profiler, Live Telemetry, 10 kali cek campuran): tidak ada pola naik bertahap. Native kembali ke kisaran awal (sekitar 24-30 MB); lonjakan Graphics saat overlay terbuka turun lagi setelah ditutup.
+    - File: `run-as ls -R` tidak menemukan file gambar di HP; tidak ada file gambar baru di folder server.
+    - **Belum diuji:** Wi-Fi kampus dan mode navigasi gestur.
+  - **Daftar uji manual** (Logcat filter `CekHoaks`, log server di jendela PowerShell):
+    - [x] Uji koneksi lewat USB (`adb reverse`): "Tersambung. Versi server: 0.4.0".
+    - [x] Uji koneksi lewat hotspot HP.
+    - [x] Uji koneksi lewat Wi-Fi yang sama.
+    - [x] Alamat salah format (misalnya `http://192.168.1.5:8000/analisis`): pesan format belum benar, alamat tidak tersimpan.
+    - [x] Cek dengan `PAKSA_TINGKAT` = `kuat`, `hati_hati`, `tidak_ditemukan`: judul dan jumlah ciri di kartu sesuai.
+    - [x] Cek dengan `PAKSA_TINGKAT=teks_tidak_terbaca`: kartu galat menyarankan memilih area dengan tulisan yang lebih jelas, tanpa tombol "Buka pengaturan".
+    - [x] Tanpa `PAKSA_TINGKAT`: tiga cek berturut-turut menghasilkan kuat, hati-hati, lalu tidak ditemukan.
+    - [x] Alamat server dikosongkan (hapus data aplikasi): kartu galat dengan tombol "Buka pengaturan" yang membuka aplikasi dan menggulir ke bagian Pengaturan server.
+    - [x] Server dimatikan: kartu galat "Server belum bisa dihubungi" dengan tombol "Buka pengaturan", tidak crash, dan tombol mengambang bisa dipakai lagi.
+    - [x] Batal saat kartu "Sedang menganalisis…" tampil: kartu tertutup, log server menampilkan `Permintaan … dibatalkan klien`, dan tidak ada baris `tingkat …` untuk permintaan itu.
+    - [x] Ketuk tombol mengambang berkali-kali saat mengirim: tidak ada layar pilih area baru, Logcat menampilkan `Ketukan diabaikan, status: MENGIRIM`.
+    - [x] Ketuk tombol mengambang saat kartu hasil masih tampil: kartu tertutup dan tidak ikut tertangkap di layar pilih area.
+    - [x] Tombol cek dimatikan dari notifikasi saat mengirim: kartu tertutup tanpa crash.
+    - [x] Ulangi 10 kali berturut-turut (campuran hasil, galat, dan Batal) sambil memantau Profiler: grafik memori tidak terus naik.
+    - [x] "Pilih seluruh layar" lalu cek: log `Mengirim JPEG … byte` menunjukkan ukuran wajar, dan log server menunjukkan dimensi dengan sisi terpanjang maksimal 2000.
+    - [x] Tidak ada file gambar baru: `adb shell run-as com.example.cekhoaks ls -R` hanya berisi `shared_prefs` dan folder bawaan, dan folder `server/` tidak berisi file gambar.
+- **Tahap 5 (pekerjaan dari temuan tahap 4):** server sebaiknya menolak jalan sejak awal (gagal saat start dengan pesan jelas) kalau `PAKSA_TINGKAT` berisi nilai yang tidak dikenal. Saat ini nilai salah ketik baru memunculkan galat 500 pada saat cek.
+- **Tahap 7 (catatan dari uji tahap 4):** skema `http://` ditambahkan otomatis, tetapi port tidak, jadi "192.168.0.101" menjadi `http://192.168.0.101` (port 80) dan gagal terhubung. Perbaikan: kolom URL diberi placeholder `http://192.168.x.x:8000`, dan kalau alamat `http://` tidak menyebut port, tambahkan `:8000` secara otomatis.
+- **Tahap 8 (persiapan showcase):**
+  - APK di HP harus build debug, karena HTTP tanpa TLS (cleartext) hanya diizinkan di varian itu.
+  - Profil jaringan laptop harus Private (`Set-NetConnectionProfile` lewat PowerShell Administrator). Kalau tidak, HP tidak bisa menghubungi server lewat Wi-Fi atau hotspot.
+  - Alamat IP laptop di hotspot HP berubah setiap kali tersambung ulang (contoh: 10.248.150.58 lalu 10.190.18.58). Setiap kali server dijalankan, cek alamat yang dicetak dan perbarui di aplikasi.
+  - `adb reverse` hilang setiap kali kabel dicabut atau HP di-restart.
 - **Umum:** sistem atau aplikasi tertentu (misalnya halaman pengaturan izin dan aplikasi perbankan) dapat menyembunyikan overlay. Ini perilaku normal.
 
 ## 14. Di luar cakupan MVP (roadmap)

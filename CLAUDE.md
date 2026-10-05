@@ -8,8 +8,8 @@ Rancangan lengkap ada di `docs/RANCANGAN_PROYEK.md`. Baca dokumen itu sebelum me
 
 ## Status tahap
 
-- Tahap aktif: **Tahap 3 selesai, Tahap 4 belum dimulai**
-- Tahap selesai: Tahap 1 (tombol mengambang overlay), Tahap 2 (tombol bisa digeser, ketukan mengambil screenshot layar penuh sebagai Bitmap), Tahap 3 (layar pilih area, menghasilkan Bitmap potongan di memori; mode navigasi gestur belum diuji)
+- Tahap aktif: **Tahap 4 selesai, Tahap 5 belum dimulai**
+- Tahap selesai: Tahap 1 (tombol mengambang overlay), Tahap 2 (tombol bisa digeser, ketukan mengambil screenshot layar penuh sebagai Bitmap), Tahap 3 (layar pilih area, menghasilkan Bitmap potongan di memori; mode navigasi gestur belum diuji), Tahap 4 (server FastAPI dummy, kartu status, uji koneksi USB/hotspot/Wi-Fi rumah; Wi-Fi kampus dan mode navigasi gestur belum diuji)
 
 Perbarui bagian ini setiap kali developer menyatakan sebuah tahap selesai.
 

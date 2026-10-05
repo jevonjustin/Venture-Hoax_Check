@@ -24,7 +24,6 @@
     <!-- Tombol mengambang -->
     <string name="tombol_cek_deskripsi">Cek informasi di layar ini</string>
     <string name="tangkap_gagal">Gambar layar belum berhasil diambil. Coba ketuk tombol cek lagi.</string>
-    <string name="tangkap_thumbnail_deskripsi">Potongan layar yang dipilih</string>
 
     <!-- Layar pilih area -->
     <string name="pilih_petunjuk">Geser dan atur kotak pada bagian yang ingin dicek</string>
@@ -37,6 +36,51 @@
     <string name="pilih_cek_deskripsi">Cek bagian layar di dalam kotak</string>
     <string name="pilih_gagal_dibuka">Layar pilih area belum bisa dibuka. Coba ketuk tombol cek lagi.</string>
     <string name="potong_gagal">Bagian layar belum berhasil dipotong. Coba ketuk tombol cek lagi.</string>
+
+    <!-- Kartu status analisis -->
+    <string name="kartu_thumbnail_deskripsi">Potongan layar yang sedang dicek</string>
+    <string name="kartu_menunggu_judul">Sedang menganalisis…</string>
+    <string name="kartu_menunggu_isi">Mohon tunggu sebentar ya, hasilnya segera muncul</string>
+    <string name="kartu_batal">Batal</string>
+    <string name="kartu_batal_deskripsi">Batalkan pengecekan</string>
+    <string name="kartu_tutup">Tutup</string>
+    <string name="kartu_buka_pengaturan">Buka pengaturan</string>
+    <string name="kartu_gagal_dibuka">Kartu status belum bisa ditampilkan. Coba ketuk tombol cek lagi.</string>
+
+    <!-- Kartu hasil sementara (tahap 4; kartu hasil lengkap di tahap 6) -->
+    <string name="hasil_tingkat_kuat">Indikasi kuat hoaks</string>
+    <string name="hasil_tingkat_hati_hati">Perlu hati-hati</string>
+    <string name="hasil_tingkat_tidak_ditemukan">Tidak ditemukan indikasi hoaks</string>
+    <string name="hasil_jumlah_ciri">Ciri hoaks yang ditemukan: %1$d</string>
+    <string name="hasil_tanpa_ciri">Tidak ada ciri hoaks yang ditemukan. Ini bukan jaminan kebenaran, jadi tetap cek sumbernya.</string>
+
+    <!-- Galat pengecekan -->
+    <string name="galat_judul">Pengecekan belum berhasil</string>
+    <string name="galat_url_belum_diatur">Alamat server belum diatur. Atur dulu di aplikasi Cek Hoaks, bagian Pengaturan server.</string>
+    <string name="galat_tidak_terjangkau">Server belum bisa dihubungi. Periksa alamat server di aplikasi, pastikan server di laptop sudah berjalan, dan HP terhubung ke jaringan yang sama.</string>
+    <string name="galat_waktu_habis">Server terlalu lama menjawab. Coba lagi sebentar lagi.</string>
+    <string name="galat_cleartext">Versi aplikasi ini tidak mengizinkan alamat http:// biasa. Pakai build debug atau alamat https://.</string>
+    <string name="galat_respons_tidak_dikenali">Jawaban server tidak dikenali. Pastikan alamat di pengaturan mengarah ke server Cek Hoaks.</string>
+    <string name="galat_teks_tidak_terbaca">Belum ada tulisan yang bisa dibaca di area ini. Coba pilih area dengan tulisan yang lebih jelas atau lebih besar.</string>
+    <string name="galat_terlalu_besar">Gambar terlalu besar untuk dikirim. Coba pilih area yang lebih kecil.</string>
+    <string name="galat_gambar_rusak">Gambar tidak terkirim dengan utuh. Coba ulangi pengecekan.</string>
+    <string name="galat_server">Server sedang mengalami masalah. Coba lagi nanti.</string>
+    <string name="galat_penyandian">Gambar belum berhasil disiapkan untuk dikirim. Coba ketuk tombol cek lagi.</string>
+
+    <!-- Pengaturan server (layar utama) -->
+    <string name="server_judul">Pengaturan server</string>
+    <string name="server_penjelasan">Alamat server analisis yang berjalan di laptop, misalnya http://192.168.1.5:8000. Alamat yang bisa dipakai tercetak saat server dijalankan.</string>
+    <string name="server_label_url">Alamat server</string>
+    <string name="server_contoh_url">http://192.168.1.5:8000</string>
+    <string name="server_tombol_uji">Uji koneksi</string>
+    <string name="server_tombol_usb">USB (adb reverse)</string>
+    <string name="server_petunjuk_usb">Untuk koneksi USB, jalankan dulu di laptop: adb reverse tcp:8000 tcp:8000</string>
+    <string name="server_url_tidak_valid">Format alamat belum benar. Contoh: http://192.168.1.5:8000 (tanpa /analisis atau jalur lain di belakangnya).</string>
+    <string name="server_url_kosong">Alamat server masih kosong.</string>
+    <string name="server_menguji">Menghubungi server…</string>
+    <string name="server_tersambung">Tersambung. Versi server: %1$s</string>
+    <string name="server_tersimpan">Alamat tersimpan: %1$s</string>
+    <string name="server_belum_diatur">Belum ada alamat yang tersimpan.</string>
 
     <!-- Notifikasi -->
     <string name="notif_channel_nama">Tombol cek</string>

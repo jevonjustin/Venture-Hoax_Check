@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Hanya ikut di build debug. Gradle menggabungkan file ini dengan src/main/AndroidManifest.xml,
+    sehingga atribut di bawah ditambahkan ke <application> milik manifest utama.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application android:networkSecurityConfig="@xml/network_security_config" />
+</manifest>

@@ -11,7 +11,6 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.content.res.Configuration
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
 import android.media.projection.MediaProjection
@@ -28,14 +27,20 @@ import android.view.Gravity
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowManager
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.IntentCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Foreground service yang menampilkan tombol cek di atas aplikasi lain dan memegang sesi
@@ -61,9 +66,12 @@ class FloatingButtonService : Service() {
     private var yTombolSaatDisentuh = 0
     private var status = Status.SIAP
     private var overlayPilih: OverlayPilihArea? = null
-    private var thumbnail: ImageView? = null
-    private var bitmapThumbnail: Bitmap? = null
-    private val lepasThumbnailOtomatis = Runnable { lepasThumbnail() }
+    private var kartu: KartuAnalisis? = null
+
+    // Lingkup coroutine milik service: semua pekerjaan di dalamnya ikut dibatalkan di onDestroy.
+    // Dispatchers.Main berarti kode berjalan di main thread kecuali dipindah dengan withContext.
+    private val lingkup = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var pekerjaanKirim: Job? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -140,6 +148,7 @@ class FloatingButtonService : Service() {
 
     override fun onDestroy() {
         bersihkan()
+        lingkup.cancel()
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         super.onDestroy()
     }
@@ -177,7 +186,9 @@ class FloatingButtonService : Service() {
         handlerUtama.removeCallbacksAndMessages(null)
         overlayPilih?.tutup()
         overlayPilih = null
-        lepasThumbnail()
+        pekerjaanKirim?.cancel()
+        pekerjaanKirim = null
+        tutupKartu()
         lepasTombol()
         pengambil?.hentikan()
         pengambil = null
@@ -293,16 +304,16 @@ class FloatingButtonService : Service() {
         val view = tombol ?: return
         val pengambilAktif = pengambil ?: return
         if (status != Status.SIAP) {
-            // Mencegah ketukan ganda: selama layar diambil atau area sedang dipilih,
-            // ketukan tidak memicu pengambilan baru.
+            // Mencegah ketukan ganda: selama layar diambil, area sedang dipilih, atau potongan
+            // sedang dikirim, ketukan tidak memicu pengambilan baru.
             Log.d(TAG, "Ketukan diabaikan, status: $status")
             return
         }
         status = Status.MENGAMBIL
 
-        // Tombol dan thumbnail disembunyikan dulu agar tidak ikut tertangkap. Jeda memberi waktu
-        // sistem menggambar ulang layar tanpa keduanya sebelum frame terbaru diambil.
-        lepasThumbnail()
+        // Tombol dan kartu hasil sebelumnya disingkirkan dulu agar tidak ikut tertangkap. Jeda
+        // memberi waktu sistem menggambar ulang layar tanpa keduanya sebelum frame diambil.
+        tutupKartu()
         view.visibility = View.INVISIBLE
         handlerUtama.postDelayed({
             pengambilAktif.ambil(::selesaiMengambil)
@@ -343,8 +354,11 @@ class FloatingButtonService : Service() {
     private fun selesaiMemilih(potongan: Bitmap? = null, gagal: Boolean = false) {
         overlayPilih = null
         if (gagal) Toast.makeText(this, R.string.potong_gagal, Toast.LENGTH_SHORT).show()
-        potongan?.let(::tampilkanThumbnail)
-        kembaliSiap()
+        if (potongan == null) {
+            kembaliSiap()
+            return
+        }
+        kirim(potongan)
     }
 
     private fun kembaliSiap() {
@@ -352,59 +366,98 @@ class FloatingButtonService : Service() {
         status = Status.SIAP
     }
 
+    // --- Pengiriman ke server dan kartu status ---
+
     /**
-     * Alat verifikasi sementara selama pengembangan: pratinjau kecil potongan selama 1,5 detik.
-     * Potongan dibuang (recycle) saat pratinjau dilepas.
+     * Mengirim potongan ke server sambil menampilkan kartu "sedang menganalisis".
+     * [potongan] selalu dibuang (recycle) di sini, termasuk saat dibatalkan atau gagal.
      */
-    private fun tampilkanThumbnail(bitmap: Bitmap) {
-        val ukuranMaks = resources.getDimensionPixelSize(R.dimen.thumbnail_ukuran_maks)
-        val bingkai = resources.getDimensionPixelSize(R.dimen.thumbnail_bingkai)
-        val skala = ukuranMaks.toFloat() / maxOf(bitmap.width, bitmap.height)
-
-        val view = ImageView(this).apply {
-            setImageBitmap(bitmap)
-            scaleType = ImageView.ScaleType.FIT_XY
-            setBackgroundColor(Color.WHITE)
-            setPadding(bingkai, bingkai, bingkai, bingkai)
-            contentDescription = getString(R.string.tangkap_thumbnail_deskripsi)
-        }
-        val params = WindowManager.LayoutParams(
-            (bitmap.width * skala).toInt() + 2 * bingkai,
-            (bitmap.height * skala).toInt() + 2 * bingkai,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            // NOT_TOUCHABLE: sentuhan menembus thumbnail ke aplikasi di bawahnya.
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
-            PixelFormat.TRANSLUCENT,
-        ).apply {
-            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            y = resources.getDimensionPixelSize(R.dimen.thumbnail_jarak_bawah)
-        }
-
-        try {
-            windowManager.addView(view, params)
-        } catch (e: RuntimeException) {
-            Log.w(TAG, "Gagal menampilkan thumbnail", e)
-            bitmap.recycle()
+    private fun kirim(potongan: Bitmap) {
+        // Kartu memakai salinan kecil, sehingga potongan asli bisa dibuang segera setelah
+        // disandikan tanpa ada view yang masih menggambarnya.
+        val kecil = KartuAnalisis.buatThumbnail(potongan, resources.getDimensionPixelSize(R.dimen.kartu_thumbnail))
+        val kartuBaru = KartuAnalisis(
+            this,
+            windowManager,
+            kecil,
+            onBatal = ::batalKirim,
+            onTutup = ::tutupKartu,
+            onBukaPengaturan = ::bukaPengaturanServer,
+        )
+        if (!kartuBaru.tampilkan()) {
+            potongan.recycle()
+            Toast.makeText(this, R.string.kartu_gagal_dibuka, Toast.LENGTH_SHORT).show()
+            kembaliSiap()
             return
         }
-        thumbnail = view
-        bitmapThumbnail = bitmap
-        handlerUtama.postDelayed(lepasThumbnailOtomatis, DURASI_THUMBNAIL_MS)
+        kartu = kartuBaru
+        // Tombol tampil lagi, tetapi ketukannya diabaikan selama status MENGIRIM.
+        tombol?.visibility = View.VISIBLE
+        status = Status.MENGIRIM
+
+        val urlServer = PengaturanServer.baca(this)
+        val pekerjaan = lingkup.launch {
+            try {
+                if (urlServer.isBlank()) {
+                    kartuBaru.tampilkanGalat(JenisGagal.UrlBelumDiatur)
+                    return@launch
+                }
+                // Penyandian JPEG berat, jadi dipindah ke thread latar (Dispatchers.Default).
+                val jpeg = withContext(Dispatchers.Default) { PenyandiJpeg.sandikanLaluBuang(potongan) }
+                if (jpeg == null) {
+                    Log.w(TAG, "Penyandian JPEG gagal")
+                    kartuBaru.tampilkanGalat(R.string.galat_penyandian)
+                    return@launch
+                }
+                Log.i(TAG, "Mengirim JPEG ${jpeg.size} byte ke $urlServer")
+                when (val hasil = KlienApi.bersama.analisis(urlServer, jpeg)) {
+                    is HasilPanggilan.Berhasil -> {
+                        val data = hasil.data
+                        Log.i(TAG, "Hasil ${data.idPermintaan}: ${data.tingkat}, ${data.ciri.size} ciri, ${data.durasiMs} ms")
+                        kartuBaru.tampilkanHasil(data)
+                    }
+                    is HasilPanggilan.Gagal -> {
+                        Log.w(TAG, "Pengecekan gagal: ${hasil.jenis}")
+                        kartuBaru.tampilkanGalat(hasil.jenis)
+                    }
+                }
+            } finally {
+                // Hanya membereskan status milik pengecekan ini. Setelah Batal, pengecekan baru
+                // bisa sudah dimulai dengan kartu lain sebelum blok ini sempat berjalan.
+                if (kartu === kartuBaru) {
+                    pekerjaanKirim = null
+                    if (status == Status.MENGIRIM) status = Status.SIAP
+                }
+            }
+        }
+        // Dipanggil saat pekerjaan benar-benar selesai, termasuk jika dibatalkan sebelum sempat
+        // berjalan. Pekerjaan baru dianggap selesai setelah blok withContext di atas selesai,
+        // jadi potongan tidak mungkin dibuang saat masih disandikan.
+        pekerjaan.invokeOnCompletion { if (!potongan.isRecycled) potongan.recycle() }
+        if (pekerjaan.isActive) pekerjaanKirim = pekerjaan
     }
 
-    private fun lepasThumbnail() {
-        handlerUtama.removeCallbacks(lepasThumbnailOtomatis)
-        val view = thumbnail ?: return
+    /** Tombol Batal di kartu menunggu: memutus permintaan HTTP dan menutup kartu. */
+    private fun batalKirim() {
+        Log.i(TAG, "Pengecekan dibatalkan pengguna")
+        pekerjaanKirim?.cancel()
+        pekerjaanKirim = null
+        tutupKartu()
+        kembaliSiap()
+    }
+
+    private fun tutupKartu() {
+        kartu?.tutup()
+        kartu = null
+    }
+
+    private fun bukaPengaturanServer() {
+        tutupKartu()
+        // Aplikasi yang punya izin tampil di atas aplikasi lain boleh membuka Activity dari service.
         try {
-            // Dilepas seketika agar Bitmap yang dibuang di bawah tidak sempat digambar lagi.
-            windowManager.removeViewImmediate(view)
-        } catch (e: IllegalArgumentException) {
-            Log.w(TAG, "Thumbnail sudah tidak terpasang", e)
-        } finally {
-            view.setImageDrawable(null)
-            bitmapThumbnail?.recycle()
-            bitmapThumbnail = null
-            thumbnail = null
+            startActivity(MainActivity.intentPengaturanServer(this).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (e: RuntimeException) {
+            Log.w(TAG, "Gagal membuka pengaturan server", e)
         }
     }
 
@@ -449,7 +502,7 @@ class FloatingButtonService : Service() {
             .build()
     }
 
-    private enum class Status { SIAP, MENGAMBIL, MEMILIH }
+    private enum class Status { SIAP, MENGAMBIL, MEMILIH, MENGIRIM }
 
     companion object {
         private const val TAG = "CekHoaks"
@@ -460,7 +513,6 @@ class FloatingButtonService : Service() {
         private const val EXTRA_DATA_HASIL = "com.example.cekhoaks.extra.DATA_HASIL"
         private const val POSISI_VERTIKAL = 0.4f
         private const val JEDA_SEMBUNYI_MS = 150L
-        private const val DURASI_THUMBNAIL_MS = 1500L
 
         private val _berjalan = MutableStateFlow(false)
 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    KHUSUS BUILD DEBUG. Sejak Android 9, HTTP tanpa TLS (http://) diblokir secara bawaan.
+    Server dummy di laptop hanya melayani http://, dan alamat IP-nya berubah-ubah tergantung
+    jaringan (192.168.x.x, 10.x.x.x, 172.x.x.x, atau 127.0.0.1 lewat USB), sehingga tidak bisa
+    didaftarkan per alamat. Karena itu cleartext diizinkan untuk semua alamat, tetapi hanya di
+    build debug. Build release tidak memuat file ini dan tetap memblokir http://.
+-->
+<network-security-config xmlns:tools="http://schemas.android.com/tools">
+    <!-- InsecureBaseConfiguration: disengaja, hanya untuk build debug (lihat penjelasan di atas) -->
+    <base-config
+        cleartextTrafficPermitted="true"
+        tools:ignore="InsecureBaseConfiguration" />
+</network-security-config>

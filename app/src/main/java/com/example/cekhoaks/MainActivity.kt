@@ -2,6 +2,7 @@ package com.example.cekhoaks
 
 import android.Manifest
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.projection.MediaProjectionConfig
@@ -13,6 +14,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,6 +38,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -48,6 +51,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import com.example.cekhoaks.ui.theme.CekHoaksTheme
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -57,6 +61,14 @@ class MainActivity : ComponentActivity() {
     private var tampilkanPenjelasanRekam by mutableStateOf(false)
     private var sedangMemintaIzinRekam = false
     private val snackbarHostState = SnackbarHostState()
+
+    private var urlMasukan by mutableStateOf("")
+    private var urlTersimpan by mutableStateOf("")
+    private var statusUji by mutableStateOf<StatusUji>(StatusUji.Diam)
+    private var pekerjaanUji: Job? = null
+
+    // Setiap kenaikan nilai ini menggulir layar ke bagian Pengaturan server.
+    private var mintaFokusServer by mutableIntStateOf(0)
 
     // Hasil dialog izin notifikasi diabaikan: tombol cek tetap bisa aktif meskipun izin ditolak.
     private val mintaIzinNotifikasi =
@@ -83,6 +95,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        urlTersimpan = PengaturanServer.baca(this)
+        urlMasukan = urlTersimpan
+        periksaPermintaanPengaturan(intent)
         setContent {
             CekHoaksTheme {
                 val tombolAktif by FloatingButtonService.berjalan.collectAsState()
@@ -97,7 +112,20 @@ class MainActivity : ComponentActivity() {
                         onBerikanIzin = ::bukaPengaturanIzin,
                         onAlihkanTombol = { if (tombolAktif) matikanTombolCek() else aktifkanTombolCek() },
                         modifier = Modifier.padding(innerPadding),
-                    )
+                    ) {
+                        BagianPengaturanServer(
+                            urlMasukan = urlMasukan,
+                            urlTersimpan = urlTersimpan,
+                            statusUji = statusUji,
+                            mintaFokus = mintaFokusServer,
+                            onUrlBerubah = { urlMasukan = it },
+                            onUji = ::ujiKoneksi,
+                            onPakaiUsb = {
+                                urlMasukan = PengaturanServer.URL_USB
+                                statusUji = StatusUji.Diam
+                            },
+                        )
+                    }
                 }
                 if (tampilkanPenjelasanRekam) {
                     DialogPenjelasanRekam(
@@ -113,6 +141,44 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         izinOverlay = Settings.canDrawOverlays(this)
+    }
+
+    // Dipanggil (sebagai ganti onCreate) jika aplikasi sudah terbuka saat kartu status
+    // meminta membuka Pengaturan server.
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        periksaPermintaanPengaturan(intent)
+    }
+
+    private fun periksaPermintaanPengaturan(intent: Intent?) {
+        if (intent?.getBooleanExtra(EXTRA_BUKA_PENGATURAN_SERVER, false) != true) return
+        // Dihapus agar layar tidak menggulir lagi saat Activity dibuat ulang (misalnya diputar).
+        intent.removeExtra(EXTRA_BUKA_PENGATURAN_SERVER)
+        mintaFokusServer++
+    }
+
+    /** Menyimpan alamat yang valid, lalu memanggil /health untuk memastikan server bisa dihubungi. */
+    private fun ujiKoneksi() {
+        val url = PengaturanServer.normalisasiUrl(urlMasukan)
+        if (url == null) {
+            statusUji = StatusUji.Gagal(
+                if (urlMasukan.isBlank()) R.string.server_url_kosong else R.string.server_url_tidak_valid,
+            )
+            return
+        }
+        urlMasukan = url
+        urlTersimpan = url
+        PengaturanServer.simpan(this, url)
+
+        pekerjaanUji?.cancel()
+        statusUji = StatusUji.Menguji
+        pekerjaanUji = lifecycleScope.launch {
+            statusUji = when (val hasil = KlienApi.bersama.cekKesehatan(url)) {
+                is HasilPanggilan.Berhasil -> StatusUji.Tersambung(hasil.data.versi)
+                is HasilPanggilan.Gagal -> StatusUji.Gagal(hasil.jenis.pesan())
+            }
+        }
     }
 
     private fun bukaPengaturanIzin() {
@@ -173,6 +239,24 @@ class MainActivity : ComponentActivity() {
     private fun matikanTombolCek() {
         stopService(Intent(this, FloatingButtonService::class.java))
     }
+
+    companion object {
+        private const val EXTRA_BUKA_PENGATURAN_SERVER = "com.example.cekhoaks.extra.BUKA_PENGATURAN_SERVER"
+
+        /** Intent untuk membuka aplikasi langsung di bagian Pengaturan server. */
+        fun intentPengaturanServer(context: Context): Intent =
+            Intent(context, MainActivity::class.java)
+                .putExtra(EXTRA_BUKA_PENGATURAN_SERVER, true)
+                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+    }
+}
+
+/** Keadaan tombol "Uji koneksi" di bagian Pengaturan server. */
+sealed interface StatusUji {
+    data object Diam : StatusUji
+    data object Menguji : StatusUji
+    data class Tersambung(val versi: String) : StatusUji
+    data class Gagal(@param:StringRes val pesan: Int) : StatusUji
 }
 
 @Composable
@@ -183,6 +267,7 @@ fun LayarUtama(
     onBerikanIzin: () -> Unit,
     onAlihkanTombol: () -> Unit,
     modifier: Modifier = Modifier,
+    bagianBawah: @Composable () -> Unit = {},
 ) {
     Column(
         modifier = modifier
@@ -265,6 +350,8 @@ fun LayarUtama(
                 }
             }
         }
+
+        bagianBawah()
     }
 }
 
@@ -305,6 +392,16 @@ fun LayarUtamaPreview() {
             tampilkanPetunjukIzin = true,
             onBerikanIzin = {},
             onAlihkanTombol = {},
-        )
+        ) {
+            BagianPengaturanServer(
+                urlMasukan = "",
+                urlTersimpan = "",
+                statusUji = StatusUji.Diam,
+                mintaFokus = 0,
+                onUrlBerubah = {},
+                onUji = {},
+                onPakaiUsb = {},
+            )
+        }
     }
 }

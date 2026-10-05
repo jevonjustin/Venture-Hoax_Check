@@ -7,10 +7,18 @@
     <!-- Ruang kosong di sekeliling lingkaran agar bayangan tidak terpotong tepi jendela overlay -->
     <dimen name="tombol_cek_ruang_bayangan">8dp</dimen>
 
-    <!-- Thumbnail sementara untuk memverifikasi hasil potongan (tahap 2-3) -->
-    <dimen name="thumbnail_ukuran_maks">160dp</dimen>
-    <dimen name="thumbnail_bingkai">3dp</dimen>
-    <dimen name="thumbnail_jarak_bawah">48dp</dimen>
+    <!-- Kartu status analisis (dari prototipe) -->
+    <dimen name="kartu_jarak_samping">18dp</dimen>
+    <!-- Jarak kartu dari bawah status bar -->
+    <dimen name="kartu_jarak_atas">56dp</dimen>
+    <dimen name="kartu_sudut">20dp</dimen>
+    <dimen name="kartu_bayangan">10dp</dimen>
+    <!-- Ruang kosong di atas dan bawah kartu agar bayangan tidak terpotong tepi jendela overlay -->
+    <dimen name="kartu_ruang_bayangan">14dp</dimen>
+    <dimen name="kartu_thumbnail">72dp</dimen>
+    <dimen name="kartu_thumbnail_sudut">14dp</dimen>
+    <dimen name="kartu_putar">24dp</dimen>
+    <dimen name="kartu_tombol_tinggi">48dp</dimen>
 
     <!-- Layar pilih area -->
     <dimen name="pilih_kotak_min">96dp</dimen>

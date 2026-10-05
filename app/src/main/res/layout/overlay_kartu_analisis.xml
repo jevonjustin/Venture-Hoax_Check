@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Kartu status di bagian atas layar (dari prototipe): thumbnail potongan dengan indikator loading,
+    judul, keterangan, lalu baris tombol. Padding di sekeliling kartu memberi ruang untuk bayangan.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="@dimen/kartu_jarak_samping"
+    android:paddingTop="@dimen/kartu_ruang_bayangan"
+    android:paddingEnd="@dimen/kartu_jarak_samping"
+    android:paddingBottom="@dimen/kartu_ruang_bayangan"
+    tools:ignore="UselessParent">
+    <!-- UselessParent: FrameLayout ini diperlukan sebagai ruang bayangan di sekeliling kartu -->
+
+    <LinearLayout
+        android:id="@+id/kartu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_kartu"
+        android:elevation="@dimen/kartu_bayangan"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="false"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="16dp">
+
+            <FrameLayout
+                android:id="@+id/kartu_bingkai_thumbnail"
+                android:layout_width="@dimen/kartu_thumbnail"
+                android:layout_height="@dimen/kartu_thumbnail"
+                android:background="@drawable/bg_kartu_thumbnail">
+
+                <ImageView
+                    android:id="@+id/kartu_thumbnail"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/kartu_thumbnail_deskripsi"
+                    android:scaleType="centerCrop" />
+
+                <View
+                    android:id="@+id/kartu_redup"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/kartu_thumbnail_redup" />
+
+                <ProgressBar
+                    android:id="@+id/kartu_putar"
+                    android:layout_width="@dimen/kartu_putar"
+                    android:layout_height="@dimen/kartu_putar"
+                    android:layout_gravity="center"
+                    android:indeterminate="true"
+                    android:indeterminateTint="@color/white" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/kartu_judul"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="3dp"
+                    android:textColor="@color/teks_utama"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:text="@string/kartu_menunggu_judul" />
+
+                <TextView
+                    android:id="@+id/kartu_isi"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:lineSpacingExtra="3sp"
+                    android:textColor="@color/teks_sekunder"
+                    android:textSize="14sp"
+                    tools:text="@string/kartu_menunggu_isi" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/kartu_garis" />
+
+        <!-- ButtonStyle: tombol sengaja memakai latar sesuai prototipe, bukan tombol tanpa bingkai -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            tools:ignore="ButtonStyle">
+
+            <Button
+                android:id="@+id/kartu_tombol_utama"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/kartu_tombol_tinggi"
+                android:layout_weight="1"
+                android:background="@drawable/bg_kartu_tombol"
+                android:stateListAnimator="@null"
+                android:textAllCaps="false"
+                android:textColor="@color/kartu_tombol_teks"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                tools:text="@string/kartu_batal" />
+
+            <View
+                android:id="@+id/kartu_pemisah_tombol"
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="@color/kartu_garis"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/kartu_tombol_pengaturan"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/kartu_tombol_tinggi"
+                android:layout_weight="1"
+                android:background="@drawable/bg_kartu_tombol"
+                android:stateListAnimator="@null"
+                android:text="@string/kartu_buka_pengaturan"
+                android:textAllCaps="false"
+                android:textColor="@color/utama"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

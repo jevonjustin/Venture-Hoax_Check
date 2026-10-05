@@ -28,4 +28,21 @@
     <!-- Latar tombol teks "Pilih seluruh layar": #0F172A dengan opacity 60% -->
     <color name="pilih_tombol_teks_latar">#990F172A</color>
     <color name="pilih_efek_tekan">#33FFFFFF</color>
+
+    <!-- Teks (rancangan §11) -->
+    <color name="teks_utama">#FF0F172A</color>
+    <color name="teks_sekunder">#FF64748B</color>
+
+    <!-- Kartu status (dari prototipe) -->
+    <color name="kartu_garis">#FFE2E8F0</color>
+    <color name="kartu_thumbnail_latar">#FFE2E8F0</color>
+    <!-- #0F172A dengan opacity 40% -->
+    <color name="kartu_thumbnail_redup">#660F172A</color>
+    <color name="kartu_tombol_latar">#FFF8FAFC</color>
+    <color name="kartu_tombol_teks">#FF334155</color>
+    <color name="kartu_efek_tekan">#1F0F172A</color>
+
+    <!-- Judul kartu hasil sementara per tingkat indikasi -->
+    <color name="tingkat_kuat">#FFB91C1C</color>
+    <color name="tingkat_hati_hati">#FFC2410C</color>
 </resources>

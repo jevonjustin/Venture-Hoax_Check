@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ripple: efek gelombang saat tombol ditekan. Sudut bawah kartu dipotong oleh kartu itu sendiri. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/kartu_efek_tekan">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/kartu_tombol_latar" />
+        </shape>
+    </item>
+</ripple>

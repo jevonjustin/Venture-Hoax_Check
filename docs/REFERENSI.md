@@ -54,3 +54,29 @@ Aset pihak ketiga:
 | Aset | Sumber | Lisensi |
 |---|---|---|
 | Bentuk ikon `verified_user` (`app/src/main/res/drawable/ic_verified_user.xml`) | [Material Icons (Google)](https://github.com/google/material-design-icons) | Apache-2.0 |
+
+## Tahap 4 — Kirim potongan ke server dummy
+
+Tidak ada kode yang disalin dari repositori referensi. Klien HTTP, kartu status, dan server ditulis sendiri berdasarkan dokumentasi resmi setiap library. Tahap ini hanya menambah dependensi library, yang semuanya berlisensi permisif. Lisensinya diperiksa dari metadata paket (Python) dan file `LICENSE` di repositori resminya (Android).
+
+### Library Android
+
+| Library | Versi | Lisensi | Dipakai untuk |
+|---|---|---|---|
+| [OkHttp](https://github.com/square/okhttp) (`com.squareup.okhttp3:okhttp`) | 5.3.2 | Apache-2.0 | Klien HTTP. `Call.cancel()` memutus koneksi saat tombol Batal ditekan. Versi 5.4 ke atas butuh compileSdk 37, jadi dipakai 5.3.2 |
+| MockWebServer (`com.squareup.okhttp3:mockwebserver`) | 5.3.2 | Apache-2.0 | Khusus unit test: server HTTP tiruan untuk menguji `KlienApi` |
+| [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) (`kotlinx-serialization-json` + plugin Gradle `org.jetbrains.kotlin.plugin.serialization`) | 1.9.0 (plugin mengikuti Kotlin 2.2.10) | Apache-2.0 | Membaca JSON respons server |
+| [kotlinx.coroutines](https://github.com/Kotlin/kotlinx.coroutines) (`kotlinx-coroutines-android`) | 1.10.2 | Apache-2.0 | Pengiriman di luar main thread. Sebelumnya sudah ikut tidak langsung lewat lifecycle, sekarang dideklarasikan langsung karena dipakai langsung oleh service |
+
+### Library server (Python, `server/requirements*.txt`)
+
+| Library | Versi | Lisensi | Dipakai untuk |
+|---|---|---|---|
+| [FastAPI](https://github.com/fastapi/fastapi) | 0.141.1 | MIT | Kerangka server |
+| [Starlette](https://github.com/encode/starlette) (ikut FastAPI) | 1.6.0 | BSD-3-Clause | Dasar FastAPI |
+| [Pydantic](https://github.com/pydantic/pydantic) (ikut FastAPI) | 2.13.5 | MIT | Model data sesuai kontrak |
+| [Uvicorn](https://github.com/encode/uvicorn) | 0.53.0 | BSD-3-Clause | Menjalankan server |
+| [python-multipart](https://github.com/Kludex/python-multipart) | 0.0.32 | Apache-2.0 | Parser multipart tingkat rendah. Dipakai langsung agar unggahan tetap di memori (`UploadFile` bawaan Starlette menulis unggahan di atas 1 MB ke file sementara) |
+| [Pillow](https://github.com/python-pillow/Pillow) | 12.3.0 | MIT-CMU | Memastikan unggahan adalah gambar utuh dan membaca dimensinya, di memori |
+| [pytest](https://github.com/pytest-dev/pytest) | 9.1.1 | MIT | Test (khusus pengembangan) |
+| [httpx2](https://pypi.org/project/httpx2/) | 2.13.0 | BSD-3-Clause | Dibutuhkan `TestClient` Starlette 1.x (khusus pengembangan) |

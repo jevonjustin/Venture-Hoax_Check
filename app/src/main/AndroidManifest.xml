@@ -8,6 +8,8 @@
     <!-- Foreground service yang memegang sesi rekam layar (MediaProjection) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Mengirim potongan layar ke server analisis -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
