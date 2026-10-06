@@ -13,6 +13,19 @@ class Tingkat(str, Enum):
     TIDAK_DITEMUKAN = "tidak_ditemukan"
 
 
+# Id ciri bagian dari kontrak API (docs/API.md, RANCANGAN_PROYEK.md §8). Jangan diubah tanpa mengubah kontrak.
+ID_CIRI_TERKUNCI = (
+    "ajakan_menyebarkan",
+    "desakan_waktu",
+    "kapital_tanda_seru",
+    "link_mencurigakan",
+    "sumber_tidak_jelas",
+    "judul_clickbait",
+    "bahasa_provokatif",
+    "pernah_dibantah",
+)
+
+
 class Ciri(BaseModel):
     id: str = Field(description="Id tetap dari daftar ciri (RANCANGAN_PROYEK.md §8)")
     nama: str

@@ -1,6 +1,6 @@
-# Server Cek Hoaks (dummy, tahap 4)
+# Server Cek Hoaks (pipeline dummy, Sesi 5.1)
 
-Server FastAPI yang menerima potongan layar dari aplikasi dan mengembalikan hasil analisis **contoh**. Belum ada model maupun OCR. Server ini dipakai untuk menguji jalur kirim-terima dan kartu di aplikasi. Kontrak lengkapnya ada di [`docs/API.md`](../docs/API.md).
+Server FastAPI yang menerima potongan layar dari aplikasi dan mengembalikan hasil analisis **contoh**. Belum ada model maupun OCR. Struktur pipeline-nya (`app/pipeline/`) sudah disiapkan untuk tahap 5; setiap modul masih dummy dan akan diganti satu per satu. Server ini dipakai untuk menguji jalur kirim-terima dan kartu di aplikasi. Kontrak lengkapnya ada di [`docs/API.md`](../docs/API.md).
 
 - Gambar hanya dibaca di memori, tidak pernah ditulis ke disk. Log hanya mencatat ukuran, dimensi, tingkat, dan durasi.
 - Ada jeda buatan 1-3 detik supaya kartu "Sedang menganalisis…" sempat terlihat.
@@ -27,7 +27,7 @@ Saat server mulai, alamat yang bisa diketik di aplikasi tercetak seperti ini:
 
 ```
 ============================================================
-Server dummy Cek Hoaks 0.4.0
+Server Cek Hoaks 0.4.0 (pipeline dummy)
 Alamat yang bisa diketik di aplikasi:
   http://172.17.32.1:8000
   http://192.168.0.105:8000
@@ -53,11 +53,40 @@ Remove-Item Env:PAKSA_TINGKAT              # kembali ke mode bergiliran
 
 Variabel ini hanya berlaku di jendela PowerShell tempat ia diisi. Dari browser atau curl, hasil bisa juga dipaksa lewat query, misalnya `POST /analisis?paksa=hati_hati`.
 
+Kalau `PAKSA_TINGKAT` berisi nilai yang tidak dikenal (misalnya salah ketik), server menolak jalan: pesan galat mencetak nilai yang diterima beserta daftar nilai sah, dan kode keluarnya 1. Nilai kosong berarti tidak dipaksa.
+
+### Pengaturan lain (variabel lingkungan)
+
+Semua pengaturan ada di `app/konfigurasi.py`. Nilai bawaan cocok untuk pemakaian biasa; variabel di bawah hanya perlu diisi kalau ingin menimpa.
+
+| Variabel | Bawaan | Fungsi |
+|---|---|---|
+| `CEKHOAKS_HOST` | `0.0.0.0` | Antarmuka jaringan yang didengarkan |
+| `CEKHOAKS_PORT` | `8000` | Port server |
+| `CEKHOAKS_BATAS_GAMBAR_BYTE` | `8388608` | Ukuran gambar maksimal (8 MB) |
+| `CEKHOAKS_JEDA_MIN`, `CEKHOAKS_JEDA_MAKS` | `1`, `3` | Rentang jeda buatan (detik) |
+| `PAKSA_TINGKAT` | kosong | Memaksa hasil (lihat di atas) |
+
+### Mencoba pipeline dari terminal
+
+```powershell
+$env:PAKSA_TINGKAT = "kuat"                # opsional
+.venv\Scripts\python -m app.cek C:\path\ke\gambar.png
+```
+
+`app.cek` menjalankan pipeline yang sama dengan endpoint `/analisis` (tanpa jeda buatan) dan mencetak JSON berformat respons API, termasuk format galat seragam. Kode keluar: 0 sukses, 1 galat API, 2 berkas tidak bisa dibaca. Tanpa `PAKSA_TINGKAT`, hasilnya selalu `kuat`: giliran `kuat` → `hati_hati` → `tidak_ditemukan` hanya berjalan di dalam satu proses server, sedangkan tiap perintah `app.cek` adalah proses baru. Perilaku ini hilang setelah Sesi 5.5, saat hasil dummy diganti hasil analisis sungguhan.
+
 ### Test
 
 ```powershell
 .venv\Scripts\python -m pytest
 ```
+
+Test memakai `TestClient` FastAPI tanpa jeda buatan, dengan gambar yang dibuat di memori. Isinya: kontrak API (bentuk respons, id ciri terkunci, semua kode galat), konfigurasi, pipeline (durasi tahap dicatat tanpa teks), dan `app.cek`.
+
+### Folder `data_lokal/`
+
+`server/data_lokal/` disiapkan untuk screenshot uji dan dataset mentah di sesi berikutnya. Isinya masuk `.gitignore`, jadi tidak pernah ikut repo.
 
 Halaman dokumentasi interaktif tersedia di `http://127.0.0.1:8000/docs` selama server berjalan. Di halaman itu, `/analisis` bisa dicoba dengan mengunggah gambar dari browser.
 

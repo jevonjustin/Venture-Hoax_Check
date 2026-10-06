@@ -104,7 +104,8 @@ Semua respons dengan status selain 2xx memakai format berikut:
 | `teks_tidak_terbaca` | 422 | Gambar tidak berisi teks yang bisa dibaca |
 | `tidak_ditemukan` | 404 | Rute tidak ada |
 | `metode_salah` | 405 | Metode HTTP salah untuk rute ini |
-| `galat_server` | 500 | Galat tak terduga di server, atau `PAKSA_TINGKAT` berisi nilai yang tidak dikenal |
+| `galat_http` | sesuai galat aslinya (selain 404 dan 405) | Galat HTTP lain yang dihasilkan kerangka server dan tidak punya kode khusus di tabel ini. Aplikasi menampilkannya sebagai kartu galat umum |
+| `galat_server` | 500 | Galat internal yang tidak terduga di server |
 
 Kalau aplikasi memutus koneksi (tombol Batal), server dummy menghentikan pemrosesan dan mencatat `Permintaan <id> dibatalkan klien` di log.
 

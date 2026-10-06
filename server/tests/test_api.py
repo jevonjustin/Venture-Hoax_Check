@@ -8,14 +8,17 @@ from fastapi.testclient import TestClient
 from PIL import Image
 
 from app import contoh, main
+from app.konfigurasi import pengaturan
+from app.skema import ID_CIRI_TERKUNCI
 
 klien = TestClient(main.app)
 
 
 @pytest.fixture(autouse=True)
 def tanpa_jeda(monkeypatch):
-    monkeypatch.setattr(main, "JEDA_DETIK", (0.0, 0.0))
-    monkeypatch.delenv("PAKSA_TINGKAT", raising=False)
+    monkeypatch.setattr(pengaturan, "jeda_min_detik", 0.0)
+    monkeypatch.setattr(pengaturan, "jeda_maks_detik", 0.0)
+    monkeypatch.setattr(pengaturan, "paksa_tingkat", None)
     contoh.atur_ulang_giliran()
 
 
@@ -85,13 +88,25 @@ def test_tidak_ditemukan_tanpa_ciri():
 
 
 def test_paksa_lewat_env(monkeypatch):
-    monkeypatch.setenv("PAKSA_TINGKAT", "hati_hati")
+    monkeypatch.setattr(pengaturan, "paksa_tingkat", "hati_hati")
     assert [kirim(buat_gambar()).json()["tingkat"] for _ in range(2)] == ["hati_hati", "hati_hati"]
 
 
 def test_query_mengalahkan_env(monkeypatch):
-    monkeypatch.setenv("PAKSA_TINGKAT", "hati_hati")
+    monkeypatch.setattr(pengaturan, "paksa_tingkat", "hati_hati")
     assert kirim(buat_gambar(), params={"paksa": "kuat"}).json()["tingkat"] == "kuat"
+
+
+@pytest.mark.parametrize("paksa", ["kuat", "hati_hati", "tidak_ditemukan"])
+def test_id_ciri_termasuk_daftar_terkunci(paksa):
+    isi = kirim(buat_gambar(), params={"paksa": paksa}).json()
+    assert {c["id"] for c in isi["ciri"]} <= set(ID_CIRI_TERKUNCI)
+    assert {c["keyakinan"] for c in isi["ciri"]} <= {"tinggi", "sedang"}
+
+
+def test_semua_id_ciri_contoh_termasuk_daftar_terkunci():
+    semua = {ciri.id for isi in contoh.CONTOH.values() for ciri in isi.ciri}
+    assert semua <= set(ID_CIRI_TERKUNCI)
 
 
 # --- Galat ---
@@ -102,17 +117,12 @@ def test_teks_tidak_terbaca_lewat_query():
 
 
 def test_teks_tidak_terbaca_lewat_env(monkeypatch):
-    monkeypatch.setenv("PAKSA_TINGKAT", "teks_tidak_terbaca")
+    monkeypatch.setattr(pengaturan, "paksa_tingkat", "teks_tidak_terbaca")
     periksa_galat(kirim(buat_gambar()), 422, "teks_tidak_terbaca")
 
 
 def test_paksa_query_tidak_dikenal():
     periksa_galat(kirim(buat_gambar(), params={"paksa": "aman"}), 422, "permintaan_tidak_valid")
-
-
-def test_paksa_env_tidak_dikenal(monkeypatch):
-    monkeypatch.setenv("PAKSA_TINGKAT", "aman")
-    periksa_galat(kirim(buat_gambar()), 500, "galat_server")
 
 
 def test_gambar_kosong():
@@ -141,7 +151,7 @@ def test_bukan_multipart():
 
 
 def test_terlalu_besar():
-    periksa_galat(kirim(b"\xff" * (main.BATAS_GAMBAR_BYTE + 100 * 1024)), 413, "terlalu_besar")
+    periksa_galat(kirim(b"\xff" * (pengaturan.batas_gambar_byte + 100 * 1024)), 413, "terlalu_besar")
 
 
 def test_rute_tidak_ada():
@@ -161,7 +171,7 @@ def test_unggahan_besar_tidak_ditulis_ke_disk(monkeypatch):
     keluaran = io.BytesIO()
     Image.frombytes("RGB", (1500, 1500), data_acak).save(keluaran, format="PNG")
     data = keluaran.getvalue()
-    assert 6 * 1024 * 1024 < len(data) < main.BATAS_GAMBAR_BYTE
+    assert 6 * 1024 * 1024 < len(data) < pengaturan.batas_gambar_byte
 
     def dilarang(*_, **__):
         raise AssertionError("Server mencoba menulis ke disk")

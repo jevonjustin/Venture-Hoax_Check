@@ -39,15 +39,18 @@ Platform MVP hanya Android. iOS tidak mengizinkan tombol di atas aplikasi lain m
 ## 5. Arsitektur sistem
 
 ```
-[HP Android]                                    [Laptop developer, GPU NVIDIA 6 GB]
+[HP Android]                                    [Laptop developer, CPU saja]
 Tombol mengambang (overlay)                      FastAPI
-  -> ambil layar (MediaProjection)                 -> Qwen-VL via Ollama: baca teks, ekstrak klaim,
-  -> pilih area (overlay crop)                        deteksi ciri dari daftar tetap (output JSON)
-  -> kirim potongan gambar (HTTP) ---------------> -> pencocokan klaim dengan database cek fakta
-                                                      (embedding + pgvector)
-                                                   -> validasi ciri: aturan + classifier IndoBERT
+  -> ambil layar (MediaProjection)                 -> baca teks (OCR atau Qwen-VL kecil, diputuskan
+  -> pilih area (overlay crop)                        dari pengukuran di Sesi 5.2)
+  -> kirim potongan gambar (HTTP) ---------------> -> bersihkan teks, ambil klaim_utama (heuristik)
+                                                   -> pencocokan klaim dengan database cek fakta
+                                                      (multilingual-e5, vektor NumPy di memori)
+                                                   -> deteksi ciri (regex)
   <- kartu hasil (overlay) <---------------------- -> logika tingkat indikasi (kode sendiri) -> JSON
 ```
+
+Laptop showcase: Lenovo, Ryzen 7 8840HS, iGPU Radeon 780M (tanpa GPU NVIDIA dan tanpa ROCm), RAM 16 GB, Windows. Karena itu seluruh pipeline dirancang untuk CPU.
 
 Koneksi HP ke laptop bisa lewat tiga cara: USB dengan `adb reverse`, Wi-Fi yang sama, atau hotspot dari HP. Alamat server diatur di layar utama aplikasi. Saat showcase, gunakan hotspot sendiri, USB, atau tunnel (ngrok atau Cloudflare Tunnel), dan jangan bergantung pada Wi-Fi kampus. Langkah untuk setiap cara ada di `server/README.md`.
 
@@ -65,10 +68,10 @@ Koneksi HP ke laptop bisa lewat tiga cara: USB dengan `adb reverse`, Wi-Fi yang 
 ## 7. Komponen server (mulai tahap 4)
 
 - **Framework:** Python FastAPI, satu endpoint utama untuk menerima gambar.
-- **Model vision:** Qwen-VL ukuran kecil yang dikuantisasi (misalnya Qwen2.5-VL 3B atau Qwen3-VL 4B), dijalankan dengan Ollama. Pilih yang muat di VRAM 6 GB dan cek ketersediaannya saat tahap 5. Qwen hanya bertugas membaca teks, merangkum klaim, dan menandai ciri dari daftar tetap. Qwen tidak menentukan kesimpulan akhir.
-- **Pencocokan cek fakta:** embedding `multilingual-e5-base` (wajib memakai awalan `query: ` dan `passage: `), disimpan di PostgreSQL dengan pgvector. Cadangan: `multilingual-e5-small` jika lambat, `bge-m3` jika kurang akurat.
-- **Validator ciri:** aturan (regex dan daftar kata kunci) ditambah classifier multi-label hasil fine-tuning sendiri (IndoBERTweet untuk bahasa media sosial atau IndoBERT base). Bila perlu, diekspor ke ONNX int8.
-- **OCR pembanding (opsional):** PaddleOCR untuk memeriksa teks yang dibaca Qwen.
+- **Pembacaan teks:** diputuskan dari pengukuran di Sesi 5.2 pada sekitar 20 screenshot berlabel: RapidOCR dan PaddleOCR dibandingkan dengan Qwen-VL kecil lewat Ollama (CPU). Qwen-VL dipilih hanya kalau rata-rata di bawah sekitar 8 detik per gambar dan CER-nya tidak lebih buruk dari OCR. Apa pun yang dipilih, modelnya hanya membaca teks dan tidak menentukan kesimpulan akhir.
+- **Klaim utama:** heuristik di awal. LLM teks kecil untuk bagian ini termasuk jalur opsional.
+- **Pencocokan cek fakta:** embedding `multilingual-e5` (wajib memakai awalan `query: ` dan `passage: `), vektor disimpan sebagai NumPy di memori. pgvector hanya disebut sebagai rencana skala besar. Ukuran model (`base` atau `small`) diputuskan dari kecepatan di CPU; `bge-m3` sebagai cadangan jika kurang akurat.
+- **Deteksi ciri:** aturan (regex dan daftar kata kunci). Classifier IndoBERT/IndoBERTweet hasil fine-tuning termasuk jalur opsional setelah Tahap 6-7 aman.
 - **Penjelasan ciri:** teks template yang ditulis sendiri untuk setiap ciri, bukan dibuat oleh LLM.
 - **Privasi:** gambar diproses di memori dan tidak disimpan maupun dicatat di log.
 
@@ -213,7 +216,36 @@ Pengumpulan data dan fine-tuning classifier dikerjakan paralel mulai minggu 2 di
     - [x] Ulangi 10 kali berturut-turut (campuran hasil, galat, dan Batal) sambil memantau Profiler: grafik memori tidak terus naik.
     - [x] "Pilih seluruh layar" lalu cek: log `Mengirim JPEG … byte` menunjukkan ukuran wajar, dan log server menunjukkan dimensi dengan sisi terpanjang maksimal 2000.
     - [x] Tidak ada file gambar baru: `adb shell run-as com.example.cekhoaks ls -R` hanya berisi `shared_prefs` dan folder bawaan, dan folder `server/` tidak berisi file gambar.
-- **Tahap 5 (pekerjaan dari temuan tahap 4):** server sebaiknya menolak jalan sejak awal (gagal saat start dengan pesan jelas) kalau `PAKSA_TINGKAT` berisi nilai yang tidak dikenal. Saat ini nilai salah ketik baru memunculkan galat 500 pada saat cek.
+- **Tahap 5 (versi CPU, sedang berjalan):**
+  - **Pipeline target:** gambar → pembacaan teks → pembersihan teks (termasuk membuang teks UI media sosial) → `klaim_utama` (heuristik) → pencocokan ke database cek fakta → deteksi ciri (regex) → logika tingkat buatan sendiri → penjelasan dari template.
+  - **Pembagian sesi:**
+    - 5.1 Fondasi server dan beres-beres (kode selesai; uji manual di HP belum).
+    - 5.2 Pengukuran OCR (RapidOCR, PaddleOCR) vs Qwen-VL kecil lewat Ollama di laptop Lenovo, pada sekitar 20 screenshot berlabel.
+    - 5.3 Database cek fakta dan pencarian vektor.
+    - 5.4 Daftar ciri, regex, template penjelasan (daftar ciri di §8 difinalkan di sini).
+    - 5.5 Penyatuan pipeline di `/analisis` (parameter `ctx` khusus dummy dan `skenario` dihapus dari modul pipeline).
+    - 5.6 Evaluasi dan penetapan ambang.
+    - Opsional, setelah Tahap 6-7 aman: classifier IndoBERT/IndoBERTweet dan LLM teks kecil untuk `klaim_utama`.
+  - **Keputusan yang sudah diambil:**
+    - Vektor disimpan sebagai NumPy di memori; pgvector hanya rencana skala besar.
+    - Target kecepatan di bawah 10 detik sebagai sasaran dan 15 detik sebagai batas, diukur dari ketukan kirim sampai kartu hasil muncul di HP.
+    - Data uji berlabel 120-150 dulu: sekitar sepertiga hoaks yang ada di database, sepertiga hoaks yang tidak ada, sepertiga informasi biasa.
+    - Artikel cek fakta yang labelnya bukan hoaks tetap ditampilkan sebagai rujukan dengan label apa adanya beserta sumbernya. Artikel seperti itu tidak pernah menaikkan tingkat ke `kuat`, dan sistem sendiri tetap tidak menyatakan informasi benar.
+    - Qwen-VL dipilih hanya jika rata-rata di bawah sekitar 8 detik per gambar dan CER-nya tidak lebih buruk dari OCR.
+  - **Keputusan yang masih terbuka:** tanggal pasti showcase (perkiraan awal November); apakah dan berapa banyak artikel cek fakta terbaru ditambahkan manual untuk demo; apakah jalur opsional dikerjakan.
+  - **Sesi 5.1, yang dikerjakan:**
+    - `PAKSA_TINGKAT` tidak dikenal membuat server menolak jalan (pesan memuat nilai yang diterima dan daftar nilai sah, kode keluar 1). Daftar nilai sah satu sumber di `server/app/konfigurasi.py` (`NILAI_PAKSA`). Karena itu galat 500 untuk kasus ini tidak lagi bisa sampai ke HP; deskripsi `galat_server` di `docs/API.md` sudah disesuaikan dan `galat_http` ditambahkan ke tabel galat (klien Android sudah menampilkan kode tak dikenal sebagai kartu galat umum, tanpa crash).
+    - Satu file konfigurasi `server/app/konfigurasi.py` (modul Python biasa, tanpa dependensi baru). Bawaan bisa ditimpa variabel lingkungan: `CEKHOAKS_HOST`, `CEKHOAKS_PORT`, `CEKHOAKS_BATAS_GAMBAR_BYTE`, `CEKHOAKS_JEDA_MIN`, `CEKHOAKS_JEDA_MAKS`, `PAKSA_TINGKAT`. Pengaturan ambang kemiripan dan pilihan model ditambahkan saat sesi yang memakainya.
+    - Logika analisis dipecah ke `server/app/pipeline/`: `baca`, `bersih`, `klaim`, `cocok`, `ciri`, `tingkat`, `template`, dan `orkestrator` yang memanggil semuanya berurutan serta mencatat durasi tiap tahap (tanpa teks atau isi gambar). Semua modul masih dummy dengan keluaran sama seperti server Tahap 4. `main.py` hanya mengurus HTTP; endpoint dan `app.cek` memanggil `orkestrator.jalankan` yang sama.
+    - `python -m app.cek PATH_GAMBAR` menjalankan pipeline yang sama dari terminal tanpa jeda buatan (kode keluar 0 sukses, 1 galat API, 2 berkas tak terbaca).
+    - `server/data_lokal/` untuk screenshot uji dan dataset mentah di sesi berikutnya. Folder ini masuk `.gitignore`, jadi gambar dan dataset mentah tidak ikut repo. Aturan "gambar tidak disimpan" berlaku untuk server dan aplikasi, bukan untuk berkas uji milik developer di folder ini.
+    - 54 pytest (kontrak API, konfigurasi, pipeline, `app.cek`); gambar uji dibuat di memori.
+  - **Daftar uji Sesi 5.1** (perintah lengkap di `server/README.md`):
+    - [ ] `pytest` lulus (54 test).
+    - [ ] `app.cek` pada satu gambar mencetak JSON berformat respons API; dengan `PAKSA_TINGKAT=teks_tidak_terbaca` mencetak galat seragam dan kode keluar 1.
+    - [ ] Server dengan `PAKSA_TINGKAT=aman` menolak jalan dengan pesan jelas dan kode keluar bukan nol; setelah variabelnya dihapus, server menyala normal.
+    - [ ] Regresi di HP lewat Wi-Fi sama dengan Tahap 4: kirim gambar (giliran kuat → hati_hati → tidak_ditemukan), Batal di tengah analisis (log server `dibatalkan klien`), setiap nilai `PAKSA_TINGKAT`, dan kartu galat saat server mati.
+    - [ ] Log server menampilkan satu baris durasi tahap per permintaan, tanpa teks hasil bacaan.
 - **Tahap 7 (catatan dari uji tahap 4):** skema `http://` ditambahkan otomatis, tetapi port tidak, jadi "192.168.0.101" menjadi `http://192.168.0.101` (port 80) dan gagal terhubung. Perbaikan: kolom URL diberi placeholder `http://192.168.x.x:8000`, dan kalau alamat `http://` tidak menyebut port, tambahkan `:8000` secara otomatis.
 - **Tahap 8 (persiapan showcase):**
   - APK di HP harus build debug, karena HTTP tanpa TLS (cleartext) hanya diizinkan di varian itu.

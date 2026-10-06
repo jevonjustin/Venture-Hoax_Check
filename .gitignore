@@ -19,6 +19,9 @@ local.properties
 __pycache__/
 .pytest_cache/
 
+# Screenshot uji dan dataset mentah (tahap 5): tidak boleh masuk repo
+/server/data_lokal/
+
 # Salinan repositori referensi (tidak ikut build)
 /_referensi/
 /.idea/
