@@ -68,7 +68,7 @@ Koneksi HP ke laptop bisa lewat tiga cara: USB dengan `adb reverse`, Wi-Fi yang 
 ## 7. Komponen server (mulai tahap 4)
 
 - **Framework:** Python FastAPI, satu endpoint utama untuk menerima gambar.
-- **Pembacaan teks:** diputuskan dari pengukuran di Sesi 5.2 pada sekitar 20 screenshot berlabel: RapidOCR dan PaddleOCR dibandingkan dengan Qwen-VL kecil lewat Ollama (CPU). Qwen-VL dipilih hanya kalau rata-rata di bawah sekitar 8 detik per gambar dan CER-nya tidak lebih buruk dari OCR. Apa pun yang dipilih, modelnya hanya membaca teks dan tidak menentukan kesimpulan akhir.
+- **Pembacaan teks:** diputuskan dari pengukuran di Sesi 5.2 pada 18 screenshot berlabel: RapidOCR bawaan dipilih setelah dibandingkan dengan RapidOCR Latin dan PaddleOCR. Pembaca teks hanya membaca teks dan tidak menentukan kesimpulan akhir.
 - **Klaim utama:** heuristik di awal. LLM teks kecil untuk bagian ini termasuk jalur opsional.
 - **Pencocokan cek fakta:** embedding `multilingual-e5` (wajib memakai awalan `query: ` dan `passage: `), vektor disimpan sebagai NumPy di memori. pgvector hanya disebut sebagai rencana skala besar. Ukuran model (`base` atau `small`) diputuskan dari kecepatan di CPU; `bge-m3` sebagai cadangan jika kurang akurat.
 - **Deteksi ciri:** aturan (regex dan daftar kata kunci). Classifier IndoBERT/IndoBERTweet hasil fine-tuning termasuk jalur opsional setelah Tahap 6-7 aman.
@@ -220,7 +220,7 @@ Pengumpulan data dan fine-tuning classifier dikerjakan paralel mulai minggu 2 di
   - **Pipeline target:** gambar → pembacaan teks → pembersihan teks (termasuk membuang teks UI media sosial) → `klaim_utama` (heuristik) → pencocokan ke database cek fakta → deteksi ciri (regex) → logika tingkat buatan sendiri → penjelasan dari template.
   - **Pembagian sesi:**
     - 5.1 Fondasi server dan beres-beres (kode selesai; uji manual di HP belum).
-    - 5.2 Pengukuran OCR (RapidOCR, PaddleOCR) vs Qwen-VL kecil lewat Ollama di laptop Lenovo, pada sekitar 20 screenshot berlabel.
+    - 5.2 Pengukuran OCR (RapidOCR, RapidOCR Latin, PaddleOCR) di laptop Lenovo, pada 18 screenshot berlabel (selesai; RapidOCR bawaan dipilih).
     - 5.3 Database cek fakta dan pencarian vektor.
     - 5.4 Daftar ciri, regex, template penjelasan (daftar ciri di §8 difinalkan di sini).
     - 5.5 Penyatuan pipeline di `/analisis` (parameter `ctx` khusus dummy dan `skenario` dihapus dari modul pipeline).
@@ -231,8 +231,8 @@ Pengumpulan data dan fine-tuning classifier dikerjakan paralel mulai minggu 2 di
     - Target kecepatan di bawah 10 detik sebagai sasaran dan 15 detik sebagai batas, diukur dari ketukan kirim sampai kartu hasil muncul di HP.
     - Data uji berlabel 120-150 dulu: sekitar sepertiga hoaks yang ada di database, sepertiga hoaks yang tidak ada, sepertiga informasi biasa.
     - Artikel cek fakta yang labelnya bukan hoaks tetap ditampilkan sebagai rujukan dengan label apa adanya beserta sumbernya. Artikel seperti itu tidak pernah menaikkan tingkat ke `kuat`, dan sistem sendiri tetap tidak menyatakan informasi benar.
-    - Qwen-VL dipilih hanya jika rata-rata di bawah sekitar 8 detik per gambar dan CER-nya tidak lebih buruk dari OCR.
-  - **Keputusan yang masih terbuka:** tanggal pasti showcase (perkiraan awal November); apakah dan berapa banyak artikel cek fakta terbaru ditambahkan manual untuk demo; apakah jalur opsional dikerjakan.
+    - Pembacaan teks memakai RapidOCR bawaan (Sesi 5.2). Qwen-VL lokal tidak diukur karena proyek beralih ke kemungkinan memakai API LLM.
+  - **Keputusan yang masih terbuka:** tanggal pasti showcase (perkiraan awal November); apakah dan berapa banyak artikel cek fakta terbaru ditambahkan manual untuk demo; apakah jalur opsional dikerjakan; pemakaian API LLM dan pemilihan penyedianya.
   - **Sesi 5.1, yang dikerjakan:**
     - `PAKSA_TINGKAT` tidak dikenal membuat server menolak jalan (pesan memuat nilai yang diterima dan daftar nilai sah, kode keluar 1). Daftar nilai sah satu sumber di `server/app/konfigurasi.py` (`NILAI_PAKSA`). Karena itu galat 500 untuk kasus ini tidak lagi bisa sampai ke HP; deskripsi `galat_server` di `docs/API.md` sudah disesuaikan dan `galat_http` ditambahkan ke tabel galat (klien Android sudah menampilkan kode tak dikenal sebagai kartu galat umum, tanpa crash).
     - Satu file konfigurasi `server/app/konfigurasi.py` (modul Python biasa, tanpa dependensi baru). Bawaan bisa ditimpa variabel lingkungan: `CEKHOAKS_HOST`, `CEKHOAKS_PORT`, `CEKHOAKS_BATAS_GAMBAR_BYTE`, `CEKHOAKS_JEDA_MIN`, `CEKHOAKS_JEDA_MAKS`, `PAKSA_TINGKAT`. Pengaturan ambang kemiripan dan pilihan model ditambahkan saat sesi yang memakainya.
@@ -240,6 +240,32 @@ Pengumpulan data dan fine-tuning classifier dikerjakan paralel mulai minggu 2 di
     - `python -m app.cek PATH_GAMBAR` menjalankan pipeline yang sama dari terminal tanpa jeda buatan (kode keluar 0 sukses, 1 galat API, 2 berkas tak terbaca).
     - `server/data_lokal/` untuk screenshot uji dan dataset mentah di sesi berikutnya. Folder ini masuk `.gitignore`, jadi gambar dan dataset mentah tidak ikut repo. Aturan "gambar tidak disimpan" berlaku untuk server dan aplikasi, bukan untuk berkas uji milik developer di folder ini.
     - 54 pytest (kontrak API, konfigurasi, pipeline, `app.cek`); gambar uji dibuat di memori.
+  - **Sesi 5.2, bahan ukur (keterbatasan):** 18 gambar uji di `server/data_lokal/screenshot_uji/` bukan screenshot dari HP developer. Sepuluh gambar berasal dari unduhan developer (kebanyakan tangkapan layar penipuan lewat WhatsApp, Facebook, dan Messenger), tujuh diambil dari header artikel turnbackhoax.id (sudah di-crop dari bingkai ilustrasi), satu dari artikel merahputih.com. Semuanya beresolusi rendah (lebar 376-1100 px); hanya dua yang lebarnya 1080 px atau lebih, sisanya 16 gambar di bawah itu. Karena itu alat ukur (`server/alat/ukur_baca/`) memperbesar gambar yang lebarnya di bawah 1080 px ke lebar 1080 px dengan Lanczos sebelum praproses aplikasi, untuk meniru gambar terusan yang dibuka layar penuh di galeri Samsung A55 lalu di-screenshot. Perbesaran tidak menambah detail, jadi CER dan waktu baca pada gambar-gambar itu hanya perkiraan, kemungkinan lebih buruk dari screenshot HP asli. Kolom `diperbesar` di CSV hasil menandai gambar yang diperbesar. Transkripsi acuan dibuat dari gambar aslinya (bukan hasil praproses) oleh Claude dan hanya diperiksa acak oleh manusia. Bagian yang meragukan, tertutup, atau terpotong ditulis `[?]` dan dikeluarkan dari perhitungan CER (wildcard). 16 dari 18 gambar diperbesar dari resolusi rendah, sehingga CER absolut lebih buruk dari pemakaian nyata, tetapi perbandingan antarkandidat tetap adil karena semuanya membaca gambar yang sama. Gambar 15 tidak berisi teks, jadi tidak punya CER; untuk gambar itu hanya dicatat jumlah teks yang dihasilkan kandidat.
+  - **Sesi 5.2, hasil pengukuran pembacaan teks (selesai):**
+    - **Kondisi:** laptop Lenovo, Ryzen 7 8840HS, RAM 16 GB, Windows 11, tersambung charger dengan mode daya Best performance, CPU saja (iGPU Radeon 780M tidak dipakai). Python 3.12.4. Versi alat: RapidOCR 3.9.2 dengan onnxruntime 1.30.0 (`.venv-ukur`); PaddleOCR 3.7.0 dengan PaddlePaddle 3.3.1 (`.venv-ukur-paddle`, dipisah karena bentrok numpy dan opencv); Pillow 12.3.0. Waktu per gambar adalah median dari 3 kali baca, setelah satu pemanasan yang dibuang. Praproses meniru aplikasi (sisi terpanjang maksimal 2000 px, JPEG kualitas 90) dengan perbesaran awal seperti dicatat di butir bahan ukur.
+    - **Metrik:** `cer_isi` (utama): jarak edit karakter terhadap seluruh acuan; karakter baris UI media sosial tidak dihitung, `[?]` menjadi wildcard, dan sisipan yang tidak cocok dengan isi maupun UI dihitung salah. `cer_penuh` memperlakukan karakter UI seperti isi. `ui_terbaca` adalah proporsi karakter UI yang muncul di hasil. Karangan adalah jumlah karakter sisipan; di gambar 15 (tanpa teks) semuanya karangan. Gambar 08 punya banyak wildcard, jadi ringkasan juga ditampilkan tanpa gambar itu.
+    - **Ringkasan, semua gambar** (17 gambar yang punya teks; gambar 15 hanya untuk karangan):
+
+      | kandidat | detik rata-rata | detik median | cer_isi | cer_penuh | ui_terbaca | karangan di gambar 15 |
+      |---|---|---|---|---|---|---|
+      | RapidOCR bawaan | 0,88 | 0,89 | 0,089 | 0,097 | 0,96 | 0 |
+      | RapidOCR Latin | 1,05 | 1,03 | 0,093 | 0,098 | 0,98 | 0 |
+      | PaddleOCR | 34,57 | 24,94 | 0,089 | 0,094 | 0,97 | 5 |
+
+    - **Ringkasan, tanpa gambar 08** (16 gambar):
+
+      | kandidat | detik rata-rata | detik median | cer_isi | cer_penuh | ui_terbaca | karangan di gambar 15 |
+      |---|---|---|---|---|---|---|
+      | RapidOCR bawaan | 0,84 | 0,84 | 0,060 | 0,067 | 0,96 | 0 |
+      | RapidOCR Latin | 1,02 | 1,01 | 0,065 | 0,067 | 0,98 | 0 |
+      | PaddleOCR | 35,21 | 24,99 | 0,061 | 0,064 | 0,97 | 5 |
+
+    - **Catatan kualitatif:** ketiga kandidat sama baik pada teks yang jelas (selisih `cer_isi` di bawah 0,01), dan teks UI hampir selalu terbaca. Kesalahan terbesar ada di gambar beresolusi rendah dengan teks bertumpuk (gambar 08 dan 18, `cer_isi` sekitar 0,55 di semua kandidat) dan pada teks kecil berwarna putih di atas foto. Pemeriksaan kata acuan yang tidak dibaca oleh satu kandidat pun menyisakan sebelas kata di tiga gambar: sembilan di gambar 18 (teks kecil di atas foto, terlihat jelas), satu pada lencana kecil di gambar 07 (terlihat jelas), dan satu pecahan kata di samping wildcard di gambar 06. Tidak ada acuan yang diganti `[?]`. Karena ketiganya satu keluarga model (PP-OCR), kata yang gagal dibaca semuanya tidak dianggap tebakan. PaddleOCR menghasilkan karangan di gambar tanpa teks, RapidOCR tidak.
+    - **PaddleOCR gugur:** rata-rata 34,6 detik per gambar, jauh di atas batas 15 detik untuk seluruh pipeline, dan tidak lebih akurat. oneDNN harus dimatikan karena melempar `NotImplementedError` di PaddlePaddle 3.3 untuk Windows CPU, sehingga tidak ada jalan untuk mempercepatnya.
+    - **RapidOCR Latin tidak dipilih:** sedikit lebih lambat (1,05 lawan 0,88 detik) dan `cer_isi` sedikit lebih buruk (0,093 lawan 0,089).
+    - **Keputusan:** pipeline memakai RapidOCR bawaan (0,88 detik per gambar, `cer_isi` 0,089 untuk semua gambar dan 0,060 tanpa gambar 08), sehingga pembacaan teks memakai kurang dari 10% dari sasaran 10 detik. Gambar tidak dikirim ke pihak ketiga pada langkah ini.
+    - **Qwen-VL lokal tidak diukur:** rencana pengukuran lewat Ollama tidak dijalankan karena proyek beralih ke kemungkinan memakai API LLM untuk tahap berikutnya. Pemilihan model atau penyedia API ditunda dan masuk ke keputusan terbuka.
+    - **Pekerjaan sesi berikutnya:** memasang RapidOCR ke `server/app/pipeline/baca.py` (dependensi server dan praproses gambar di server). Alat ukur tidak dipakai server.
   - **Daftar uji Sesi 5.1** (perintah lengkap di `server/README.md`):
     - [ ] `pytest` lulus (54 test).
     - [ ] `app.cek` pada satu gambar mencetak JSON berformat respons API; dengan `PAKSA_TINGKAT=teks_tidak_terbaca` mencetak galat seragam dan kode keluar 1.

@@ -16,6 +16,8 @@ local.properties
 
 # Server Python
 /server/.venv/
+/server/.venv-ukur/
+/server/.venv-ukur-paddle/
 __pycache__/
 .pytest_cache/
 

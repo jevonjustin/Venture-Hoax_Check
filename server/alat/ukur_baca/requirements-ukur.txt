@@ -1,0 +1,4 @@
+﻿# Dependensi alat ukur Sesi 5.2 (venv terpisah: .venv-ukur). Tidak dipakai server.
+pillow==12.3.0
+rapidocr==3.9.2
+onnxruntime==1.30.0

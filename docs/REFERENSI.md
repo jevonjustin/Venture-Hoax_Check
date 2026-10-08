@@ -80,3 +80,14 @@ Tidak ada kode yang disalin dari repositori referensi. Klien HTTP, kartu status,
 | [Pillow](https://github.com/python-pillow/Pillow) | 12.3.0 | MIT-CMU | Memastikan unggahan adalah gambar utuh dan membaca dimensinya, di memori |
 | [pytest](https://github.com/pytest-dev/pytest) | 9.1.1 | MIT | Test (khusus pengembangan) |
 | [httpx2](https://pypi.org/project/httpx2/) | 2.13.0 | BSD-3-Clause | Dibutuhkan `TestClient` Starlette 1.x (khusus pengembangan) |
+
+## Tahap 5 — Pembacaan teks dari gambar (Sesi 5.2)
+
+Tidak ada kode yang disalin dari repositori referensi. Library dipakai lewat `pip` di alat ukur (`server/alat/ukur_baca/`), dan hanya RapidOCR yang dipilih untuk pipeline. Lisensi diperiksa dari berkas `LICENSE` di repositori resminya pada 2026-10-08, dan cocok dengan metadata paket yang terpasang.
+
+| Library | Versi | Lisensi | Dipakai untuk |
+|---|---|---|---|
+| [RapidOCR](https://github.com/RapidAI/RapidOCR) | 3.9.2 | Apache-2.0 (Copyright 2021 RapidOCR Authors) | Pembaca teks yang dipilih untuk pipeline |
+| [ONNX Runtime](https://github.com/microsoft/onnxruntime) | 1.30.0 | MIT (Copyright Microsoft Corporation) | Mesin inferensi CPU yang dipakai RapidOCR |
+| [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) | 3.7.0 | Apache-2.0 (Copyright 2016 PaddlePaddle Authors) | Hanya diukur sebagai pembanding, tidak dipilih karena terlalu lambat |
+| [PaddlePaddle](https://github.com/PaddlePaddle/Paddle) (ikut PaddleOCR) | 3.3.1 | Apache-2.0 menurut metadata paket (berkas `LICENSE` repositorinya belum diperiksa) | Mesin inferensi PaddleOCR, hanya untuk pengukuran |

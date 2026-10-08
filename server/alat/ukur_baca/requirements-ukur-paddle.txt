@@ -1,0 +1,5 @@
+# Dependensi PaddleOCR untuk alat ukur Sesi 5.2 (venv terpisah: .venv-ukur-paddle),
+# karena paddlepaddle menurunkan numpy dan membawa opencv sendiri yang bentrok dengan rapidocr.
+pillow==12.3.0
+paddlepaddle==3.3.1
+paddleocr==3.7.0
