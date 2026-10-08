@@ -24,8 +24,11 @@ class Pengaturan:
     host: str = "0.0.0.0"  # semua antarmuka jaringan, supaya HP di jaringan yang sama bisa masuk
     port: int = 8000
     batas_gambar_byte: int = 8 * 1024 * 1024
-    jeda_min_detik: float = 1.0
-    jeda_maks_detik: float = 3.0
+    # Jeda buatan hanya untuk menguji pembatalan; waktu proses sungguhan sudah ada sejak Sesi 5.2b.
+    jeda_min_detik: float = 0.0
+    jeda_maks_detik: float = 0.0
+    # Jumlah minimum karakter huruf-angka hasil baca; di bawahnya galat teks_tidak_terbaca.
+    ambang_teks_karakter: int = 20
     paksa_tingkat: str | None = None
 
 
@@ -56,6 +59,7 @@ def muat(env: Mapping[str, str] = os.environ) -> Pengaturan:
         batas_gambar_byte=_angka(env, "CEKHOAKS_BATAS_GAMBAR_BYTE", int, bawaan.batas_gambar_byte),
         jeda_min_detik=_angka(env, "CEKHOAKS_JEDA_MIN", float, bawaan.jeda_min_detik),
         jeda_maks_detik=_angka(env, "CEKHOAKS_JEDA_MAKS", float, bawaan.jeda_maks_detik),
+        ambang_teks_karakter=_angka(env, "CEKHOAKS_AMBANG_TEKS", int, bawaan.ambang_teks_karakter),
         paksa_tingkat=paksa or None,
     )
     if pengaturan.jeda_min_detik > pengaturan.jeda_maks_detik:

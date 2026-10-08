@@ -1,7 +1,7 @@
 """Menguji pipeline dari terminal: python -m app.cek PATH_GAMBAR
 
 Menjalankan pipeline yang sama dengan endpoint /analisis dan mencetak JSON dengan format respons
-API (termasuk format galat seragam). Tanpa jeda buatan. Menghormati PAKSA_TINGKAT.
+API (termasuk format galat seragam). Membaca teks sungguhan (RapidOCR); tahap lain masih dummy. Tanpa jeda buatan. Menghormati PAKSA_TINGKAT.
 Gambar hanya dibaca dari disk, tidak ada yang ditulis.
 
 Kode keluar: 0 sukses, 1 galat API, 2 berkas tidak bisa dibaca.
@@ -48,6 +48,8 @@ def main(argv: list[str]) -> int:
         print(f"Pengaturan tidak sah:\n  {konfigurasi.kesalahan}", file=sys.stderr)
         return 1
 
+    if konfigurasi.pengaturan.paksa_tingkat != konfigurasi.PAKSA_TEKS_TIDAK_TERBACA:
+        print("Memuat pembaca teks dan membaca gambar ...", file=sys.stderr, flush=True)
     hasil = asyncio.run(analisis_gambar(data, konfigurasi.pengaturan.paksa_tingkat))
     print(json.dumps(hasil, ensure_ascii=False, indent=2))
     return 1 if "galat" in hasil else 0

@@ -1,7 +1,7 @@
 """Server Cek Hoaks: lapisan HTTP.
 
 Menerima potongan gambar dari aplikasi, menyerahkannya ke pipeline (app/pipeline), dan mengembalikan
-hasilnya sesuai kontrak di docs/API.md. Pipeline masih dummy (Sesi 5.1): belum ada model maupun OCR.
+hasilnya sesuai kontrak di docs/API.md. Pembaca teks sudah RapidOCR (Sesi 5.2b); tahap lain masih dummy.
 
 Privasi: gambar hanya dibaca di memori. Body permintaan dibaca sendiri dan di-parse dengan
 parser multipart tingkat rendah, karena UploadFile bawaan Starlette menyimpan unggahan di atas
@@ -24,11 +24,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from .galat import DibatalkanKlien, GalatApi, respons_galat as _respons_galat
 from . import konfigurasi
 from .konfigurasi import NILAI_PAKSA, pengaturan
-from .pipeline import orkestrator
+from .pipeline import baca, orkestrator
 from .pipeline.tipe import Konteks
 from .skema import HasilAnalisis, ResponsGalat, StatusServer
 
-VERSI = "0.4.0"
+VERSI = "0.5.0"
 # Ruang tambahan untuk header dan pembatas multipart di sekitar gambar.
 RUANG_MULTIPART_BYTE = 64 * 1024
 
@@ -58,7 +58,7 @@ def alamat_ipv4_lokal() -> list[str]:
 
 
 def _cetak_alamat() -> None:
-    baris = ["", "=" * 60, f"Server Cek Hoaks {VERSI} (pipeline dummy)", "Alamat yang bisa diketik di aplikasi:"]
+    baris = ["", "=" * 60, f"Server Cek Hoaks {VERSI} (pembaca teks: RapidOCR, tahap lain masih dummy)", "Alamat yang bisa diketik di aplikasi:"]
     ip = alamat_ipv4_lokal()
     if ip:
         baris += [f"  http://{a}:{pengaturan.port}" for a in ip]
@@ -69,6 +69,7 @@ def _cetak_alamat() -> None:
         baris.append(f"PAKSA_TINGKAT = {pengaturan.paksa_tingkat}")
     else:
         baris.append("Tingkat hasil: bergiliran (PAKSA_TINGKAT tidak diisi)")
+    baris.append(f"Ambang teks: minimal {pengaturan.ambang_teks_karakter} karakter huruf-angka")
     baris.append("=" * 60)
     print("\n".join(baris), flush=True)
 
@@ -77,6 +78,10 @@ def _cetak_alamat() -> None:
 async def lifespan(_: FastAPI):
     if konfigurasi.kesalahan:  # server dijalankan langsung lewat uvicorn, tanpa python -m app
         raise konfigurasi.kesalahan
+    print("Memuat pembaca teks ...", flush=True)
+    detik = await baca.pembaca.siapkan()
+    lama = f"{detik:.1f}".replace(".", ",")
+    print(f"Pembaca teks siap ({baca.versi_mesin()}), dimuat dalam {lama} detik", flush=True)
     _cetak_alamat()
     yield
 

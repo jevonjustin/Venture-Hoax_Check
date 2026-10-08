@@ -221,6 +221,7 @@ Pengumpulan data dan fine-tuning classifier dikerjakan paralel mulai minggu 2 di
   - **Pembagian sesi:**
     - 5.1 Fondasi server dan beres-beres (kode selesai; uji manual di HP belum).
     - 5.2 Pengukuran OCR (RapidOCR, RapidOCR Latin, PaddleOCR) di laptop Lenovo, pada 18 screenshot berlabel (selesai; RapidOCR bawaan dipilih).
+    - 5.2b Pemasangan RapidOCR ke server (selesai; uji manual lulus).
     - 5.3 Database cek fakta dan pencarian vektor.
     - 5.4 Daftar ciri, regex, template penjelasan (daftar ciri di §8 difinalkan di sini).
     - 5.5 Penyatuan pipeline di `/analisis` (parameter `ctx` khusus dummy dan `skenario` dihapus dari modul pipeline).
@@ -266,6 +267,20 @@ Pengumpulan data dan fine-tuning classifier dikerjakan paralel mulai minggu 2 di
     - **Keputusan:** pipeline memakai RapidOCR bawaan (0,88 detik per gambar, `cer_isi` 0,089 untuk semua gambar dan 0,060 tanpa gambar 08), sehingga pembacaan teks memakai kurang dari 10% dari sasaran 10 detik. Gambar tidak dikirim ke pihak ketiga pada langkah ini.
     - **Qwen-VL lokal tidak diukur:** rencana pengukuran lewat Ollama tidak dijalankan karena proyek beralih ke kemungkinan memakai API LLM untuk tahap berikutnya. Pemilihan model atau penyedia API ditunda dan masuk ke keputusan terbuka.
     - **Pekerjaan sesi berikutnya:** memasang RapidOCR ke `server/app/pipeline/baca.py` (dependensi server dan praproses gambar di server). Alat ukur tidak dipakai server.
+  - **Sesi 5.2b (pemasangan RapidOCR ke server), yang dikerjakan:**
+    - Pembaca teks sungguhan terpasang di `server/app/pipeline/baca.py`: RapidOCR 3.9.2 dengan konfigurasi dan urutan baris sama seperti kandidat `rapidocr` di alat ukur, tanpa pembesaran gambar. Versi `rapidocr`, `onnxruntime`, `numpy`, dan `opencv-python` di `requirements.txt` dikunci sama dengan `.venv-ukur`.
+    - Mesin dimuat dan dipanaskan sekali saat server menyala (pesan siap beserta lama pemuatan tercetak). Pembacaan berjalan di satu thread pekerja, sehingga satu per satu dan tidak memblokir event loop. Pembatalan klien diperiksa setelah pembacaan selesai.
+    - `teks_tidak_terbaca` sungguhan: jumlah karakter huruf-angka di bawah `CEKHOAKS_AMBANG_TEKS` (bawaan 20; gambar 15 menghasilkan 0, teks sah terpendek di data uji 93) menghasilkan galat 422. Ambang final ditetapkan di Sesi 5.6.
+    - `PAKSA_TINGKAT=teks_tidak_terbaca` tetap memaksa galat tanpa OCR; nilai paksa lain tetap membaca teks sungguhan tetapi melewati ambang. Jeda buatan bawaan menjadi 0. Versi server 0.5.0; kontrak API tetap 0.4.
+    - Modul lain (bersih, klaim, cocok, ciri, tingkat, template) masih dummy, jadi klaim, ciri, dan tingkat tidak berkaitan dengan teks yang dibaca. Kartu hasil di aplikasi tidak menampilkan `teks_terbaca`.
+  - **Daftar uji Sesi 5.2b** (perintah lengkap ada di catatan sesi; semuanya lulus):
+    - [x] `pytest`: 71 lulus; dengan `-m "not rapidocr"`: 66 lulus, 5 dilewati.
+    - [x] `app.cek`: `01.jpg` menghasilkan `teks_terbaca` yang sesuai isi gambar; `15.png` menghasilkan galat `teks_tidak_terbaca` dengan kode keluar 1.
+    - [x] Pemuatan pembaca teks saat server menyala: 1,5 sampai 2,0 detik (pesan siap tercetak).
+    - [x] Uji koneksi dari HP lewat hotspot HP: berhasil, versi server 0.5.0. Analisis diuji lewat USB (`adb reverse`); Wi-Fi rumah atau kampus tidak diuji ulang di sesi ini.
+    - [x] Giliran tingkat tanpa `PAKSA_TINGKAT` (kuat → hati-hati → tidak ditemukan), kartu teks tidak terbaca pada area tanpa tulisan, Batal di tengah analisis, keempat nilai `PAKSA_TINGKAT`, dan kartu galat saat server mati: semua sesuai.
+    - [x] Waktu pembacaan di server: 0,35 sampai 0,73 detik per gambar.
+  - **Temuan untuk Sesi 5.6:** satu area yang dimaksudkan tanpa tulisan terbaca 25 karakter huruf-angka, sehingga lolos ambang 20 dan tidak menghasilkan `teks_tidak_terbaca`. Ambang 20 ditetapkan dari 18 gambar uji (gambar tanpa teks: 0 karakter), jadi perlu ditinjau ulang dengan data area tanpa tulisan yang lebih beragam (misalnya latar bertekstur, ikon, dan foto) beserta skor keyakinan per baris (`BarisTeks.skor`) sebagai pertimbangan tambahan.
   - **Daftar uji Sesi 5.1** (perintah lengkap di `server/README.md`):
     - [ ] `pytest` lulus (54 test).
     - [ ] `app.cek` pada satu gambar mencetak JSON berformat respons API; dengan `PAKSA_TINGKAT=teks_tidak_terbaca` mencetak galat seragam dan kode keluar 1.

@@ -1,9 +1,11 @@
-# Server Cek Hoaks (pipeline dummy, Sesi 5.1)
+# Server Cek Hoaks (pembaca teks RapidOCR, Sesi 5.2b)
 
-Server FastAPI yang menerima potongan layar dari aplikasi dan mengembalikan hasil analisis **contoh**. Belum ada model maupun OCR. Struktur pipeline-nya (`app/pipeline/`) sudah disiapkan untuk tahap 5; setiap modul masih dummy dan akan diganti satu per satu. Server ini dipakai untuk menguji jalur kirim-terima dan kartu di aplikasi. Kontrak lengkapnya ada di [`docs/API.md`](../docs/API.md).
+Server FastAPI yang menerima potongan layar dari aplikasi dan mengembalikan hasil analisis. Tahap membaca teks (`app/pipeline/baca.py`) sudah memakai **RapidOCR** sungguhan; tahap lain di `app/pipeline/` (bersih, klaim, cocok, ciri, tingkat, template) masih dummy dan diganti satu per satu. Karena itu `teks_terbaca` berisi teks asli dari gambar, sedangkan klaim, ciri, cek fakta, dan tingkat masih contoh yang tidak berkaitan dengan isi gambar. Server ini dipakai untuk menguji jalur kirim-terima dan kartu di aplikasi. Kontrak lengkapnya ada di [`docs/API.md`](../docs/API.md).
 
 - Gambar hanya dibaca di memori, tidak pernah ditulis ke disk. Log hanya mencatat ukuran, dimensi, tingkat, dan durasi.
-- Ada jeda buatan 1-3 detik supaya kartu "Sedang menganalisis…" sempat terlihat.
+- Teks hasil baca tidak pernah dicatat di log. Yang dicatat hanya durasi tiap tahap dan jumlah karakter.
+- Jeda buatan bawaan 0 (waktu baca sungguhan sudah cukup lama, sekitar 1-2 detik). Pengaturannya tetap ada untuk menguji pembatalan (lihat tabel pengaturan).
+- RapidOCR dimuat sekali saat server menyala, bersama satu pemanasan. Pesan `Pembaca teks siap (...), dimuat dalam X,X detik` tercetak sebelum alamat server, dan permintaan baru diterima sesudahnya. Pembacaan dijalankan satu per satu (antrean) di luar event loop, jadi beberapa HP sekaligus akan bergantian.
 - Unggahan dibatasi 8 MB.
 
 ## Menjalankan di Windows (PowerShell)
@@ -23,22 +25,33 @@ py -3.12 -m venv .venv
 
 Perintah di atas memanggil Python dari venv secara langsung, sehingga tidak perlu `Activate.ps1` (yang sering diblokir execution policy Windows).
 
-Saat server mulai, alamat yang bisa diketik di aplikasi tercetak seperti ini:
+Saat server mulai, pesan `Memuat pembaca teks ...` lalu `Pembaca teks siap (RapidOCR 3.9.2), dimuat dalam X,X detik` tercetak lebih dulu. Setelah itu alamat yang bisa diketik di aplikasi tercetak seperti ini:
 
 ```
 ============================================================
-Server Cek Hoaks 0.4.0 (pipeline dummy)
+Server Cek Hoaks 0.5.0 (pembaca teks: RapidOCR, tahap lain masih dummy)
 Alamat yang bisa diketik di aplikasi:
   http://172.17.32.1:8000
   http://192.168.0.105:8000
   http://127.0.0.1:8000   <- lewat USB, setelah: adb reverse tcp:8000 tcp:8000
 Tingkat hasil: bergiliran (PAKSA_TINGKAT tidak diisi)
+Ambang teks: minimal 20 karakter huruf-angka
 ============================================================
 ```
 
 Tidak semua alamat bisa dipakai. Pilih yang berasal dari jaringan yang juga dipakai HP. Alamat dari adapter virtual (misalnya WSL atau Hyper-V, sering berawalan `172.17.` atau `172.2x.`) tidak bisa dijangkau dari HP.
 
 Hentikan server dengan `Ctrl+C`.
+
+### Teks tidak terbaca dan aturan `PAKSA_TINGKAT`
+
+Kalau jumlah karakter huruf dan angka hasil baca di bawah ambang (bawaan 20, variabel `CEKHOAKS_AMBANG_TEKS`), server membalas galat `teks_tidak_terbaca` (422). Dasarnya pengukuran Sesi 5.2: gambar tanpa teks menghasilkan 0 karakter, dan teks sah terpendek di data uji 93 karakter.
+
+| `PAKSA_TINGKAT` | OCR | Ambang teks | Hasil |
+|---|---|---|---|
+| kosong | berjalan | diperiksa | tingkat bergiliran (dummy), `teks_terbaca` asli; teks terlalu sedikit menjadi galat |
+| `kuat`, `hati_hati`, `tidak_ditemukan` | berjalan | dilewati (mode demo) | tingkat dan isi dummy sesuai nilai, `teks_terbaca` asli (bisa kosong) |
+| `teks_tidak_terbaca` | tidak berjalan | - | galat `teks_tidak_terbaca` langsung |
 
 ### Memaksa hasil tertentu
 
@@ -64,7 +77,8 @@ Semua pengaturan ada di `app/konfigurasi.py`. Nilai bawaan cocok untuk pemakaian
 | `CEKHOAKS_HOST` | `0.0.0.0` | Antarmuka jaringan yang didengarkan |
 | `CEKHOAKS_PORT` | `8000` | Port server |
 | `CEKHOAKS_BATAS_GAMBAR_BYTE` | `8388608` | Ukuran gambar maksimal (8 MB) |
-| `CEKHOAKS_JEDA_MIN`, `CEKHOAKS_JEDA_MAKS` | `1`, `3` | Rentang jeda buatan (detik) |
+| `CEKHOAKS_JEDA_MIN`, `CEKHOAKS_JEDA_MAKS` | `0`, `0` | Rentang jeda buatan (detik), untuk menguji Batal; misalnya `3` dan `3` |
+| `CEKHOAKS_AMBANG_TEKS` | `20` | Jumlah minimum karakter huruf-angka agar teks dianggap terbaca |
 | `PAKSA_TINGKAT` | kosong | Memaksa hasil (lihat di atas) |
 
 ### Mencoba pipeline dari terminal
@@ -74,15 +88,16 @@ $env:PAKSA_TINGKAT = "kuat"                # opsional
 .venv\Scripts\python -m app.cek C:\path\ke\gambar.png
 ```
 
-`app.cek` menjalankan pipeline yang sama dengan endpoint `/analisis` (tanpa jeda buatan) dan mencetak JSON berformat respons API, termasuk format galat seragam. Kode keluar: 0 sukses, 1 galat API, 2 berkas tidak bisa dibaca. Tanpa `PAKSA_TINGKAT`, hasilnya selalu `kuat`: giliran `kuat` → `hati_hati` → `tidak_ditemukan` hanya berjalan di dalam satu proses server, sedangkan tiap perintah `app.cek` adalah proses baru. Perilaku ini hilang setelah Sesi 5.5, saat hasil dummy diganti hasil analisis sungguhan.
+`app.cek` menjalankan pipeline yang sama dengan endpoint `/analisis` (tanpa jeda buatan), termasuk **pembacaan teks sungguhan** (pemuatan model sekitar beberapa detik tiap perintah; pesan memuat tercetak ke stderr) dan mencetak JSON berformat respons API, termasuk format galat seragam. Kode keluar: 0 sukses, 1 galat API, 2 berkas tidak bisa dibaca. Tanpa `PAKSA_TINGKAT`, hasilnya selalu `kuat`: giliran `kuat` → `hati_hati` → `tidak_ditemukan` hanya berjalan di dalam satu proses server, sedangkan tiap perintah `app.cek` adalah proses baru. Perilaku ini hilang setelah Sesi 5.5, saat hasil dummy diganti hasil analisis sungguhan.
 
 ### Test
 
 ```powershell
 .venv\Scripts\python -m pytest
+.venv\Scripts\python -m pytest -m "not rapidocr"   # tanpa uji RapidOCR sungguhan (lebih cepat)
 ```
 
-Test memakai `TestClient` FastAPI tanpa jeda buatan, dengan gambar yang dibuat di memori. Isinya: kontrak API (bentuk respons, id ciri terkunci, semua kode galat), konfigurasi, pipeline (durasi tahap dicatat tanpa teks), dan `app.cek`.
+Test memakai `TestClient` FastAPI dengan gambar yang dibuat di memori. Bawaannya pembaca teks diganti pembaca palsu (cepat), kecuali uji bertanda `rapidocr` di `tests/test_rapidocr.py` yang memakai RapidOCR sungguhan. Isinya: kontrak API (bentuk respons, id ciri terkunci, semua kode galat), konfigurasi, pipeline (durasi tahap dicatat tanpa teks), dan `app.cek`.
 
 ### Folder `data_lokal/`
 
@@ -92,7 +107,7 @@ Halaman dokumentasi interaktif tersedia di `http://127.0.0.1:8000/docs` selama s
 
 ## Tiga cara menghubungkan HP ke laptop
 
-Di aplikasi, buka bagian **Pengaturan server**, isi alamat, lalu tekan **Uji koneksi**. Hasilnya harus "Tersambung. Versi server: 0.4.0".
+Di aplikasi, buka bagian **Pengaturan server**, isi alamat, lalu tekan **Uji koneksi**. Hasilnya harus "Tersambung. Versi server: 0.5.0".
 
 ### 1. USB (`adb reverse`), paling stabil
 

@@ -5,6 +5,7 @@ import pytest
 from PIL import Image
 
 from app import contoh
+from conftest import TEKS_PALSU
 from app.galat import DibatalkanKlien, GalatApi
 from app.konfigurasi import pengaturan
 from app.pipeline import orkestrator
@@ -91,7 +92,7 @@ async def test_hasil_sama_dengan_contoh(tingkat):
     hasil = await orkestrator.jalankan(gambar(), buat_konteks(paksa=tingkat.value))
     asli = contoh.CONTOH[tingkat]
     assert hasil.tingkat == tingkat
-    assert hasil.teks_terbaca == asli.teks_terbaca
+    assert hasil.teks_terbaca == TEKS_PALSU  # teks dari pembaca, bukan dari contoh
     assert hasil.klaim_utama == asli.klaim_utama
     assert [c.id for c in hasil.ciri] == [c.id for c in asli.ciri]
     assert hasil.cek_fakta == asli.cek_fakta

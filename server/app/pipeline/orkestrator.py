@@ -7,10 +7,11 @@ Log hanya mencatat ukuran, dimensi, tingkat, dan durasi tiap tahap, tanpa teks m
 import logging
 import time
 
+from .. import contoh
 from ..galat import DibatalkanKlien, GalatApi
 from ..gambar import periksa_gambar
 from ..konfigurasi import pengaturan
-from ..skema import HasilAnalisis
+from ..skema import HasilAnalisis, Tingkat
 from . import baca, bersih, ciri, cocok, klaim, template, tingkat
 from .tipe import Konteks
 
@@ -39,12 +40,17 @@ async def jalankan(data: bytes, ctx: Konteks) -> HasilAnalisis:
         durasi_tahap[nama] = _ms(awal, time.perf_counter())
 
     def log_tahap() -> str:
-        return " ".join(f"{nama}={ms}ms" for nama, ms in durasi_tahap.items())
+        tahap = " ".join(f"{nama}={ms}ms" for nama, ms in durasi_tahap.items())
+        return f"{tahap} teks={hasil_baca.karakter_bermakna} karakter"
 
     try:
         awal = time.perf_counter()
-        teks = await baca.baca_teks(data, ctx)
+        hasil_baca = await baca.baca_teks(data, ctx)
+        teks = hasil_baca.teks
         catat("baca", awal)
+        # Khusus dummy (hilang di Sesi 5.5): dipilih setelah baca berhasil supaya giliran
+        # tidak maju untuk permintaan yang batal atau teksnya tidak terbaca.
+        ctx.skenario = Tingkat(ctx.paksa) if ctx.paksa else contoh.tingkat_berikutnya()
 
         awal = time.perf_counter()
         teks_bersih = bersih.bersihkan(teks)

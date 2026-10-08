@@ -14,8 +14,13 @@ FOLDER_SERVER = Path(__file__).resolve().parent.parent
 def test_nilai_bawaan():
     p = muat({})
     assert (p.host, p.port, p.batas_gambar_byte) == ("0.0.0.0", 8000, 8 * 1024 * 1024)
-    assert (p.jeda_min_detik, p.jeda_maks_detik) == (1.0, 3.0)
+    assert (p.jeda_min_detik, p.jeda_maks_detik) == (0.0, 0.0)
+    assert p.ambang_teks_karakter == 20
     assert p.paksa_tingkat is None
+
+
+def test_ambang_teks_bisa_ditimpa():
+    assert muat({"CEKHOAKS_AMBANG_TEKS": "50"}).ambang_teks_karakter == 50
 
 
 def test_ditimpa_variabel_lingkungan():
@@ -49,6 +54,8 @@ def test_paksa_tidak_dikenal_ditolak_dengan_pesan_jelas():
 
 @pytest.mark.parametrize("env", [
     {"CEKHOAKS_PORT": "abc"},
+    {"CEKHOAKS_AMBANG_TEKS": "-5"},
+    {"CEKHOAKS_AMBANG_TEKS": "banyak"},
     {"CEKHOAKS_BATAS_GAMBAR_BYTE": "-1"},
     {"CEKHOAKS_JEDA_MIN": "5", "CEKHOAKS_JEDA_MAKS": "1"},
 ])
