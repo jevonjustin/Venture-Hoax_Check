@@ -91,3 +91,34 @@ Tidak ada kode yang disalin dari repositori referensi. Library dipakai lewat `pi
 | [ONNX Runtime](https://github.com/microsoft/onnxruntime) | 1.30.0 | MIT (Copyright Microsoft Corporation) | Mesin inferensi CPU yang dipakai RapidOCR |
 | [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) | 3.7.0 | Apache-2.0 (Copyright 2016 PaddlePaddle Authors) | Hanya diukur sebagai pembanding, tidak dipilih karena terlalu lambat |
 | [PaddlePaddle](https://github.com/PaddlePaddle/Paddle) (ikut PaddleOCR) | 3.3.1 | Apache-2.0 menurut metadata paket (berkas `LICENSE` repositorinya belum diperiksa) | Mesin inferensi PaddleOCR, hanya untuk pengukuran |
+
+## Tahap 5 — Database cek fakta dan pencarian kemiripan (Sesi 5.3)
+
+Tidak ada kode yang disalin dari repositori referensi. Alat ada di `server/alat/cek_fakta/` dan seluruh datanya di `server/data_lokal/` (tidak masuk repo). Lisensi library diperiksa dari metadata paket terpasang; lisensi model dari API resmi Hugging Face pada 2026-10-08.
+
+### Sumber data
+
+| Sumber | Dipakai untuk | Lisensi atau ketentuan |
+|---|---|---|
+| [TurnBackHoax.ID](https://turnbackhoax.id) (MAFINDO), dikumpulkan langsung | Judul, URL, tanggal, label, dan cuplikan narasi (maksimal 500 karakter) untuk pencarian lokal | `robots.txt` mengizinkan semua (`User-agent: *`, `Disallow:` kosong), tanpa sitemap; ada RSS `/feed` dan daftar `/articles`. Halaman Ketentuan Layanan hanya menyatakan bahwa semua materi adalah milik MAFINDO, tanpa larangan otomatisasi. Pengumpulan penuh selesai 2026-10-09 (15.585 artikel, 13.889 permintaan, satu permintaan dalam satu waktu). Semua materi dinyatakan milik MAFINDO; **izin tertulis dari MAFINDO belum diminta** dan disarankan diminta sebelum showcase. Yang disimpan hanya judul, URL, tanggal, label, hasil periksa, dan cuplikan narasi maksimal 500 karakter. Pengumpul memakai user-agent `CekHoaksResearchBot/0.1 (proyek kuliah Venture Creation)`, satu permintaan dalam satu waktu, jeda minimal 1 detik |
+| Kaggle: [aginanjar/dataset-hoax-turnbackhoax](https://www.kaggle.com/datasets/aginanjar/dataset-hoax-turnbackhoax) | Artikel TurnBackHoax 2015-09 sampai 2024-10-30 (15.720 baris) | Lisensi **belum diketahui**: tidak tercantum di berkas, dan developer yang memeriksanya sendiri di halaman Kaggle (belum dilakukan). Isinya cuplikan konten MAFINDO |
+| Kaggle: [ireddragonicy/indonesian-hoax-news-dataset](https://www.kaggle.com/datasets/ireddragonicy/indonesian-hoax-news-dataset) | Klarifikasi hoaks Komdigi 2024-05 sampai 2026-10-06 (4.104 baris) | Lisensi **belum diketahui**. Situs asal (`komdigi.go.id`) membalas 403 pada `robots.txt`, jadi tidak dikumpulkan langsung |
+| Kaggle: [linkgish/indonesian-fact-and-hoax-political-news](https://www.kaggle.com/datasets/linkgish/indonesian-fact-and-hoax-political-news) | Bagian TurnBackHoax (10.381 baris, kolom `Narasi` melengkapi narasi). Berita CNN, Kompas, dan Tempo **tidak masuk database**; hanya dipakai sebagai kalimat kueri negatif pada uji lokal | Lisensi **belum diketahui**. Isi berita CNN, Kompas, dan Tempo milik media masing-masing |
+
+Status lisensi ketiga dataset Kaggle: **belum diketahui sampai developer memeriksanya sendiri**; hasilnya dicatat di tabel di atas. Selama belum jelas, data tidak dibagikan ulang dan tetap di `server/data_lokal/` (tidak masuk repo).
+
+Situs yang diperiksa dan tidak dikumpulkan: kompas.com dan cekfakta.kompas.com (ketentuan melarang scraping dan data mining), cekfakta.tempo.co dan antaranews.com (memblokir ClaudeBot), cekfakta.com (agregator dari media yang diblokir), komdigi.go.id (403), kominfo.go.id dan jabar.kominfo.go.id (tidak terjangkau).
+
+### Model dan library
+
+| Komponen | Versi | Lisensi | Dipakai untuk |
+|---|---|---|---|
+| [intfloat/multilingual-e5-small](https://huggingface.co/intfloat/multilingual-e5-small) | rilis ONNX resmi | MIT | Embedding (dimensi 384) |
+| [intfloat/multilingual-e5-base](https://huggingface.co/intfloat/multilingual-e5-base) | rilis ONNX resmi | MIT | Embedding (dimensi 768) |
+| [tokenizers](https://github.com/huggingface/tokenizers) | 0.23.2 | Apache-2.0 | Tokenisasi model e5 tanpa PyTorch |
+| [Beautiful Soup 4](https://pypi.org/project/beautifulsoup4/) | 4.15.0 | MIT | Membaca HTML turnbackhoax.id |
+| [Requests](https://github.com/psf/requests) | 2.34.2 | Apache-2.0 | Klien HTTP pengumpul |
+| [openpyxl](https://foss.heptapod.net/openpyxl/openpyxl) | 3.1.5 | MIT | Membaca xlsx Kaggle |
+| [psutil](https://github.com/giampaolo/psutil) | 7.2.2 | BSD-3-Clause | Mengukur pemakaian RAM (khusus alat) |
+
+Rujukan model: Wang dkk., "Multilingual E5 Text Embeddings: A Technical Report", 2024. Library ONNX Runtime, NumPy, RapidOCR, OpenCV, dan Pillow sudah tercatat di bagian sebelumnya.

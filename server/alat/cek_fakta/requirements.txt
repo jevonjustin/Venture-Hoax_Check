@@ -1,0 +1,20 @@
+# Dependensi alat database cek fakta (Sesi 5.3). Dipasang di .venv-cekfakta, terpisah dari server.
+# Versi onnxruntime, numpy, rapidocr, opencv-python, dan pillow sama dengan server/requirements.txt,
+# jadi bagian pencarian bisa dipindah ke server tanpa konflik.
+
+# Pencarian dan embedding (bagian yang nanti masuk server)
+onnxruntime==1.30.0
+numpy==2.5.3
+tokenizers==0.23.2
+
+# Membaca teks dari gambar untuk cari.py --gambar (sama dengan server)
+rapidocr==3.9.2
+opencv-python==5.0.0.93
+pillow==12.3.0
+
+# Hanya alat ini (tidak masuk server)
+requests==2.34.2
+beautifulsoup4==4.15.0
+openpyxl==3.1.5
+psutil==7.2.2
+pytest==9.1.1

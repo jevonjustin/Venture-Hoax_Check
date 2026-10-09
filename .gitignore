@@ -18,6 +18,7 @@ local.properties
 /server/.venv/
 /server/.venv-ukur/
 /server/.venv-ukur-paddle/
+/server/.venv-cekfakta/
 __pycache__/
 .pytest_cache/
 
