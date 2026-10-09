@@ -29,6 +29,39 @@ class HasilBaca:
 
 
 @dataclass(frozen=True)
+class BarisDibuang:
+    """Baris yang dibuang pembersih beserta alasannya. Hanya untuk debug, tidak dikirim ke HP."""
+
+    teks: str
+    alasan: str
+
+
+@dataclass(frozen=True)
+class HasilBersih:
+    """Keluaran tahap bersih: baris yang dipertahankan digabung dengan baris baru, urutan asli."""
+
+    teks: str
+    dibuang: list[BarisDibuang]
+
+
+@dataclass(frozen=True)
+class CiriRegex:
+    """Hasil satu detektor regex. `kekuatan` adalah "kuat" (pola yang hampir pasti) atau "lemah"."""
+
+    id: str
+    kekuatan: str
+    bukti: list[str]
+
+
+@dataclass(frozen=True)
+class KandidatLLM:
+    """Ciri yang ditandai LLM beserta kutipannya (belum diverifikasi)."""
+
+    id: str
+    kutipan: list[str]
+
+
+@dataclass(frozen=True)
 class CiriTerdeteksi:
     """Hasil deteksi sebelum diberi nama dan penjelasan oleh tahap template."""
 
@@ -52,3 +85,5 @@ class Konteks:
     mulai: float = field(default_factory=time.perf_counter)
     # Khusus dummy: tingkat skenario yang dipilih di tahap baca. Hilang di Sesi 5.5.
     skenario: Tingkat | None = None
+    # Diisi orkestrator hanya kalau pemanggil memberi dict (app.cek) agar hasil antara bisa dicetak.
+    diagnostik: dict | None = None

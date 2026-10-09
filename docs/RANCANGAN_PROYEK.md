@@ -89,14 +89,16 @@ Daftar ini dipakai bersama oleh sistem dan pertanyaan kepada pengguna, sehingga 
 
 | id | Ciri | Deteksi utama |
 |---|---|---|
-| `ajakan_menyebarkan` | Ajakan menyebarkan ("sebarkan", "viralkan") | Aturan |
-| `desakan_waktu` | Desakan waktu ("sebelum dihapus", "segera") | Aturan + Qwen |
-| `kapital_tanda_seru` | Huruf kapital dan tanda seru berlebihan | Aturan |
-| `link_mencurigakan` | Tautan pemendek atau tautan tidak jelas | Aturan |
-| `sumber_tidak_jelas` | Tidak menyebut sumber yang bisa dicek | Qwen + aturan |
-| `judul_clickbait` | Judul clickbait | Classifier (CLICK-ID) + Qwen |
-| `bahasa_provokatif` | Bahasa provokatif, memancing emosi atau panik | Classifier + Qwen |
-| `pernah_dibantah` | Klaim serupa sudah dibantah media cek fakta | Pencocokan embedding |
+| `ajakan_menyebarkan` | Ajakan menyebarkan ("sebarkan", "viralkan") | Regex (pola kuat dan lemah) + kandidat LLM |
+| `desakan_waktu` | Desakan waktu ("sebelum dihapus", "segera") | Regex (pola kuat dan lemah) + kandidat LLM |
+| `kapital_tanda_seru` | Huruf kapital dan tanda seru berlebihan | Regex dan hitungan sederhana + kandidat LLM |
+| `link_mencurigakan` | Tautan pemendek atau tautan tidak jelas | Regex (pola kuat dan lemah) + kandidat LLM |
+| `sumber_tidak_jelas` | Tidak menyebut sumber yang bisa dicek | Kandidat LLM; regex hanya pola lemah sebagai cadangan |
+| `judul_clickbait` | Judul clickbait | Kandidat LLM; regex hanya pola lemah sebagai cadangan |
+| `bahasa_provokatif` | Bahasa provokatif, memancing emosi atau panik | Kandidat LLM; regex hanya pola lemah sebagai cadangan |
+| `pernah_dibantah` | Klaim serupa sudah dibantah media cek fakta | Pencarian embedding di database cek fakta (bukan regex, bukan LLM) |
+
+Arsitektur deteksi (Sesi 5.4): regex berperan sebagai pemeriksa dan cadangan, sedangkan LLM hanya menandai kandidat ciri beserta kutipan yang diverifikasi server terhadap teks. Kutipan yang tidak ditemukan di teks membuat ciri dibuang. Keyakinan tinggi untuk ciri yang ditemukan LLM dan regex sekaligus, atau regex dengan pola kuat; keyakinan sedang untuk ciri yang hanya ditemukan LLM. Jika LLM gagal, hasil regex dipakai sendiri. Penjelasan selalu dari template. Qwen dan classifier IndoBERT tidak dipakai di jalur utama; classifier tetap jalur opsional di §13.
 
 ## 9. Tingkat indikasi (draf logika)
 

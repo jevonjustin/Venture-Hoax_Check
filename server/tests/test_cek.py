@@ -56,3 +56,13 @@ def test_main_dengan_gambar_dari_memori(monkeypatch, capsys):
     monkeypatch.setattr(pengaturan, "paksa_tingkat", "teks_tidak_terbaca")
     assert cek.main(["gambar-contoh.jpg"]) == 1
     assert json.loads(capsys.readouterr().out)["galat"]["kode"] == "teks_tidak_terbaca"
+
+
+def test_diagnostik_dicetak_ke_stderr_dan_stdout_tetap_json(monkeypatch, capsys):
+    monkeypatch.setattr(cek.Path, "read_bytes", lambda self: gambar())
+    monkeypatch.setattr(pengaturan, "paksa_tingkat", "kuat")
+    assert cek.main(["gambar-contoh.jpg"]) == 0
+    keluar = capsys.readouterr()
+    assert json.loads(keluar.out)["tingkat"] == "kuat"
+    assert "=== Teks mentah ===" in keluar.err and "=== Teks bersih ===" in keluar.err
+    assert "=== Baris dibuang (0) ===" in keluar.err

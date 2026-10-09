@@ -96,3 +96,40 @@ async def test_hasil_sama_dengan_contoh(tingkat):
     assert hasil.klaim_utama == asli.klaim_utama
     assert [c.id for c in hasil.ciri] == [c.id for c in asli.ciri]
     assert hasil.cek_fakta == asli.cek_fakta
+
+
+async def test_bersih_gagal_memakai_teks_mentah_dan_hanya_mencatat_peringatan(monkeypatch, caplog):
+    from app.pipeline import bersih
+
+    def rusak(*args, **kwargs):
+        raise RuntimeError("RAHASIA-ISI-TEKS")
+
+    monkeypatch.setattr(bersih, "bersihkan", rusak)
+    caplog.set_level(logging.INFO)
+    hasil = await orkestrator.jalankan(gambar(), buat_konteks(paksa="kuat"))
+    assert hasil.teks_terbaca == TEKS_PALSU
+    peringatan = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(peringatan) == 1 and "pembersihan teks gagal" in peringatan[0].getMessage()
+    assert "RuntimeError" in peringatan[0].getMessage()
+    log_semua = "\n".join(r.getMessage() for r in caplog.records)
+    assert "RAHASIA-ISI-TEKS" not in log_semua and TEKS_PALSU not in log_semua
+
+
+async def test_bersih_dipanggil_dengan_baris_dan_ukuran_gambar(monkeypatch):
+    from app.pipeline import bersih
+    from app.pipeline.tipe import HasilBersih
+
+    panggilan = []
+
+    def palsu(baris, lebar, tinggi, *args, **kwargs):
+        panggilan.append((len(baris), lebar, tinggi))
+        return HasilBersih("bersih", [])
+
+    monkeypatch.setattr(bersih, "bersihkan", palsu)
+    diagnostik = {}
+    ctx = buat_konteks(paksa="kuat")
+    ctx.diagnostik = diagnostik
+    hasil = await orkestrator.jalankan(gambar(), ctx)
+    assert panggilan == [(1, 60, 40)]
+    assert hasil.teks_terbaca == TEKS_PALSU  # respons tetap memakai teks mentah
+    assert diagnostik["mentah"] == TEKS_PALSU and diagnostik["bersih"].teks == "bersih"

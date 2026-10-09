@@ -28,7 +28,7 @@ from .pipeline import baca, orkestrator
 from .pipeline.tipe import Konteks
 from .skema import HasilAnalisis, ResponsGalat, StatusServer
 
-VERSI = "0.5.0"
+VERSI = "0.5.1"
 # Ruang tambahan untuk header dan pembatas multipart di sekitar gambar.
 RUANG_MULTIPART_BYTE = 64 * 1024
 

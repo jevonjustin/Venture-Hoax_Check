@@ -47,13 +47,24 @@ async def jalankan(data: bytes, ctx: Konteks) -> HasilAnalisis:
         awal = time.perf_counter()
         hasil_baca = await baca.baca_teks(data, ctx)
         teks = hasil_baca.teks
+        if ctx.diagnostik is not None:
+            ctx.diagnostik["mentah"] = teks
         catat("baca", awal)
         # Khusus dummy (hilang di Sesi 5.5): dipilih setelah baca berhasil supaya giliran
         # tidak maju untuk permintaan yang batal atau teksnya tidak terbaca.
         ctx.skenario = Tingkat(ctx.paksa) if ctx.paksa else contoh.tingkat_berikutnya()
 
         awal = time.perf_counter()
-        teks_bersih = bersih.bersihkan(teks)
+        try:
+            hasil_bersih = bersih.bersihkan(hasil_baca.baris, info.lebar, info.tinggi)
+            teks_bersih = hasil_bersih.teks
+            if ctx.diagnostik is not None:
+                ctx.diagnostik["bersih"] = hasil_bersih
+        except Exception as e:  # bersih tidak boleh menggagalkan /analisis; pakai teks mentah
+            teks_bersih = teks
+            log.warning(
+                "Permintaan %s: pembersihan teks gagal (%s), memakai teks mentah", ctx.id_permintaan, type(e).__name__
+            )
         catat("bersih", awal)
 
         awal = time.perf_counter()

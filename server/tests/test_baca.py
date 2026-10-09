@@ -142,7 +142,7 @@ async def test_pembacaan_berjalan_satu_per_satu_di_luar_event_loop():
 
 def test_startup_memuat_pembaca_dan_mencetak_pesan(pembaca_palsu, capsys):
     with TestClient(main.app) as klien:
-        assert klien.get("/health").json()["versi"] == "0.5.0"
+        assert klien.get("/health").json()["versi"] == "0.5.1"
     keluaran = capsys.readouterr().out
     assert pembaca_palsu.siap
     assert "Pembaca teks siap" in keluaran and "dimuat dalam 0,5 detik" in keluaran

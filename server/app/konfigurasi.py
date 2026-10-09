@@ -30,6 +30,33 @@ class Pengaturan:
     # Jumlah minimum karakter huruf-angka hasil baca; di bawahnya galat teks_tidak_terbaca.
     ambang_teks_karakter: int = 20
     paksa_tingkat: str | None = None
+    # Pembersihan teks UI (pipeline/bersih.py). Semua dibuat konservatif: lebih baik ada sisa teks UI
+    # daripada membuang kalimat isi.
+    # Bilah status hanya dicari di pita ini (fraksi tinggi gambar, dihitung dari tengah baris).
+    bersih_pita_atas: float = 0.06
+    # Baris tombol, menu, dan penanda waktu hanya dibuang kalau tidak lebih dari ini kata.
+    bersih_maks_kata_ui: int = 3
+    # Deret menu: minimal jumlah baris pendek sejajar (satu menu situs) agar semuanya dibuang.
+    bersih_menu_min_baris: int = 3
+    # Dua baris dianggap sejajar kalau selisih tengah vertikalnya tidak lebih dari fraksi tinggi gambar ini.
+    bersih_toleransi_sejajar: float = 0.02
+    # Baris menu: tiap baris tidak lebih dari ini kata.
+    bersih_menu_maks_kata: int = 3
+    # Detektor ciri (pipeline/ciri.py).
+    ciri_bukti_maks: int = 3  # bukti per ciri
+    ciri_bukti_maks_karakter: int = 140  # panjang tiap bukti
+    ciri_bukti_konteks: int = 30  # karakter di kiri dan kanan kecocokan yang ikut dikutip
+    ciri_kapital_rasio: float = 0.4  # rasio huruf kapital yang dianggap berlebihan (pola lemah)
+    ciri_kapital_min_huruf: int = 30  # rasio hanya dinilai kalau teks punya sedikitnya sekian huruf
+    ciri_kalimat_kapital_kuat: int = 2  # jumlah kalimat kapital penuh bertanda seru untuk pola kuat
+    ciri_seru_beruntun_kuat: int = 3  # jumlah tanda seru beruntun untuk pola kuat
+    # Klaim utama heuristik (pipeline/klaim.py).
+    klaim_min_kata: int = 5
+    klaim_maks_karakter: int = 200
+    klaim_skor_minimum: float = 2.0
+    # Baris OCR yang tidak berakhir tanda baca disambung ke baris berikutnya kalau panjangnya sedikitnya
+    # sekian kali baris terpanjang (kalimat yang terbelah karena lebar layar).
+    klaim_rasio_baris_panjang: float = 0.8
 
 
 def _angka(env: Mapping[str, str], nama: str, tipe: type, bawaan):
