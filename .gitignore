@@ -25,6 +25,9 @@ __pycache__/
 # Screenshot uji dan dataset mentah (tahap 5): tidak boleh masuk repo
 /server/data_lokal/
 
+# Kunci API penyedia LLM: tidak boleh masuk repo (templat ada di server/.env.contoh)
+/server/.env
+
 # Salinan repositori referensi (tidak ikut build)
 /_referensi/
 /.idea/
