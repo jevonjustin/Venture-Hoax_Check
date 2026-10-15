@@ -16,9 +16,9 @@ def kekuatan(teks: str, id_ciri: str):
     return c.kekuatan if c else None
 
 
-def test_id_yang_bisa_ditandai_adalah_tujuh_id_terkunci_tanpa_pernah_dibantah():
+def test_id_yang_bisa_ditandai_adalah_delapan_id_terkunci_tanpa_pernah_dibantah():
     assert ciri.ID_BISA_DITANDAI == tuple(i for i in ID_CIRI_TERKUNCI if i != "pernah_dibantah")
-    assert len(ciri.ID_BISA_DITANDAI) == 7
+    assert len(ciri.ID_BISA_DITANDAI) == 8
 
 
 def test_pernah_dibantah_tidak_pernah_muncul_dari_regex_dan_teks_kosong_tidak_menghasilkan_apa_pun():
@@ -175,9 +175,29 @@ def test_provokatif_negatif_dan_kata_kerja_kekerasan_tanpa_kelompok_tidak_kuat()
 # ----- bukti -----
 
 def test_bukti_maksimal_tiga_dan_tidak_tumpang_tindih():
-    teks = " ".join(f"Kalimat {i} sebarkan ke semua teman sekarang. " + "isi biasa " * 12 for i in range(6))
+    frasa = ["sebarkan ke semua teman", "viralkan pesan ini", "teruskan ke semua grup", "bagikan ke semua keluarga"]
+    teks = " ".join(f"Kalimat {i} {frasa[i % 4]} sekarang. " + "isi biasa " * 12 for i in range(6))
     c = hasil(teks)["ajakan_menyebarkan"]
     assert len(c.bukti) == 3 and len(set(c.bukti)) == 3
+
+
+def test_kecocokan_yang_teksnya_sama_persis_hanya_satu_bukti():
+    teks = "Segera klik. " + "isi biasa " * 12 + "Segera daftar. " + "isi biasa " * 12 + "Segera bayar."
+    c = hasil(teks)["desakan_waktu"]
+    assert len(c.bukti) == 1
+
+
+def test_bukti_tidak_pernah_diakhiri_elipsis():
+    teks = "Mohon segera " + "kata " * 5 + "sebarkan ke semua teman sekarang juga " + "kata " * 40
+    cfg = dataclasses.replace(Pengaturan(), ciri_bukti_maks_karakter=30)
+    assert all("…" not in b for c in ciri.deteksi_regex(teks, cfg) for b in c.bukti)
+
+
+def test_bukti_pola_kuat_desakan_sebelum_dinonaktifkan_didahulukan_dari_segera_lemah():
+    teks = "Segera verifikasi akun. Kami ulangi: segera. " + "isi biasa " * 12 + "Lakukan sebelum dinonaktifkan."
+    c = {x.id: x for x in ciri.deteksi_regex(teks)}["desakan_waktu"]
+    assert c.kekuatan == "kuat" and c.n_kuat >= 1
+    assert "sebelum dinonaktifkan" in c.bukti[0].lower()
 
 
 def test_bukti_pola_kuat_didahulukan_dari_lemah():
@@ -189,13 +209,13 @@ def test_panjang_bukti_dibatasi_dan_dipotong_di_batas_kata():
     teks = "Mohon segera " + "kata " * 5 + "sebarkan ke semua teman sekarang juga " + "kata " * 40
     cfg = dataclasses.replace(Pengaturan(), ciri_bukti_maks_karakter=50)
     for b in hasil(teks, cfg)["ajakan_menyebarkan"].bukti:
-        isi = b.rstrip("…")
+        isi = b
         assert len(isi) <= 50
         assert isi in teks.replace("  ", " ")
         assert not isi.startswith(" ") and not isi.endswith(" ")
     # tidak memotong di tengah kata: setiap kata dalam bukti utuh
     kata_teks = set(teks.split())
-    assert all(k in kata_teks for k in hasil(teks, cfg)["ajakan_menyebarkan"].bukti[0].rstrip("…").split())
+    assert all(k in kata_teks for k in hasil(teks, cfg)["ajakan_menyebarkan"].bukti[0].split())
 
 
 def test_bukti_adalah_potongan_teks_asli_dengan_spasi_dirapikan():
@@ -215,7 +235,3 @@ def test_urutan_hasil_mengikuti_id_terkunci():
     teks = "bit.ly/abc sebarkan ke semua katanya heboh sebelum dihapus!!!"
     urutan = [c.id for c in ciri.deteksi_regex(teks)]
     assert urutan == sorted(urutan, key=ID_CIRI_TERKUNCI.index)
-
-
-def test_deteksi_ciri_dummy_masih_ada_untuk_analisis():
-    assert callable(ciri.deteksi_ciri)

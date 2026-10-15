@@ -15,6 +15,7 @@ from app.skema import Tingkat
 pytestmark = pytest.mark.anyio
 
 NAMA_TAHAP = ["baca", "bersih", "klaim", "cocok", "ciri", "tingkat", "template"]
+NAMA_TAHAP_PAKSA = ["baca", "bersih"]
 
 
 @pytest.fixture
@@ -25,7 +26,6 @@ def anyio_backend():
 @pytest.fixture(autouse=True)
 def tanpa_jeda(monkeypatch):
     monkeypatch.setattr(pengaturan, "paksa_tingkat", None)
-    contoh.atur_ulang_giliran()
 
 
 def gambar() -> bytes:
@@ -48,15 +48,25 @@ def buat_konteks(paksa=None, klien_putus=tidak_putus, jeda=(0.0, 0.0)) -> Kontek
 
 async def test_durasi_setiap_tahap_dicatat_tanpa_teks_atau_gambar(caplog):
     caplog.set_level(logging.INFO)
-    hasil = await orkestrator.jalankan(gambar(), buat_konteks(paksa="kuat"))
+    hasil = await orkestrator.jalankan(gambar(), buat_konteks())
     baris = [r.getMessage() for r in caplog.records if "tahap:" in r.getMessage()]
     assert len(baris) == 1
     for nama in NAMA_TAHAP:
         assert f"{nama}=" in baris[0]
     log_semua = "\n".join(r.getMessage() for r in caplog.records)
     assert hasil.teks_terbaca not in log_semua
-    assert hasil.klaim_utama not in log_semua
-    assert "SEBARKAN" not in log_semua
+    assert not hasil.klaim_utama or hasil.klaim_utama not in log_semua
+    assert "sebarkan" not in log_semua.lower()
+
+
+async def test_mode_paksa_hanya_mencatat_baca_dan_bersih(caplog):
+    caplog.set_level(logging.INFO)
+    await orkestrator.jalankan(gambar(), buat_konteks(paksa="kuat"))
+    baris = [r.getMessage() for r in caplog.records if "tahap:" in r.getMessage()]
+    assert len(baris) == 1
+    for nama in NAMA_TAHAP_PAKSA:
+        assert f"{nama}=" in baris[0]
+    assert "cocok=" not in baris[0]
 
 
 async def test_dibatalkan_klien_menghentikan_pipeline(caplog):
@@ -67,18 +77,10 @@ async def test_dibatalkan_klien_menghentikan_pipeline(caplog):
     assert not any("tahap:" in r.getMessage() for r in caplog.records)
 
 
-async def test_batal_tidak_memajukan_giliran():
-    with pytest.raises(DibatalkanKlien):
-        await orkestrator.jalankan(gambar(), buat_konteks(klien_putus=putus, jeda=(1.0, 1.0)))
-    hasil = await orkestrator.jalankan(gambar(), buat_konteks())
-    assert hasil.tingkat == Tingkat.KUAT  # giliran pertama, belum ada yang terpakai
-
-
-async def test_teks_tidak_terbaca_tidak_memajukan_giliran():
+async def test_teks_tidak_terbaca_lewat_paksa():
     with pytest.raises(GalatApi) as e:
         await orkestrator.jalankan(gambar(), buat_konteks(paksa="teks_tidak_terbaca"))
     assert (e.value.status, e.value.kode) == (422, "teks_tidak_terbaca")
-    assert (await orkestrator.jalankan(gambar(), buat_konteks())).tingkat == Tingkat.KUAT
 
 
 async def test_gambar_tidak_sah_ditolak_sebelum_tahap_apa_pun():
@@ -88,14 +90,15 @@ async def test_gambar_tidak_sah_ditolak_sebelum_tahap_apa_pun():
 
 
 @pytest.mark.parametrize("tingkat", list(Tingkat))
-async def test_hasil_sama_dengan_contoh(tingkat):
+async def test_hasil_sama_dengan_contoh(tingkat, pencarian_palsu):
     hasil = await orkestrator.jalankan(gambar(), buat_konteks(paksa=tingkat.value))
     asli = contoh.CONTOH[tingkat]
     assert hasil.tingkat == tingkat
-    assert hasil.teks_terbaca == TEKS_PALSU  # teks dari pembaca, bukan dari contoh
+    assert hasil.teks_terbaca == TEKS_PALSU  # teks bersih dari pembaca, bukan dari contoh
     assert hasil.klaim_utama == asli.klaim_utama
     assert [c.id for c in hasil.ciri] == [c.id for c in asli.ciri]
     assert hasil.cek_fakta == asli.cek_fakta
+    assert pencarian_palsu.kueri == []  # mode demo tidak mencari
 
 
 async def test_bersih_gagal_memakai_teks_mentah_dan_hanya_mencatat_peringatan(monkeypatch, caplog):
@@ -131,5 +134,5 @@ async def test_bersih_dipanggil_dengan_baris_dan_ukuran_gambar(monkeypatch):
     ctx.diagnostik = diagnostik
     hasil = await orkestrator.jalankan(gambar(), ctx)
     assert panggilan == [(1, 60, 40)]
-    assert hasil.teks_terbaca == TEKS_PALSU  # respons tetap memakai teks mentah
+    assert hasil.teks_terbaca == "bersih"  # respons memakai teks bersih
     assert diagnostik["mentah"] == TEKS_PALSU and diagnostik["bersih"].teks == "bersih"

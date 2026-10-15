@@ -7,10 +7,12 @@ tests/test_template.py memindai semua teks di modul ini.
 """
 
 from ..skema import Ciri, Tingkat
+from .ciri import jenis_tautan
 from .tipe import CiriTerdeteksi
 
 # Nama yang tampil di aplikasi. Id-nya bagian dari kontrak API (skema.ID_CIRI_TERKUNCI).
 NAMA = {
+    "permintaan_data_rahasia": "Permintaan kode, data rahasia, atau uang",
     "ajakan_menyebarkan": "Ajakan menyebarkan",
     "desakan_waktu": "Desakan waktu",
     "kapital_tanda_seru": "Huruf kapital dan tanda seru berlebihan",
@@ -22,6 +24,12 @@ NAMA = {
 }
 
 PENJELASAN = {
+    "permintaan_data_rahasia": (
+        "Permintaan kode verifikasi, PIN, kata sandi, data kartu, atau uang lewat pesan adalah modus yang sering "
+        "dipakai untuk mengambil alih akun atau menguras rekening. Kode seperti itu bersifat rahasia dan lembaga "
+        "resmi pada umumnya tidak memintanya lewat obrolan, jadi pengirimnya perlu dipastikan lebih dulu lewat "
+        "jalur resmi."
+    ),
     "ajakan_menyebarkan": (
         "Pesan yang mendesak untuk segera disebarkan sering dibuat agar orang ikut meneruskannya "
         "sebelum sempat memeriksa isinya. Informasi dari sumber yang jelas biasanya tidak bergantung "
@@ -55,7 +63,24 @@ PENJELASAN = {
         "berpikir. Pesan seperti ini patut dibaca dengan tenang dan dicek ke sumber lain."
     ),
     "pernah_dibantah": (
-        "Klaim yang mirip sudah pernah diperiksa dan dinyatakan salah oleh media cek fakta."
+        "Klaim yang mirip sudah pernah diperiksa dan dinyatakan salah atau digolongkan sebagai penipuan "
+        "oleh media cek fakta."
+    ),
+}
+
+# Varian penjelasan ciri link_mencurigakan menurut jenis tautan pada buktinya (ciri.jenis_tautan). Id ciri tetap
+# satu; hanya teksnya yang menyesuaikan dengan pemicunya.
+PENJELASAN_TAUTAN = {
+    "pemendek": PENJELASAN["link_mencurigakan"],
+    "situs_gratis": (
+        "Alamat ini memakai layanan pembuat situs gratis atau domain yang tidak umum. Siapa pun dapat membuat "
+        "situs dengan nama apa pun di layanan seperti itu, sehingga nama pada alamat tidak menunjukkan siapa "
+        "pemiliknya. Alamat resmi lembaga biasanya memakai domain milik lembaga itu sendiri."
+    ),
+    "umum": (
+        "Tautan pada pesan seperti ini belum tentu mengarah ke tempat yang disebutkan di sekitarnya. "
+        "Pengirim dan tujuan tautan perlu dipastikan lebih dulu, misalnya dengan membuka situs resminya "
+        "secara langsung, bukan lewat tautan di pesan."
     ),
 }
 
@@ -111,13 +136,39 @@ TINGKAT = {
     ),
     Tingkat.HATI_HATI: (
         "Perlu Hati-hati",
-        "Belum ada artikel cek fakta yang cocok, tetapi ditemukan beberapa ciri yang sering muncul pada "
-        "informasi menyesatkan. Informasi sebaiknya dicek ke sumber resmi sebelum dipercaya atau disebarkan.",
+        "Tidak ada artikel cek fakta yang menyatakan klaim mirip ini salah, tetapi ditemukan satu atau lebih "
+        "ciri yang sering muncul pada informasi menyesatkan. Informasi sebaiknya dicek ke sumber resmi "
+        "sebelum dipercaya atau disebarkan.",
     ),
     Tingkat.TIDAK_DITEMUKAN: (
         "Tidak Ditemukan Indikasi Hoaks",
         "Tidak ada artikel cek fakta yang cocok dan tidak ditemukan ciri yang menonjol. "
         "Ini bukan jaminan bahwa informasinya benar; sumbernya tetap perlu dicek.",
+    ),
+}
+
+# Keterangan untuk varian tertentu dari sebuah tingkat, dipilih oleh pipeline/tingkat.py. Judul tingkat tidak
+# berubah; hanya keterangannya yang menyesuaikan dengan alasan tingkat itu muncul.
+VARIAN_TINGKAT = {
+    (Tingkat.HATI_HATI, "ciri_saja"): TINGKAT[Tingkat.HATI_HATI][1],
+    (Tingkat.HATI_HATI, "mirip"): (
+        "Ada artikel cek fakta yang menyatakan klaim yang mirip dengan ini salah, tetapi kemiripannya belum "
+        "cukup tinggi untuk disimpulkan. Artikel rujukan sebaiknya dibaca langsung dan dicocokkan dengan isi gambar."
+    ),
+    (Tingkat.HATI_HATI, "satir"): (
+        "Ada artikel yang mengidentifikasi konten yang sangat mirip sebagai satir atau parodi. Konten seperti itu "
+        "tidak dimaksudkan sebagai berita dan mudah disalahartikan bila dibagikan tanpa konteks, jadi artikel "
+        "rujukan sebaiknya dibaca."
+    ),
+    (Tingkat.HATI_HATI, "konflik"): (
+        "Ada artikel cek fakta yang menyatakan klaim mirip ini salah, tetapi ada juga artikel dengan kesimpulan "
+        "berbeda yang sama miripnya atau lebih mirip. Kedua artikel sebaiknya dibaca langsung sebelum menarik "
+        "kesimpulan."
+    ),
+    (Tingkat.TIDAK_DITEMUKAN, "rujukan"): (
+        "Tidak ada artikel cek fakta yang menyatakan klaim mirip ini salah dan tidak ditemukan ciri yang "
+        "menonjol. Artikel yang tampil hanya rujukan dan belum tentu sama dengan isi gambar. "
+        "Ini bukan jaminan bahwa informasinya benar; sumbernya tetap perlu dicek."
     ),
 }
 
@@ -127,6 +178,8 @@ def semua_teks() -> list[str]:
     teks = list(NAMA.values()) + list(PENJELASAN.values()) + list(LABEL.values()) + [LABEL_CADANGAN, SUMBER_CADANGAN]
     for judul, keterangan in TINGKAT.values():
         teks += [judul, keterangan]
+    teks += list(VARIAN_TINGKAT.values())
+    teks += list(PENJELASAN_TAUTAN.values())
     return teks
 
 
@@ -143,13 +196,21 @@ def judul_tingkat(tingkat: Tingkat) -> str:
     return TINGKAT[tingkat][0]
 
 
-def keterangan_tingkat(tingkat: Tingkat) -> str:
-    return TINGKAT[tingkat][1]
+def keterangan_tingkat(tingkat: Tingkat, varian: str = "") -> str:
+    """Keterangan tingkat. Varian yang tidak dikenal (atau kosong) memakai keterangan bawaan tingkat itu."""
+    return VARIAN_TINGKAT.get((tingkat, varian), TINGKAT[tingkat][1])
 
 
 def susun_penjelasan(ciri: list[CiriTerdeteksi]) -> list[Ciri]:
     """Masukan: ciri terdeteksi. Keluaran: ciri lengkap dengan nama dan penjelasan, urutan tetap."""
     return [
-        Ciri(id=c.id, nama=NAMA[c.id], bukti=c.bukti, penjelasan=PENJELASAN[c.id], keyakinan=c.keyakinan)
+        Ciri(id=c.id, nama=NAMA[c.id], bukti=c.bukti, penjelasan=_penjelasan_ciri(c), keyakinan=c.keyakinan)
         for c in ciri
     ]
+
+
+def _penjelasan_ciri(c: CiriTerdeteksi) -> str:
+    """Penjelasan dasar per id; link_mencurigakan memilih varian menurut jenis tautan pada buktinya."""
+    if c.id == "link_mencurigakan":
+        return PENJELASAN_TAUTAN[jenis_tautan(c.bukti)]
+    return PENJELASAN[c.id]

@@ -1,7 +1,7 @@
 """Server Cek Hoaks: lapisan HTTP.
 
 Menerima potongan gambar dari aplikasi, menyerahkannya ke pipeline (app/pipeline), dan mengembalikan
-hasilnya sesuai kontrak di docs/API.md. Pembaca teks sudah RapidOCR (Sesi 5.2b); tahap lain masih dummy.
+hasilnya sesuai kontrak di docs/API.md. Pembaca teks RapidOCR dan pencarian cek fakta dimuat saat server menyala; LLM dipanggil lewat API per permintaan.
 
 Privasi: gambar hanya dibaca di memori. Body permintaan dibaca sendiri dan di-parse dengan
 parser multipart tingkat rendah, karena UploadFile bawaan Starlette menyimpan unggahan di atas
@@ -9,7 +9,9 @@ parser multipart tingkat rendah, karena UploadFile bawaan Starlette menyimpan un
 """
 
 import logging
+import re
 import socket
+import subprocess
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -24,11 +26,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from .galat import DibatalkanKlien, GalatApi, respons_galat as _respons_galat
 from . import konfigurasi
 from .konfigurasi import NILAI_PAKSA, pengaturan
-from .pipeline import baca, orkestrator
+from .pipeline import baca, cocok, llm, orkestrator
 from .pipeline.tipe import Konteks
 from .skema import HasilAnalisis, ResponsGalat, StatusServer
 
-VERSI = "0.5.1"
+VERSI = konfigurasi.VERSI_SERVER
 # Ruang tambahan untuk header dan pembatas multipart di sekitar gambar.
 RUANG_MULTIPART_BYTE = 64 * 1024
 
@@ -57,18 +59,62 @@ def alamat_ipv4_lokal() -> list[str]:
     return sorted(a for a in alamat if not a.startswith(("127.", "169.254.", "0.")))
 
 
+# Potongan nama adaptor yang bukan jaringan ke HP (WSL, Docker, mesin virtual); alamatnya disembunyikan di banner.
+_ADAPTOR_VIRTUAL = ("vethernet", "wsl", "docker", "hyper-v", "virtualbox", "vmware", "vmnet", "loopback", "tap-")
+
+
+def urai_ipconfig(keluaran: str) -> dict[str, str]:
+    """Memetakan alamat IPv4 ke nama adaptor dari keluaran `ipconfig`. Tidak bergantung pada bahasa Windows:
+    nama adaptor adalah baris tanpa indentasi yang berakhir ':', alamatnya baris bermuatan "IPv4"."""
+    peta: dict[str, str] = {}
+    adaptor = ""
+    for baris in keluaran.splitlines():
+        if baris and not baris[0].isspace() and baris.rstrip().endswith(":"):
+            adaptor = re.sub(r"^\S+(?:\s+\S+)?\s+(?:adapter|adaptor)\s+", "", baris.strip().rstrip(":"), flags=re.I)
+            adaptor = adaptor or baris.strip().rstrip(":")
+        elif "ipv4" in baris.lower():
+            m = re.search(r"(\d{1,3}(?:\.\d{1,3}){3})", baris)
+            if m and adaptor:
+                peta[m.group(1)] = adaptor
+    return peta
+
+
+def adaptor_virtual(nama: str) -> bool:
+    return any(k in nama.lower() for k in _ADAPTOR_VIRTUAL)
+
+
+def _nama_adaptor() -> dict[str, str]:
+    """Peta IP -> nama adaptor; kosong bila `ipconfig` tidak ada atau gagal (alamat lalu tampil tanpa label)."""
+    try:
+        hasil = subprocess.run(
+            ["ipconfig"], capture_output=True, text=True, encoding="oem", errors="replace", timeout=5
+        )
+    except (OSError, subprocess.SubprocessError, LookupError):
+        return {}
+    return urai_ipconfig(hasil.stdout)
+
+
 def _cetak_alamat() -> None:
-    baris = ["", "=" * 60, f"Server Cek Hoaks {VERSI} (pembaca teks: RapidOCR, tahap lain masih dummy)", "Alamat yang bisa diketik di aplikasi:"]
+    baris = ["", "=" * 60, f"Server Cek Hoaks {VERSI}", f"Pencarian cek fakta: {cocok.pencarian.ringkasan()}", f"Analisis teks (LLM): {llm.ringkasan_status()}", "Alamat yang bisa diketik di aplikasi:"]
     ip = alamat_ipv4_lokal()
-    if ip:
-        baris += [f"  http://{a}:{pengaturan.port}" for a in ip]
+    nama = _nama_adaptor()
+    nyata = [a for a in ip if not adaptor_virtual(nama.get(a, ""))]
+    tersembunyi = [a for a in ip if a not in nyata]
+    if nyata:
+        for a in nyata:
+            label = f"   <- {nama[a]}" if a in nama else ""
+            baris.append(f"  http://{a}:{pengaturan.port}{label}")
+        if tersembunyi:
+            baris.append(f"  ({len(tersembunyi)} alamat adaptor virtual disembunyikan: WSL, Docker, atau mesin virtual)")
+    elif tersembunyi:
+        baris += [f"  http://{a}:{pengaturan.port}   <- {nama.get(a, '?')} (adaptor virtual)" for a in tersembunyi]
     else:
         baris.append("  (tidak ada IPv4 jaringan yang ditemukan)")
     baris.append(f"  http://127.0.0.1:{pengaturan.port}   <- lewat USB, setelah: adb reverse tcp:{pengaturan.port} tcp:{pengaturan.port}")
     if pengaturan.paksa_tingkat:
         baris.append(f"PAKSA_TINGKAT = {pengaturan.paksa_tingkat}")
     else:
-        baris.append("Tingkat hasil: bergiliran (PAKSA_TINGKAT tidak diisi)")
+        baris.append("Tingkat hasil: dari analisis sungguhan (PAKSA_TINGKAT tidak diisi)")
     baris.append(f"Ambang teks: minimal {pengaturan.ambang_teks_karakter} karakter huruf-angka")
     baris.append("=" * 60)
     print("\n".join(baris), flush=True)
@@ -82,6 +128,9 @@ async def lifespan(_: FastAPI):
     detik = await baca.pembaca.siapkan()
     lama = f"{detik:.1f}".replace(".", ",")
     print(f"Pembaca teks siap ({baca.versi_mesin()}), dimuat dalam {lama} detik", flush=True)
+    print("Memuat pencarian cek fakta ...", flush=True)
+    await cocok.pencarian.siapkan()
+    print(f"Pencarian cek fakta {cocok.pencarian.ringkasan()}", flush=True)
     _cetak_alamat()
     yield
 

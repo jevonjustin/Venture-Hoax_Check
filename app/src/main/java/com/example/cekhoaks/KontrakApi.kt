@@ -33,6 +33,8 @@ data class ArtikelCekFakta(
     val label: String,
     /** Tanggal terbit (ISO 8601), atau null jika tidak diketahui. */
     val tanggal: String? = null,
+    /** True jika url berformat lama yang sudah mati; belum dipakai UI (Tahap 6). */
+    @SerialName("url_format_lama") val urlFormatLama: Boolean = false,
 )
 
 @Serializable
@@ -44,6 +46,8 @@ data class HasilAnalisis(
     @SerialName("cek_fakta") val cekFakta: List<ArtikelCekFakta>,
     @SerialName("teks_terbaca") val teksTerbaca: String,
     @SerialName("durasi_ms") val durasiMs: Long,
+    /** Bagian pemeriksaan yang tidak berjalan ("cek_fakta", "ai"); kosong jika semuanya berjalan. Belum dipakai UI. */
+    @SerialName("pemeriksaan_terbatas") val pemeriksaanTerbatas: List<String> = emptyList(),
 )
 
 @Serializable

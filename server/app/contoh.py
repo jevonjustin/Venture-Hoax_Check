@@ -1,12 +1,9 @@
-"""Data contoh untuk modul pipeline dummy. Semua narasi dan artikel di sini fiktif.
+"""Data contoh untuk mode demo PAKSA_TINGKAT (cadangan saat showcase). Semua narasi dan artikel di sini fiktif.
 
-Hanya dipakai selama pipeline masih dummy; tiap sesi tahap 5 menggantikan satu modul pipeline
-dengan implementasi sungguhan, dan data ini ikut menyusut.
-"""
+Hasil analisis sungguhan tidak memakai berkas ini."""
 
 from dataclasses import dataclass
 from datetime import date
-from itertools import cycle
 
 from .pipeline.tipe import CiriTerdeteksi
 from .skema import ArtikelCekFakta, Tingkat
@@ -78,16 +75,3 @@ CONTOH: dict[Tingkat, Contoh] = {
         cek_fakta=[],
     ),
 }
-
-_giliran = cycle(list(Tingkat))
-
-
-def tingkat_berikutnya() -> Tingkat:
-    """Tingkat bergiliran kuat → hati_hati → tidak_ditemukan → kuat → ..."""
-    return next(_giliran)
-
-
-def atur_ulang_giliran() -> None:
-    """Dipakai test agar urutan giliran selalu mulai dari awal."""
-    global _giliran
-    _giliran = cycle(list(Tingkat))

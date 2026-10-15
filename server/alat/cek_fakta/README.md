@@ -1,6 +1,6 @@
 # Alat database cek fakta (Sesi 5.3)
 
-Membangun database artikel cek fakta lokal dan mencari artikel yang mirip dengan sebuah klaim. Alat ini belum terpasang ke `/analisis` (pemasangan dikerjakan di Sesi 5.5). Hasil perbandingan model, keputusan, dan keterbatasan ada di `docs/RANCANGAN_PROYEK.md` (bagian Sesi 5.3).
+Membangun database artikel cek fakta lokal dan mencari artikel yang mirip dengan sebuah klaim. Pencarian di server (`app/pipeline/cocok.py`) memakai berkas keluaran alat ini; alatnya sendiri tidak ikut berjalan di server (pemasangan ke `/analisis` selesai di Sesi 5.5). Hasil perbandingan model, keputusan, dan keterbatasan ada di `docs/RANCANGAN_PROYEK.md` (bagian Sesi 5.3).
 
 Semua data ada di `server/data_lokal/` (masuk `.gitignore`, tidak ikut repo):
 

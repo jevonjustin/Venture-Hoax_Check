@@ -3,8 +3,7 @@
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-
-from ..skema import Tingkat
+from datetime import date
 
 
 @dataclass(frozen=True)
@@ -51,6 +50,8 @@ class CiriRegex:
     id: str
     kekuatan: str
     bukti: list[str]
+    # Jumlah bukti pertama yang berasal dari pola kuat (bukti disusun kuat lebih dulu, lalu lemah).
+    n_kuat: int = 0
 
 
 @dataclass(frozen=True)
@@ -70,6 +71,24 @@ class CiriTerdeteksi:
     keyakinan: str  # "tinggi" | "sedang"
 
 
+@dataclass(frozen=True)
+class Kandidat:
+    """Satu artikel cek fakta hasil pencarian kemiripan (internal; belum disaring untuk respons).
+
+    `narasi` hanya dipakai server untuk memilih kalimat bukti dan tidak dikirim ke HP."""
+
+    judul: str
+    sumber: str
+    url: str
+    skor: float
+    label: str
+    tanggal: date | None
+    url_format_lama: bool
+    narasi: str = ""
+    # Bagian bobot kata isi judul artikel yang ada di teks (0-1), diisi pencarian. 1,0 bila tidak dihitung.
+    relevansi: float = 1.0
+
+
 @dataclass
 class Konteks:
     """Keadaan satu permintaan. Dibuat oleh pemanggil (endpoint atau app.cek)."""
@@ -83,7 +102,5 @@ class Konteks:
     paksa: str | None = None
     # Waktu permintaan mulai diterima (time.perf_counter), untuk durasi_ms.
     mulai: float = field(default_factory=time.perf_counter)
-    # Khusus dummy: tingkat skenario yang dipilih di tahap baca. Hilang di Sesi 5.5.
-    skenario: Tingkat | None = None
     # Diisi orkestrator hanya kalau pemanggil memberi dict (app.cek) agar hasil antara bisa dicetak.
     diagnostik: dict | None = None

@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image, ImageDraw, ImageFont
 
-from app import contoh, main
+from app import main
 from app.konfigurasi import pengaturan
 from app.pipeline import baca
 
@@ -32,7 +32,6 @@ def png(teks: list[str] | None) -> bytes:
 def siap(monkeypatch):
     monkeypatch.setattr(pengaturan, "paksa_tingkat", None)
     monkeypatch.setattr(pengaturan, "ambang_teks_karakter", 20)
-    contoh.atur_ulang_giliran()
 
 
 @pytest.fixture(scope="module")

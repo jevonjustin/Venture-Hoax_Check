@@ -7,18 +7,16 @@ Dua jalur:
   kandidat; ciri diterima kalau kutipannya terverifikasi ada di teks. Penjelasan tidak dibuat di sini
   (selalu dari template.py).
 
-`pernah_dibantah` tidak punya detektor: ciri itu ditentukan hasil pencarian database cek fakta (Sesi 5.5).
-
-`deteksi_ciri` di bawah adalah dummy yang masih dipakai /analisis sampai Sesi 5.5.
+`pernah_dibantah` tidak punya detektor: ciri itu ditentukan hasil pencarian database cek fakta
+(pipeline/tingkat.py).
 """
 
 import re
 from collections.abc import Iterable
 
-from .. import contoh
 from ..konfigurasi import Pengaturan, pengaturan as pengaturan_global
-from ..skema import ArtikelCekFakta, ID_CIRI_TERKUNCI
-from .tipe import CiriRegex, CiriTerdeteksi, KandidatLLM, Konteks
+from ..skema import ID_CIRI_TERKUNCI
+from .tipe import CiriRegex, CiriTerdeteksi, KandidatLLM
 
 KUAT = "kuat"
 LEMAH = "lemah"
@@ -62,7 +60,7 @@ _AJAKAN = [
 ]
 
 _DESAKAN = [
-    (KUAT, _p(r"\bsebelum\s+(?:(?:segera|keburu)\s+)?(?:di\s?)?(?:hapus|blokir|tutup|hilang|tarik|terlambat|kedaluwarsa|kadaluarsa)")),
+    (KUAT, _p(r"\bsebelum\s+(?:(?:segera|keburu)\s+)?(?:di\s?)?(?:hapus|blokir|tutup|hilang|tarik|terlambat|kedaluwarsa|kadaluarsa|non\s?aktif\w*|suspend\w*|cabut|bekukan|banned?)")),
     (KUAT, _p(r"\bhari\s+ini\s+(?:terakhir|saja|batas)\b")),
     (KUAT, _p(r"\b(?:kesempatan|waktu|penawaran)\s+(?:terakhir|terbatas)\b")),
     (KUAT, _p(r"\bsegera\b(?:\s+\S+){0,6}?\s+sebelum\b")),
@@ -128,7 +126,48 @@ _PROVOKATIF = [
     (LEMAH, _p(r"\b(?:kafir|antek|pengkhianat|laknat|bantai|ganyang|biadab|keji|bejat|zalim|jahanam|hancurkan|panik|mengerikan|kejam|murka|geram)\b")),
 ]
 
+# Permintaan kode, data rahasia, atau uang. Pola kuat saja: kata seperti "OTP" tanpa kata permintaan sering
+# muncul di berita dan edukasi, jadi tidak dipakai. Kalimat larangan ("JANGAN BERIKAN kode OTP ...") dibuang
+# oleh `_cocok_permintaan`.
+_KATA_MINTA = r"(?:kirim(?:kan|in)?|sebut(?:kan)?|beri(?:kan)?|kasih(?:kan)?|bacakan|masukkan|input|ketik(?:kan)?)"
+_RAHASIA = r"(?:kode(?:nya)?|otp|pin(?!\s+(?:lokasi|maps?|peta))|sandi|password|kata\s+sandi|cvv|token)"
+_LAYANAN_DOMPET = r"(?:ovo|dana|gopay|go-pay|shopeepay|linkaja|link\s+aja)"
+_PERMINTAAN = [
+    (KUAT, _p(rf"\b(?:di)?{_KATA_MINTA}\b(?:\s+\S+){{0,3}}?\s+{_RAHASIA}\b")),
+    (KUAT, _p(r"\b(?:minta|meminta|tanya|menanyakan)\w*\s+(?:\S+\s+){0,2}?(?:kode(?:nya)?|otp|pin(?!\s+(?:lokasi|maps?|peta))|sandi|password)\b")),
+    (KUAT, _p(r"\bkode\s+\d\s*(?:angka|digit)\b|\b\d\s*(?:angka|digit)\b(?:\s+\S+){0,3}?\s+kode\b")),
+    (KUAT, _p(r"\b(?:bisa|tolong|tlng|mohon|minta)\s+(?:di)?(?:kirim|forward|teruskan)\w*\s+(?:sms|kode|pesan)\b")),
+    (KUAT, _p(r"\bkode\b(?:\s+\S+){0,6}?\s+(?:kirim|kirimkan|sebutkan|kasih|bacakan)\w*")),
+    (KUAT, _p(r"\b(?:butuh|butu|perlu|harus|wajib|untuk|minta)\s+(?:\w+\s+){0,2}?verifikasi\s+(?:2|dua)\s+(?:langkah|tahap|faktor)\b")),
+    (KUAT, _p(rf"\bunlock\b(?:\s+\S+){{0,2}}?\s+(?:ke|via|lewat)\s+{_LAYANAN_DOMPET}\b")),
+    (KUAT, _p(r"\bqris\b(?:\s+\S+){0,5}?\s+(?:bermsalah|bermasalah|error|eror|gagal|bermasalah)\b")),
+    (KUAT, _p(
+        rf"\b(?:refund|reffund|refun|pengembalian\s+dana|pencairan)\b(?:\s+\S+){{0,6}}?\s+(?:dialihkan\s+)?"
+        rf"(?:ke|via|lewat)\s+{_LAYANAN_DOMPET}\b"
+    )),
+    (KUAT, _p(r"\bwajib\s+(?:di)?(?:setor|bayar|transfer)\w*(?:\s+\S+){0,4}?\s+(?:di\s+awal|dulu|terlebih\s+dahulu|sebelum)\b")),
+    (KUAT, _p(
+        r"\b(?:transfer|bayar|setor|top\s*up)\w*\b(?:\s+\S+){0,3}?\s+(?:biaya|denda|admin|administrasi|pajak|dp|deposit|jaminan|"
+        r"aktivasi|pencairan)\b"
+    )),
+]
+
+# Kalimat larangan atau edukasi: kecocokan di dekat kata ini tidak ditandai sama sekali.
+# "jangan lupa", "jangan ragu", dan sejenisnya adalah kata pendorong, bukan larangan.
+_LARANGAN = _p(
+    r"\b(?:jangan(?:lah)?(?!\s+(?:sampai\s+)?(?:lupa|ragu(?:-ragu)?|sungkan|segan|malu|telat|terlambat|lama|ketinggalan)\b)|dilarang|tidak\s+boleh|tak\s+boleh|hindari|waspada(?:i)?|"
+    r"(?:tidak|tak|nggak|gak|ga|bukan)\s+(?:pernah\s+|akan\s+){0,2}(?:me)?minta\w*|"
+    r"(?:tidak|tak|nggak|gak)\s+(?:pernah\s+|akan\s+){0,2}menanyakan|rahasiakan|bersifat\s+rahasia|"
+    r"do\s+not|don'?t|never)\b"
+)
+# Kata larangan hanya membatalkan permintaan di klausanya sendiri (tanpa koma, titik, tanda seru/tanya, titik koma,
+# atau kata "tapi/tetapi/namun/kecuali" di antaranya; titik dua bukan batas: "Waspada penipuan: pelaku meminta ...") dan hanya bila mendahului atau tumpang tindih
+# dengan kata kerja permintaan, paling jauh sekian token. Baris baru bukan batas: OCR memecah kalimat per baris.
+_PEMBATAS_KLAUSA = re.compile(r"[,;.!?]|\b(?:tapi|tetapi|namun|kecuali)\b", re.IGNORECASE)
+_JARAK_LARANGAN_TOKEN = 3
+
 _POLA = {
+    "permintaan_data_rahasia": _PERMINTAAN,
     "ajakan_menyebarkan": _AJAKAN,
     "desakan_waktu": _DESAKAN,
     "sumber_tidak_jelas": _SUMBER,
@@ -162,6 +201,24 @@ def _cocok_ajakan(datar: str) -> list[tuple[int, int, str]]:
     ]
 
 
+def _cocok_permintaan(datar: str) -> list[tuple[int, int, str]]:
+    """Pola permintaan kode/data/uang, kecuali yang berada dalam kalimat larangan atau edukasi."""
+    return [c for c in _cocok_pola(_PERMINTAAN, datar) if not _dibatalkan_larangan(datar, c[0], c[1])]
+
+
+def _dibatalkan_larangan(datar: str, s: int, e: int) -> bool:
+    """Apakah kecocokan permintaan di datar[s:e] berada di bawah kata larangan pada klausa yang sama."""
+    awal_klausa = 0
+    for m in _PEMBATAS_KLAUSA.finditer(datar, 0, s):
+        awal_klausa = m.end()
+    for larangan in _LARANGAN.finditer(datar, awal_klausa, e):
+        if larangan.end() > s:  # tumpang tindih atau berada di dalam kecocokan
+            return True
+        if len(datar[larangan.end():s].split()) <= _JARAK_LARANGAN_TOKEN:
+            return True
+    return False
+
+
 def _cocok_tautan(datar: str) -> list[tuple[int, int, str]]:
     hasil = _cocok_pola(_LINK_KUAT, datar)
     for m in _URL_UMUM.finditer(datar):
@@ -170,6 +227,24 @@ def _cocok_tautan(datar: str) -> list[tuple[int, int, str]]:
             continue
         hasil.append((m.start(), m.start() + len(url), LEMAH))
     return hasil
+
+
+TAUTAN_PEMENDEK = "pemendek"
+TAUTAN_SITUS_GRATIS = "situs_gratis"
+TAUTAN_UMUM = "umum"
+_RE_PEMENDEK = _p(rf"(?<![\w.@-])(?:{_PEMENDEK})(?:/|\b)")
+_RE_SITUS_GRATIS = _p(rf"(?:\.|//|^)(?:{_LAYANAN_GRATIS})\b|\.(?:{_TLD_MURAH})(?:/|\b|$)")
+
+
+def jenis_tautan(bukti: list[str]) -> str:
+    """Jenis tautan pada bukti ciri link_mencurigakan, untuk memilih teks penjelasan (id ciri tidak berubah):
+    pemendek tautan (tujuan tidak terlihat), situs gratis atau domain tidak umum (siapa pun bisa membuat situs
+    dengan nama apa pun), atau umum. Pemendek didahulukan kalau keduanya ada."""
+    if any(_RE_PEMENDEK.search(b) for b in bukti):
+        return TAUTAN_PEMENDEK
+    if any(_RE_SITUS_GRATIS.search(b) for b in bukti):
+        return TAUTAN_SITUS_GRATIS
+    return TAUTAN_UMUM
 
 
 def _cocok_kapital(datar: str, cfg: Pengaturan) -> list[tuple[int, int, str]]:
@@ -188,39 +263,48 @@ def _cocok_kapital(datar: str, cfg: Pengaturan) -> list[tuple[int, int, str]]:
     return hasil
 
 
-def _jendela(datar: str, s: int, e: int, cfg: Pengaturan) -> tuple[int, int, bool]:
-    """Potongan teks di sekitar kecocokan [s, e), dipotong di batas kata. Mengembalikan (awal, akhir, terpotong)."""
+def _jendela(datar: str, s: int, e: int, cfg: Pengaturan) -> tuple[int, int]:
+    """Potongan teks di sekitar kecocokan [s, e), dipotong di batas kata. Bukti harus potongan persis dari teks,
+    jadi tidak ada elipsis di sini; tampilan yang menambahkannya bila perlu."""
     maks = cfg.ciri_bukti_maks_karakter
     if e - s >= maks:
         akhir = s + maks
         while akhir > s and akhir < len(datar) and datar[akhir] != " ":
             akhir -= 1
-        return s, (akhir if akhir > s else s + maks), True
+        return s, (akhir if akhir > s else s + maks)
     konteks = min(cfg.ciri_bukti_konteks, (maks - (e - s)) // 2)
     awal, akhir = max(0, s - konteks), min(len(datar), e + konteks)
     while awal < s and awal > 0 and datar[awal - 1] != " ":
         awal += 1
     while akhir > e and akhir < len(datar) and datar[akhir] != " ":
         akhir -= 1
-    return awal, akhir, False
+    return awal, akhir
 
 
-def _kumpulkan_bukti(datar: str, cocok: list[tuple[int, int, str]], cfg: Pengaturan) -> list[str]:
-    """Bukti: pola kuat lebih dulu, lalu lemah; urutan kemunculan di dalam tiap kelompok. Jendela yang
-    saling tumpang tindih hanya dihitung sekali. Maksimal `ciri_bukti_maks`."""
+def _kumpulkan_bukti(datar: str, cocok: list[tuple[int, int, str]], cfg: Pengaturan) -> tuple[list[str], int]:
+    """Bukti: pola kuat lebih dulu, lalu lemah; urutan kemunculan di dalam tiap kelompok. Jendela yang saling
+    tumpang tindih hanya dihitung sekali, dan kecocokan yang teksnya sama persis ("Segera" tiga kali) hanya satu
+    bukti. Maksimal `ciri_bukti_maks`. Mengembalikan (bukti, jumlah bukti dari pola kuat di awal daftar)."""
     urut = sorted(cocok, key=lambda c: (c[2] != KUAT, c[0]))
-    bukti, terpakai = [], []
-    for s, e, _ in urut:
-        awal, akhir, terpotong = _jendela(datar, s, e, cfg)
+    bukti, terpakai, teks_terlihat, n_kuat = [], [], set(), 0
+    for s, e, kekuatan in urut:
+        kunci = re.sub(r"\s+", " ", datar[s:e]).lower()
+        if kunci in teks_terlihat:
+            continue
+        awal, akhir = _jendela(datar, s, e, cfg)
         if any(awal < b and a < akhir for a, b in terpakai):
             continue
-        terpakai.append((awal, akhir))
         potongan = datar[awal:akhir].strip()
-        if potongan:
-            bukti.append(potongan + ("…" if terpotong else ""))
+        if not potongan:
+            continue
+        teks_terlihat.add(kunci)
+        terpakai.append((awal, akhir))
+        bukti.append(potongan)
+        if kekuatan == KUAT:
+            n_kuat += 1
         if len(bukti) >= cfg.ciri_bukti_maks:
             break
-    return bukti
+    return bukti, n_kuat
 
 
 def deteksi_regex(teks: str, cfg: Pengaturan | None = None) -> list[CiriRegex]:
@@ -236,15 +320,17 @@ def deteksi_regex(teks: str, cfg: Pengaturan | None = None) -> list[CiriRegex]:
             cocok = _cocok_ajakan(datar)
         elif id_ciri == "link_mencurigakan":
             cocok = _cocok_tautan(datar)
+        elif id_ciri == "permintaan_data_rahasia":
+            cocok = _cocok_permintaan(datar)
         elif id_ciri == "kapital_tanda_seru":
             cocok = _cocok_kapital(datar, cfg)
         else:
             cocok = _cocok_pola(_POLA[id_ciri], datar)
         if not cocok:
             continue
-        bukti = _kumpulkan_bukti(datar, cocok, cfg)
+        bukti, n_kuat = _kumpulkan_bukti(datar, cocok, cfg)
         if bukti:
-            hasil.append(CiriRegex(id_ciri, KUAT if any(c[2] == KUAT for c in cocok) else LEMAH, bukti))
+            hasil.append(CiriRegex(id_ciri, KUAT if any(c[2] == KUAT for c in cocok) else LEMAH, bukti, n_kuat))
     return hasil
 
 
@@ -295,21 +381,49 @@ def _pangkas(bukti: str, cfg: Pengaturan) -> str:
     potong = bukti[: cfg.ciri_bukti_maks_karakter]
     if " " in potong and bukti[cfg.ciri_bukti_maks_karakter] != " ":
         potong = potong.rsplit(" ", 1)[0]
-    return potong.rstrip() + "…"
+    return potong.rstrip(" ,;:-")  # tanpa elipsis: bukti harus potongan persis dari teks
 
 
 def _tumpang_tindih(a: str, b: str) -> bool:
-    na, nb = _norm(a).rstrip("…"), _norm(b).rstrip("…")
+    na, nb = _norm(a), _norm(b)
     return bool(na) and bool(nb) and (na in nb or nb in na)
 
 
-def _gabung_bukti(kutipan_llm: list[str], bukti_regex: list[str], cfg: Pengaturan) -> list[str]:
-    """Urutan: yang sama dari kedua sumber, lalu hanya-LLM, lalu hanya-regex. Duplikat dibuang."""
+_TLD_BUKTI = (
+    r"(?:com|id|net|org|co|xyz|top|click|icu|buzz|cfd|sbs|link|info|me|ly|gl|cc|site|online|store|shop|app|biz|vip|"
+    r"live|club|io|tv|ws)"
+)
+_BENTUK_TAUTAN = _p(rf"(?:https?://|www\.)\S+|\b[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.{_TLD_BUKTI}\b")
+
+
+def _alasan_bukti_llm_ditolak(id_ciri: str, bukti: str, ditemukan_regex: bool, cfg: Pengaturan) -> str | None:
+    """Pengaman struktural yang tidak bergantung pada model. Mengembalikan alasan penolakan, atau None bila sah.
+
+    - link_mencurigakan: bukti harus berbentuk tautan (skema, www, domain ber-TLD, atau pemendek). Satu URL saja
+      sudah cukup; syarat panjang minimal tidak berlaku.
+    - kapital_tanda_seru: bukti harus didominasi huruf kapital atau memuat tanda seru berulang.
+    - ciri yang hanya ditemukan LLM: bukti sedikitnya `ciri_llm_min_kata` kata.
+    """
+    if id_ciri == "link_mencurigakan":
+        return None if _BENTUK_TAUTAN.search(bukti) or _RE_PEMENDEK.search(bukti) else "bukan_bentuk_tautan"
+    if id_ciri == "kapital_tanda_seru":
+        huruf = [c for c in bukti if c.isalpha()]
+        rasio = sum(c.isupper() for c in huruf) / len(huruf) if huruf else 0.0
+        if rasio < cfg.ciri_llm_kapital_rasio and bukti.count("!") < cfg.ciri_llm_seru_min:
+            return "bukan_kapital_atau_seru"
+    if not ditemukan_regex and len(re.findall(r"\w+", bukti)) < cfg.ciri_llm_min_kata:
+        return "terlalu_pendek"
+    return None
+
+
+def _gabung_bukti(kutipan_llm: list[str], bukti_regex: list[str], n_kuat: int, cfg: Pengaturan) -> list[str]:
+    """Urutan: kutipan yang sama dari LLM dan regex, lalu bukti regex dari pola kuat, lalu kutipan LLM saja, lalu
+    bukti regex dari pola lemah. Duplikat (saling memuat) dibuang."""
     bersama = [(k, r) for k in kutipan_llm for r in bukti_regex if _tumpang_tindih(k, r)]
     kandidat: list[str] = []
     for k, r in bersama:
         kandidat.append(min(k, r, key=len))  # yang lebih ringkas lebih terfokus
-    kandidat += kutipan_llm + bukti_regex
+    kandidat += bukti_regex[:n_kuat] + kutipan_llm + bukti_regex[n_kuat:]
     terpilih: list[str] = []
     for b in kandidat:
         if any(_tumpang_tindih(b, t) for t in terpilih):
@@ -325,6 +439,7 @@ def gabung_ciri(
     kandidat_llm: list[KandidatLLM] | None,
     teks: str,
     cfg: Pengaturan | None = None,
+    catatan: list | None = None,
 ) -> list[CiriTerdeteksi]:
     """Fungsi murni: menggabungkan regex dan kandidat LLM menjadi ciri final (tanpa nama dan penjelasan).
 
@@ -333,6 +448,12 @@ def gabung_ciri(
       pencarian database). Kutipan yang tidak terverifikasi di `teks` dibuang; ciri tanpa sisa kutipan dibuang.
     - LLM berhasil: tinggi kalau LLM dan regex sama-sama menemukan, atau regex menemukan pola kuat;
       sedang kalau hanya LLM. Ciri yang hanya ditemukan regex dengan pola lemah dibuang.
+    - Pengaman struktural (`_alasan_bukti_llm_ditolak`) membuang kutipan LLM yang tidak berbentuk sesuai cirinya;
+      ciri hanya hilang kalau tidak ada bukti yang tersisa.
+    - sumber_tidak_jelas yang hanya dari LLM dibuang: ketiadaan sumber tidak bisa dikutip. Ciri ini hanya tampil
+      bila regex menemukan atribusi samar; LLM yang menandainya menaikkan keyakinannya ke tinggi, dan bukti yang
+      dipakai hanya bukti regex.
+    `catatan` (list, opsional) diisi {"id", "bukti", "alasan"} untuk tiap kutipan atau ciri yang dibuang.
     Urutan hasil: keyakinan tinggi dulu, lalu urutan ID_CIRI_TERKUNCI.
     """
     cfg = cfg or pengaturan_global
@@ -353,12 +474,36 @@ def gabung_ciri(
                 asli = _kutipan_asli(teks, kutipan) if isinstance(kutipan, str) else None
                 if asli and asli not in terverifikasi.setdefault(k.id, []):
                     terverifikasi[k.id].append(asli)
+        def buang(id_ciri: str, bukti: str, alasan: str) -> None:
+            if catatan is not None:
+                catatan.append({"id": id_ciri, "bukti": bukti, "alasan": alasan})
+
         for id_ciri in ID_BISA_DITANDAI:
-            dari_llm = terverifikasi.get(id_ciri, [])
             c = regex.get(id_ciri)
+            ditandai_llm = bool(terverifikasi.get(id_ciri))
+            dari_llm = []
+            for bukti_llm in terverifikasi.get(id_ciri, []):
+                if id_ciri == "sumber_tidak_jelas":
+                    buang(id_ciri, bukti_llm, "hanya_dari_llm")
+                    continue
+                alasan = _alasan_bukti_llm_ditolak(id_ciri, bukti_llm, c is not None, cfg)
+                if alasan:
+                    buang(id_ciri, bukti_llm, alasan)
+                else:
+                    dari_llm.append(bukti_llm)
+            if id_ciri == "sumber_tidak_jelas":
+                if not (c and c.bukti):
+                    continue  # LLM saja: dibuang. Regex lemah tanpa persetujuan LLM juga dibuang di bawah.
+                if not ditandai_llm and c.kekuatan != KUAT:
+                    buang(id_ciri, c.bukti[0], "regex_lemah_tanpa_llm")
+                    continue
+                hasil.append(CiriTerdeteksi(id_ciri, c.bukti[: cfg.ciri_bukti_maks], TINGGI))
+                continue
             if not dari_llm and not (c and c.kekuatan == KUAT):
+                if c and c.bukti and c.kekuatan != KUAT:
+                    buang(id_ciri, c.bukti[0], "regex_lemah_tanpa_llm")
                 continue  # tidak ada kutipan LLM yang sah, dan regex tidak kuat (lemah dibuang)
-            bukti = _gabung_bukti(dari_llm, c.bukti if c else [], cfg)
+            bukti = _gabung_bukti(dari_llm, c.bukti if c else [], c.n_kuat if c else 0, cfg)
             if not bukti:
                 continue
             tinggi = bool(dari_llm and c) or bool(c and c.kekuatan == KUAT)
@@ -367,11 +512,3 @@ def gabung_ciri(
     hasil.sort(key=lambda c: c.keyakinan != TINGGI)  # sort stabil: urutan id tetap di dalam kelompok
     return hasil
 
-
-# ---------------------------------------------------------------------------
-# Dummy yang masih dipakai /analisis sampai Sesi 5.5
-# ---------------------------------------------------------------------------
-
-def deteksi_ciri(teks_bersih: str, artikel: list[ArtikelCekFakta], ctx: Konteks) -> list[CiriTerdeteksi]:
-    """Dummy. Masukan: teks bersih dan artikel yang cocok. Keluaran: ciri contoh sesuai skenario."""
-    return contoh.CONTOH[ctx.skenario].ciri

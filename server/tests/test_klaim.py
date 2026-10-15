@@ -29,7 +29,7 @@ def test_hasil_selalu_substring_teks_kecuali_elipsis():
 
 
 def test_kalimat_yang_terbelah_lintas_baris_digabung():
-    teks = "Akun Anda akan segera dinonaktifkan secara\npermanen karena terdeteksi melanggar aturan\nplatform pada 5 Mei 2026."
+    teks = "Akun pengguna akan segera dinonaktifkan secara\npermanen karena terdeteksi melanggar aturan\nplatform pada 5 Mei 2026."
     assert klaim_heuristik(teks) == rapi(teks)
 
 
@@ -86,10 +86,13 @@ def test_kalimat_dengan_pernyataan_menang_atas_seruan_kosong():
 
 
 def test_tumpang_tindih_dengan_bukti_ciri_menaikkan_skor():
-    teks = "Kami sedang melakukan pengecekan data kependudukan terbaru.\nKode verifikasi sudah dikirim ke nomor itu."
-    assert klaim_heuristik(teks) == "Kami sedang melakukan pengecekan data kependudukan terbaru."  # seri: yang lebih awal
+    teks = (
+        "Kami sedang melakukan pengecekan data kependudukan terbaru di seluruh kota.\n"
+        "Kode verifikasi sudah dikirim ke nomor itu pagi tadi."
+    )
+    assert klaim_heuristik(teks) == "Kami sedang melakukan pengecekan data kependudukan terbaru di seluruh kota."  # seri
     bukti = ["kode verifikasi sudah dikirim ke nomor itu"]
-    assert klaim_heuristik(teks, bukti) == "Kode verifikasi sudah dikirim ke nomor itu."
+    assert klaim_heuristik(teks, bukti) == "Kode verifikasi sudah dikirim ke nomor itu pagi tadi."
 
 
 def test_skor_minimum_mengikuti_konfigurasi():
@@ -103,10 +106,65 @@ def test_kalimat_terlalu_pendek_tidak_dipertimbangkan():
     assert klaim_heuristik("Jalan ditutup besok.") == ""  # 3 kata
 
 
-def test_ekstrak_klaim_dummy_masih_ada_untuk_analisis():
-    assert callable(klaim.ekstrak_klaim)
-
-
 def test_baris_ui_menjadi_pemisah_dan_baris_duplikat_tidak_membingungkan_penggabungan():
     teks = "Kata\nSuka\nKata\nkelanjutan kalimat ini yang cukup panjang untuk dihitung sebagai klaim dari pesan tadi."
     assert klaim_heuristik(teks).startswith("kelanjutan") or klaim_heuristik(teks).startswith("Kata kelanjutan")
+
+
+# ----- Sesi 5.5: kata ganti kedua, orang pertama, sapaan, klaim dari bukti -----
+
+from app.konfigurasi import Pengaturan as _Pengaturan  # noqa: E402
+from app.pipeline import klaim as _klaim  # noqa: E402
+from app.pipeline.tipe import CiriTerdeteksi as _Ciri  # noqa: E402
+
+
+def test_kata_ganti_kedua_dikenali_tanpa_salah_pada_kata_biasa():
+    for teks in ("Akun Anda dinonaktifkan", "kamu harus segera", "Jaga dirimu", "Kalian wajib hadir", "bukumu hilang"):
+        assert _klaim.memuat_kata_ganti_kedua(teks), teks
+    for teks in ("Tamu undangan hadir di acara ilmu pengetahuan", "Pemerintah mengumumkan aturan baru", "Jamu tradisional"):
+        assert not _klaim.memuat_kata_ganti_kedua(teks), teks
+
+
+def test_kalimat_dengan_anda_dilewati_dan_kalimat_berikutnya_dipilih():
+    teks = "Akun Anda akan segera dinonaktifkan secara permanen oleh platform.\nPemerintah mengumumkan aturan pajak baru berlaku mulai 1 Mei 2026."
+    assert klaim_heuristik(teks) == "Pemerintah mengumumkan aturan pajak baru berlaku mulai 1 Mei 2026."
+    assert klaim_heuristik("Akun Anda akan segera dinonaktifkan secara permanen oleh platform.") == ""
+
+
+def test_kalimat_orang_pertama_dan_sapaan_bukan_klaim_dan_dihitung():
+    teks = "OK saya tunggu, sudah lebih dari 2 menit lagi ya kak sampai selesai."
+    catatan: dict = {}
+    assert klaim_heuristik(teks, catatan=catatan) == ""
+    assert catatan == {"gugur_percakapan": 1}
+    teks2 = "Kak tolong kirim bukti pembayaran sebesar 500 ribu rupiah sekarang juga ya."
+    c2: dict = {}
+    assert klaim_heuristik(teks2, catatan=c2) == "" and c2["gugur_percakapan"] == 1
+
+
+def test_bonus_klaim_hanya_dari_ciri_tinggi():
+    ciri = [_Ciri("desakan_waktu", ["a b c"], "sedang"), _Ciri("permintaan_data_rahasia", ["d e f"], "tinggi")]
+    assert _klaim.bukti_untuk_klaim(ciri) == ["d e f"]
+
+
+def test_skor_minimum_lebih_tinggi_bila_klaim_llm_ditolak():
+    teks = "Pemerintah mengumumkan aturan pajak baru berlaku mulai 1 Mei 2026."
+    assert klaim_heuristik(teks) == teks
+    assert klaim_heuristik(teks, skor_minimum=99.0) == ""
+
+
+def test_klaim_dari_bukti_syarat_panjang_kata_ganti_dan_ui():
+    cfg = _Pengaturan()
+    assert _klaim.klaim_dari_bukti("PT CIMORY FOODS INDONESIA MENITI KARIR DI CIMORY:", cfg) == "PT CIMORY FOODS INDONESIA MENITI KARIR DI CIMORY"
+    assert _klaim.klaim_dari_bukti("700 Kepala Desa", cfg) == ""
+    assert _klaim.klaim_dari_bukti("Akun Anda AKAN Segera Dinonaktifkan oleh sistem", cfg) == ""
+    assert _klaim.klaim_dari_bukti("", cfg) == ""
+
+
+def test_klaim_dari_bukti_membuang_kata_sambung_di_ujung_dan_menolak_orang_pertama():
+    cfg = _Pengaturan()
+    assert _klaim.klaim_dari_bukti("kebakaran hutan kalimantan mulai masuk negara brunei dan", cfg) == (
+        "kebakaran hutan kalimantan mulai masuk negara brunei"
+    )
+    assert _klaim.klaim_dari_bukti("vaksin cacar air karena itu menyebabkan epidemi shingles di", cfg).endswith("shingles")
+    assert _klaim.klaim_dari_bukti("nama saya Malia dan saya bekerja di departemen SDM di Shopee", cfg) == ""
+    assert _klaim.klaim_dari_bukti("harga dan di", cfg) == ""

@@ -7,13 +7,14 @@ SKEMA_SERVER = Path(__file__).resolve().parents[2] / "app" / "skema.py"
 
 # Penjelasan singkat sesuai RANCANGAN_PROYEK.md §8
 PENJELASAN = {
-    "ajakan_menyebarkan": "ajakan menyebarkan atau meneruskan pesan (\"sebarkan\", \"viralkan\", \"teruskan ke grup\")",
-    "desakan_waktu": "desakan waktu atau tekanan agar segera bertindak (\"sebelum dihapus\", \"segera\", \"hari ini terakhir\")",
-    "kapital_tanda_seru": "huruf kapital dan tanda seru berlebihan",
-    "link_mencurigakan": "tautan pemendek atau tautan yang tidak jelas dan tidak resmi",
-    "sumber_tidak_jelas": "tidak menyebut sumber yang bisa dicek (tanpa instansi, nama, tanggal, atau tautan resmi)",
-    "judul_clickbait": "judul memancing klik dengan membesar-besarkan atau menyembunyikan informasi inti",
-    "bahasa_provokatif": "bahasa yang memancing emosi seperti marah, takut, panik, atau kebencian",
+    "permintaan_data_rahasia": "meminta penerima mengirim OTP, PIN, kata sandi, data kartu, atau uang (bukan larangan atau edukasi)",
+    "ajakan_menyebarkan": "ajakan menyebarkan atau meneruskan pesan (\"sebarkan\", \"teruskan ke grup\")",
+    "desakan_waktu": "menekan penerima agar segera bertindak (\"sebelum dihapus\", \"segera\"); bukan pihak yang menunggu dalam obrolan",
+    "kapital_tanda_seru": "kalimat kapital semua atau tanda seru berlebihan",
+    "link_mencurigakan": "tautan pemendek atau domain tidak resmi (kutipan memuat tautannya)",
+    "sumber_tidak_jelas": "rujukan sumber samar tanpa nama (\"katanya\", \"info dari grup\", \"forwarded\")",
+    "judul_clickbait": "judul yang melebih-lebihkan atau menyembunyikan inti agar diklik; judul peringatan lembaga bukan clickbait",
+    "bahasa_provokatif": "bahasa memancing marah, benci, atau takut terhadap pihak atau kelompok; bukan keluhan antarpribadi dalam obrolan",
 }
 # pernah_dibantah ditentukan server lewat pencarian database cek fakta, bukan oleh LLM.
 ID_DISERAHKAN_KE_SERVER = {"pernah_dibantah"}
@@ -41,26 +42,18 @@ def id_untuk_llm() -> tuple[str, ...]:
 
 def prompt_sistem() -> str:
     daftar = "\n".join(f"- {i}: {PENJELASAN[i]}" for i in id_untuk_llm())
-    return f"""Kamu adalah pengekstrak informasi untuk alat pemandu pemeriksaan hoaks. Tugasmu hanya membaca teks dan menandai ciri yang tampak. Kamu bukan hakim: jangan pernah menyatakan sebuah informasi benar atau salah.
+    return f"""Kamu pengekstrak informasi untuk alat pemandu pemeriksaan hoaks: baca teks, tandai ciri yang tampak. Kamu bukan hakim.
 
-Masukan adalah teks hasil pembacaan (OCR) dari tangkapan layar ponsel. Teks bisa berantakan atau salah baca. Data pribadi sudah diganti dengan [NOMOR], [EMAIL], dan [AKUN].
+Masukan: teks OCR tangkapan layar ponsel (bisa salah baca). Data pribadi diganti [NOMOR], [EMAIL], [AKUN]. Abaikan teks antarmuka aplikasi (nama akun, jam, suka, tombol, menu).
 
-Abaikan teks antarmuka aplikasi: nama akun, jam, jumlah suka dan komentar, tombol, menu situs, status baterai, dan sejenisnya.
-
-Keluarkan HANYA satu objek JSON dengan bentuk:
+Keluarkan HANYA satu objek JSON:
 {{"klaim_utama": "...", "ciri": [{{"id": "...", "kutipan": ["..."]}}]}}
 
-Aturan klaim_utama:
-- Satu kalimat netral yang merangkum klaim inti yang disampaikan teks, dengan kata-kata sedekat mungkin dengan teks.
-- Jangan menilai. Jangan memakai kata penilaian seperti benar, salah, hoaks, fakta, bohong, palsu, atau menyesatkan, kecuali kata itu memang ada di teks.
-- Kalau teks tidak memuat klaim (hanya antarmuka, obrolan pribadi, atau kosong), isi dengan string kosong.
+klaim_utama: satu kalimat netral berisi klaim inti, kata-katanya sedekat mungkin dengan teks, lengkap dengan subjek, jumlah, dan angka (gabungkan dari baris judul yang berdekatan). Isi juga untuk judul berita, iklan atau lowongan, dan pertanyaan yang memuat klaim tersirat ("laut kering, pertanda apa ya" = klaim laut kering). Tulis sebagai orang ketiga, tanpa kamu atau Anda. Jangan memakai kata penilaian (benar, salah, hoaks, fakta, bohong, palsu, menyesatkan) kecuali ada di teks. Kosongkan hanya bila tak ada informasi yang diklaim.
 
-Aturan ciri:
-- id hanya boleh salah satu dari daftar ini:
+ciri: id hanya dari daftar:
 {daftar}
-- Sertakan ciri hanya kalau jelas tampak di teks. Tidak ada ciri yang tampak: isi dengan daftar kosong.
-- kutipan berisi satu sampai tiga potongan teks yang disalin PERSIS dari masukan: jangan memperbaiki ejaan, jangan menyingkat, jangan menambah kata. Kalau tidak ada potongan persis yang menjadi bukti, jangan sertakan ciri itu.
-- Satu id hanya muncul sekali."""
+Sertakan hanya ciri yang jelas tampak (boleh kosong). kutipan: 1-3 potongan yang disalin PERSIS dari masukan (jangan memperbaiki ejaan atau menyingkat); tanpa potongan persis, jangan sertakan ciri itu. Satu id sekali saja."""
 
 
 def pesan_pengguna(teks: str) -> str:

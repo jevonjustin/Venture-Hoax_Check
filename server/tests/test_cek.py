@@ -4,7 +4,7 @@ import json
 
 from PIL import Image
 
-from app import cek, contoh
+from app import cek
 from app.konfigurasi import pengaturan
 
 
@@ -19,9 +19,11 @@ def analisis(data: bytes, paksa=None) -> dict:
 
 
 def test_sukses_berformat_respons_api():
-    contoh.atur_ulang_giliran()
     hasil = analisis(gambar(), "hati_hati")
-    assert set(hasil) == {"id_permintaan", "tingkat", "klaim_utama", "ciri", "cek_fakta", "teks_terbaca", "durasi_ms"}
+    assert set(hasil) == {
+        "id_permintaan", "tingkat", "klaim_utama", "ciri", "cek_fakta", "teks_terbaca", "durasi_ms",
+        "pemeriksaan_terbatas",
+    }
     assert hasil["tingkat"] == "hati_hati"
     json.dumps(hasil)  # harus bisa dijadikan JSON (tanggal sudah berupa teks)
 

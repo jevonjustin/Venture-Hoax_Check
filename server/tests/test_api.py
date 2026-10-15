@@ -19,7 +19,6 @@ def tanpa_jeda(monkeypatch):
     monkeypatch.setattr(pengaturan, "jeda_min_detik", 0.0)
     monkeypatch.setattr(pengaturan, "jeda_maks_detik", 0.0)
     monkeypatch.setattr(pengaturan, "paksa_tingkat", None)
-    contoh.atur_ulang_giliran()
 
 
 def buat_gambar(format_="JPEG", ukuran=(120, 80)) -> bytes:
@@ -50,10 +49,13 @@ def test_health():
 
 
 def test_analisis_sukses_sesuai_kontrak():
-    r = kirim(buat_gambar())
+    r = kirim(buat_gambar(), params={"paksa": "kuat"})
     assert r.status_code == 200
     isi = r.json()
-    assert set(isi) == {"id_permintaan", "tingkat", "klaim_utama", "ciri", "cek_fakta", "teks_terbaca", "durasi_ms"}
+    assert set(isi) == {
+        "id_permintaan", "tingkat", "klaim_utama", "ciri", "cek_fakta", "teks_terbaca", "durasi_ms",
+        "pemeriksaan_terbatas",
+    }
     assert isi["tingkat"] == "kuat"
     assert len(isi["id_permintaan"]) == 32
     assert isinstance(isi["durasi_ms"], int)
@@ -61,7 +63,7 @@ def test_analisis_sukses_sesuai_kontrak():
         assert set(ciri) == {"id", "nama", "bukti", "penjelasan", "keyakinan"}
         assert isinstance(ciri["bukti"], list) and ciri["bukti"]
     for artikel in isi["cek_fakta"]:
-        assert set(artikel) == {"judul", "sumber", "url", "skor_kemiripan", "label", "tanggal"}
+        assert set(artikel) == {"judul", "sumber", "url", "skor_kemiripan", "label", "tanggal", "url_format_lama"}
     assert isi["cek_fakta"][0]["tanggal"] == "2025-11-04"
     assert isi["cek_fakta"][1]["tanggal"] is None
 
@@ -70,9 +72,10 @@ def test_png_juga_diterima():
     assert kirim(buat_gambar("PNG")).status_code == 200
 
 
-def test_tanpa_paksa_bergiliran():
-    hasil = [kirim(buat_gambar()).json()["tingkat"] for _ in range(4)]
-    assert hasil == ["kuat", "hati_hati", "tidak_ditemukan", "kuat"]
+def test_tanpa_paksa_hasil_dari_analisis_sungguhan_dan_tidak_bergiliran():
+    hasil = [kirim(buat_gambar()).json() for _ in range(3)]
+    assert [h["tingkat"] for h in hasil] == ["hati_hati"] * 3  # teks palsu: ajakan menyebarkan, tanpa artikel
+    assert "ajakan_menyebarkan" in {c["id"] for c in hasil[0]["ciri"]}
 
 
 @pytest.mark.parametrize("tingkat", ["kuat", "hati_hati", "tidak_ditemukan"])

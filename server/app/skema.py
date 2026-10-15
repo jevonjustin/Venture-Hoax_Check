@@ -15,6 +15,7 @@ class Tingkat(str, Enum):
 
 # Id ciri bagian dari kontrak API (docs/API.md, RANCANGAN_PROYEK.md §8). Jangan diubah tanpa mengubah kontrak.
 ID_CIRI_TERKUNCI = (
+    "permintaan_data_rahasia",
     "ajakan_menyebarkan",
     "desakan_waktu",
     "kapital_tanda_seru",
@@ -41,6 +42,15 @@ class ArtikelCekFakta(BaseModel):
     skor_kemiripan: float = Field(ge=0, le=1)
     label: str = Field(description="Kesimpulan artikel, misalnya salah, menyesatkan, hoaks")
     tanggal: date | None = Field(description="Tanggal terbit artikel (ISO 8601)")
+    url_format_lama: bool = Field(
+        default=False,
+        description="True jika url berformat lama turnbackhoax.id yang sudah mati (404); judul tetap bisa dicari di web",
+    )
+
+
+# Nilai pemeriksaan_terbatas: bagian pemeriksaan yang tidak berjalan pada sebuah analisis.
+PEMERIKSAAN_CEK_FAKTA = "cek_fakta"  # pencarian database cek fakta nonaktif atau gagal
+PEMERIKSAAN_AI = "ai"  # analisis teks oleh LLM gagal atau dimatikan
 
 
 class HasilAnalisis(BaseModel):
@@ -51,6 +61,10 @@ class HasilAnalisis(BaseModel):
     cek_fakta: list[ArtikelCekFakta]
     teks_terbaca: str
     durasi_ms: int
+    pemeriksaan_terbatas: list[str] = Field(
+        default_factory=list,
+        description='Bagian pemeriksaan yang tidak berjalan ("cek_fakta", "ai"). Kosong berarti semuanya berjalan',
+    )
 
 
 class StatusServer(BaseModel):

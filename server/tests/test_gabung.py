@@ -53,15 +53,15 @@ def test_regex_kuat_tetap_tinggi_walau_llm_tidak_menandai():
 
 
 def test_hanya_llm_dengan_kutipan_terverifikasi_sedang():
-    hasil = peta(gabung_ciri([], [llm("desakan_waktu", "sebelum dihapus")], TEKS))
+    hasil = peta(gabung_ciri([], [llm("desakan_waktu", "keluarga sebelum dihapus")], TEKS))
     assert hasil["desakan_waktu"].keyakinan == "sedang"
-    assert hasil["desakan_waktu"].bukti == ["sebelum dihapus"]
+    assert hasil["desakan_waktu"].bukti == ["keluarga sebelum dihapus"]
 
 
 def test_regex_lemah_dibuang_kalau_llm_berhasil_tetapi_tidak_menandainya():
     assert gabung_ciri([regex("sumber_tidak_jelas", "lemah", "Info dari grup")], [], TEKS) == []
     # juga ketika LLM menandai ciri lain
-    hasil = gabung_ciri([regex("sumber_tidak_jelas", "lemah", "Info dari grup")], [llm("desakan_waktu", "sebelum dihapus")], TEKS)
+    hasil = gabung_ciri([regex("sumber_tidak_jelas", "lemah", "Info dari grup")], [llm("desakan_waktu", "keluarga sebelum dihapus")], TEKS)
     assert [c.id for c in hasil] == ["desakan_waktu"]
 
 
@@ -73,8 +73,8 @@ def test_kutipan_tidak_ada_di_teks_dibuang_dan_ciri_dibuang_kalau_tidak_tersisa(
 
 
 def test_hanya_kutipan_terverifikasi_yang_dipertahankan():
-    hasil = peta(gabung_ciri([], [llm("desakan_waktu", "sebelum dihapus", "kalimat karangan model")], TEKS))
-    assert hasil["desakan_waktu"].bukti == ["sebelum dihapus"]
+    hasil = peta(gabung_ciri([], [llm("desakan_waktu", "keluarga sebelum dihapus", "kalimat karangan model")], TEKS))
+    assert hasil["desakan_waktu"].bukti == ["keluarga sebelum dihapus"]
 
 
 def test_verifikasi_mengabaikan_huruf_besar_kecil_spasi_dan_pergantian_baris():
@@ -90,7 +90,7 @@ def test_kutipan_yang_menyambung_baris_dengan_teks_dummy_diverifikasi():
 
 
 def test_kutipan_bukan_string_diabaikan_tanpa_galat():
-    assert gabung_ciri([], [llm("desakan_waktu", None, 5, "sebelum dihapus")], TEKS)[0].bukti == ["sebelum dihapus"]  # type: ignore[list-item]
+    assert gabung_ciri([], [llm("desakan_waktu", None, 5, "keluarga sebelum dihapus")], TEKS)[0].bukti == ["keluarga sebelum dihapus"]  # type: ignore[list-item]
 
 
 def test_id_tidak_dikenal_dibuang_termasuk_pernah_dibantah():
@@ -99,8 +99,8 @@ def test_id_tidak_dikenal_dibuang_termasuk_pernah_dibantah():
 
 
 def test_id_llm_yang_sama_dua_kali_digabung():
-    hasil = gabung_ciri([], [llm("desakan_waktu", "sebelum dihapus"), llm("desakan_waktu", "sebelum dihapus", "Sudah 12 orang dirawat")], TEKS)
-    assert len(hasil) == 1 and hasil[0].bukti == ["sebelum dihapus", "Sudah 12 orang dirawat"]
+    hasil = gabung_ciri([], [llm("desakan_waktu", "keluarga sebelum dihapus"), llm("desakan_waktu", "keluarga sebelum dihapus", "Sudah 12 orang dirawat")], TEKS)
+    assert len(hasil) == 1 and hasil[0].bukti == ["keluarga sebelum dihapus", "Sudah 12 orang dirawat"]
 
 
 # ----- bukti gabungan -----
@@ -117,7 +117,7 @@ def test_bukti_yang_sama_dari_kedua_sumber_didahulukan_dan_duplikat_dibuang():
 
 def test_bukti_maksimal_tiga_dan_mengikuti_konfigurasi():
     teks = "satu dua tiga empat lima enam tujuh delapan"
-    kutipan = ["satu", "dua", "tiga", "empat", "lima"]
+    kutipan = ["satu dua tiga", "dua tiga empat", "tiga empat lima", "empat lima enam", "lima enam tujuh"]
     hasil = gabung_ciri([], [llm("desakan_waktu", *kutipan)], teks)
     assert len(hasil[0].bukti) == 3
     cfg = dataclasses.replace(Pengaturan(), ciri_bukti_maks=2)
@@ -128,23 +128,92 @@ def test_bukti_panjang_dipotong_di_batas_kata():
     teks = "kata " * 80
     hasil = gabung_ciri([], [llm("desakan_waktu", teks.strip())], teks)
     bukti = hasil[0].bukti[0]
-    assert bukti.endswith("…") and len(bukti) <= Pengaturan().ciri_bukti_maks_karakter + 1
-    assert all(k == "kata" for k in bukti.rstrip("…").split())
+    assert "…" not in bukti and len(bukti) <= Pengaturan().ciri_bukti_maks_karakter
+    assert all(k == "kata" for k in bukti.split())
 
 
 def test_urutan_keyakinan_tinggi_dulu_lalu_urutan_id():
     hasil = gabung_ciri(
         [regex("link_mencurigakan", "kuat", "bit.ly/air-keran")],
-        [llm("desakan_waktu", "sebelum dihapus"), llm("sumber_tidak_jelas", "Info dari grup sebelah")],
+        [llm("desakan_waktu", "keluarga sebelum dihapus"), llm("ajakan_menyebarkan", "SEBARKAN ke keluarga sebelum")],
         TEKS,
     )
-    assert [(c.id, c.keyakinan) for c in hasil] == [
-        ("link_mencurigakan", "tinggi"), ("desakan_waktu", "sedang"), ("sumber_tidak_jelas", "sedang"),
+    from app.pipeline.ciri import ID_BISA_DITANDAI
+
+    assert [(c.id, c.keyakinan) for c in hasil] == [("link_mencurigakan", "tinggi")] + [
+        (i, "sedang") for i in ID_BISA_DITANDAI if i in ("ajakan_menyebarkan", "desakan_waktu")
     ]
 
 
 def test_hasil_tidak_mengubah_masukan():
     r = [regex("ajakan_menyebarkan", "kuat", "SEBARKAN ke keluarga")]
-    k = [llm("desakan_waktu", "sebelum dihapus")]
+    k = [llm("desakan_waktu", "keluarga sebelum dihapus")]
     gabung_ciri(r, k, TEKS)
-    assert r[0].bukti == ["SEBARKAN ke keluarga"] and k[0].kutipan == ["sebelum dihapus"]
+    assert r[0].bukti == ["SEBARKAN ke keluarga"] and k[0].kutipan == ["keluarga sebelum dihapus"]
+
+
+# ----- pengaman struktural dan sumber_tidak_jelas (Sesi 5.5) -----
+
+def catat(regex_, kandidat, teks=TEKS):
+    catatan: list = []
+    return gabung_ciri(regex_, kandidat, teks, catatan=catatan), catatan
+
+
+def test_bukti_tautan_tunggal_dari_llm_diterima_walau_satu_kata():
+    hasil, catatan = catat([], [llm("link_mencurigakan", "bit.ly/air-keran")])
+    assert [(c.id, c.keyakinan, c.bukti) for c in hasil] == [("link_mencurigakan", "sedang", ["bit.ly/air-keran"])]
+    assert catatan == []
+
+
+def test_bukti_link_yang_bukan_tautan_dibuang_dengan_catatan():
+    teks = "Lihat vocazine. di sini untuk info lengkap tentang hal itu"
+    hasil, catatan = catat([], [llm("link_mencurigakan", "vocazine.")], teks)
+    assert hasil == [] and catatan == [{"id": "link_mencurigakan", "bukti": "vocazine.", "alasan": "bukan_bentuk_tautan"}]
+
+
+def test_domain_dengan_tld_dan_url_berskema_diterima():
+    teks = "Buka https://konfirmasi.weeblysite.com/ atau situs promo-gratis.xyz sekarang"
+    hasil, _ = catat([], [llm("link_mencurigakan", "https://konfirmasi.weeblysite.com/", "promo-gratis.xyz")], teks)
+    assert hasil[0].bukti == ["https://konfirmasi.weeblysite.com/", "promo-gratis.xyz"]
+
+
+def test_bukti_kapital_harus_didominasi_kapital_atau_tanda_seru():
+    teks = "AKAN Segera Dinonaktifkan SECARA PERMANEN. Segera verifikasi Formulir Pemulihan. Cek sekarang juga!!"
+    hasil, catatan = catat([], [llm(
+        "kapital_tanda_seru", "AKAN Segera Dinonaktifkan SECARA PERMANEN", "Segera verifikasi Formulir Pemulihan",
+        "Cek sekarang juga!!",
+    )], teks)
+    assert hasil[0].bukti == ["AKAN Segera Dinonaktifkan SECARA PERMANEN", "Cek sekarang juga!!"]
+    assert catatan == [{"id": "kapital_tanda_seru", "bukti": "Segera verifikasi Formulir Pemulihan", "alasan": "bukan_kapital_atau_seru"}]
+
+
+def test_ciri_kapital_hilang_bila_semua_buktinya_ditolak():
+    teks = "Segera verifikasi Formulir Pemulihan akun anda hari ini"
+    hasil, catatan = catat([], [llm("kapital_tanda_seru", "Segera verifikasi Formulir Pemulihan")], teks)
+    assert hasil == [] and len(catatan) == 1
+
+
+def test_bukti_llm_saja_minimal_tiga_kata_tetapi_tidak_bila_regex_juga_menemukan():
+    teks = "Peringatan! Segera hubungi kami sekarang juga. OKNUM POLISI? Bukan"
+    hasil, catatan = catat([], [llm("desakan_waktu", "Peringatan!"), llm("bahasa_provokatif", "OKNUM POLISI?")], teks)
+    assert hasil == [] and {c["alasan"] for c in catatan} == {"terlalu_pendek"}
+    hasil2, _ = catat([regex("desakan_waktu", "lemah", "Segera hubungi")], [llm("desakan_waktu", "Segera hubungi")], teks)
+    assert hasil2[0].keyakinan == "tinggi"  # LLM dan regex sama-sama menemukan
+
+
+def test_sumber_tidak_jelas_hanya_dari_llm_dibuang():
+    hasil, catatan = catat([], [llm("sumber_tidak_jelas", "Info dari grup sebelah")])
+    assert hasil == []
+    assert catatan == [{"id": "sumber_tidak_jelas", "bukti": "Info dari grup sebelah", "alasan": "hanya_dari_llm"}]
+
+
+def test_sumber_tidak_jelas_regex_lemah_ditandai_llm_tinggi_dengan_bukti_regex_saja():
+    r = [regex("sumber_tidak_jelas", "lemah", "Info dari grup sebelah")]
+    hasil, catatan = catat(r, [llm("sumber_tidak_jelas", "Info dari grup sebelah", "Sudah 12 orang dirawat")])
+    assert [(c.keyakinan, c.bukti) for c in hasil] == [("tinggi", ["Info dari grup sebelah"])]
+    assert [c["alasan"] for c in catatan] == ["hanya_dari_llm", "hanya_dari_llm"]
+
+
+def test_regex_lemah_tanpa_persetujuan_llm_dicatat_sebagai_dibuang():
+    hasil, catatan = catat([regex("sumber_tidak_jelas", "lemah", "Info dari grup sebelah")], [])
+    assert hasil == [] and catatan[0]["alasan"] == "regex_lemah_tanpa_llm"

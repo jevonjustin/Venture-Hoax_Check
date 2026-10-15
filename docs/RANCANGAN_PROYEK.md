@@ -69,9 +69,9 @@ Koneksi HP ke laptop bisa lewat tiga cara: USB dengan `adb reverse`, Wi-Fi yang 
 
 - **Framework:** Python FastAPI, satu endpoint utama untuk menerima gambar.
 - **Pembacaan teks:** diputuskan dari pengukuran di Sesi 5.2 pada 18 screenshot berlabel: RapidOCR bawaan dipilih setelah dibandingkan dengan RapidOCR Latin dan PaddleOCR. Pembaca teks hanya membaca teks dan tidak menentukan kesimpulan akhir.
-- **Klaim utama dan kandidat ciri:** LLM lewat API (keputusan Sesi 5.4a: Groq `openai/gpt-oss-120b`, cadangan Google `gemini-3.5-flash-lite`), dengan cadangan heuristik dari server. `klaim_utama` hanya ditampilkan; kueri pencarian cek fakta tetap teks OCR.
+- **Klaim utama dan kandidat ciri:** LLM lewat API (keputusan Sesi 5.4a: Groq `openai/gpt-oss-120b`, cadangan Google `gemini-3.5-flash-lite`; keputusan penerapan Sesi 5.5 di bagian Sesi 5.5). Model hanya mengusulkan klaim dan kutipan ciri; tingkat tidak pernah ditentukan model. Klaim melewati uji kesetiaan, lalu cadangan bertingkat (bukti `pernah_dibantah`, heuristik, kosong). `klaim_utama` hanya ditampilkan; kueri pencarian cek fakta tetap teks bersih hasil OCR.
 - **Pencocokan cek fakta:** embedding `multilingual-e5` (wajib memakai awalan `query: ` dan `passage: `), vektor disimpan sebagai NumPy di memori. pgvector hanya disebut sebagai rencana skala besar. Ukuran model (`base` atau `small`) diputuskan dari kecepatan di CPU; `bge-m3` sebagai cadangan jika kurang akurat.
-- **Deteksi ciri:** aturan (regex dan daftar kata kunci). Classifier IndoBERT/IndoBERTweet hasil fine-tuning termasuk jalur opsional setelah Tahap 6-7 aman.
+- **Deteksi ciri:** aturan (regex dan daftar kata kunci) bersama kandidat LLM yang kutipannya diverifikasi dan diperiksa pengaman struktural (§8). Classifier IndoBERT/IndoBERTweet hasil fine-tuning termasuk jalur opsional setelah Tahap 6-7 aman.
 - **Penjelasan ciri:** teks template yang ditulis sendiri untuk setiap ciri, bukan dibuat oleh LLM.
 - **Privasi:** gambar diproses di memori dan tidak disimpan maupun dicatat di log.
 
@@ -89,24 +89,27 @@ Daftar ini dipakai bersama oleh sistem dan pertanyaan kepada pengguna, sehingga 
 
 | id | Ciri | Deteksi utama |
 |---|---|---|
+| `permintaan_data_rahasia` | Permintaan kode OTP atau verifikasi, PIN, kata sandi, data kartu, atau uang (transfer, QRIS, biaya admin untuk refund atau hadiah) | Regex (pola kuat; kalimat larangan seperti "JANGAN BERIKAN kode OTP" dibuang) + kandidat LLM |
 | `ajakan_menyebarkan` | Ajakan menyebarkan ("sebarkan", "viralkan") | Regex (pola kuat dan lemah) + kandidat LLM |
 | `desakan_waktu` | Desakan waktu ("sebelum dihapus", "segera") | Regex (pola kuat dan lemah) + kandidat LLM |
 | `kapital_tanda_seru` | Huruf kapital dan tanda seru berlebihan | Regex dan hitungan sederhana + kandidat LLM |
 | `link_mencurigakan` | Tautan pemendek atau tautan tidak jelas | Regex (pola kuat dan lemah) + kandidat LLM |
-| `sumber_tidak_jelas` | Tidak menyebut sumber yang bisa dicek | Kandidat LLM; regex hanya pola lemah sebagai cadangan |
+| `sumber_tidak_jelas` | Merujuk sumber samar tanpa nama ("katanya", "info dari grup", "forwarded") | Regex (atribusi samar); LLM hanya menyetujui atau tidak. Kutipan LLM saja dibuang (Sesi 5.5) |
 | `judul_clickbait` | Judul clickbait | Kandidat LLM; regex hanya pola lemah sebagai cadangan |
 | `bahasa_provokatif` | Bahasa provokatif, memancing emosi atau panik | Kandidat LLM; regex hanya pola lemah sebagai cadangan |
 | `pernah_dibantah` | Klaim serupa sudah dibantah media cek fakta | Pencarian embedding di database cek fakta (bukan regex, bukan LLM) |
 
-Arsitektur deteksi (Sesi 5.4): regex berperan sebagai pemeriksa dan cadangan, sedangkan LLM hanya menandai kandidat ciri beserta kutipan yang diverifikasi server terhadap teks. Kutipan yang tidak ditemukan di teks membuat ciri dibuang. Keyakinan tinggi untuk ciri yang ditemukan LLM dan regex sekaligus, atau regex dengan pola kuat; keyakinan sedang untuk ciri yang hanya ditemukan LLM. Jika LLM gagal, hasil regex dipakai sendiri. Penjelasan selalu dari template. Qwen dan classifier IndoBERT tidak dipakai di jalur utama; classifier tetap jalur opsional di §13.
+Arsitektur deteksi (Sesi 5.4, diperbarui Sesi 5.5): regex berperan sebagai pemeriksa dan cadangan, sedangkan LLM hanya menandai kandidat ciri beserta kutipan yang diverifikasi server terhadap teks. Kutipan yang tidak ditemukan di teks membuat ciri dibuang. Keyakinan tinggi untuk ciri yang ditemukan LLM dan regex sekaligus, atau regex dengan pola kuat; keyakinan sedang untuk ciri yang hanya ditemukan LLM dengan kutipan terverifikasi. Jika LLM gagal, hasil regex dipakai sendiri (pola kuat tinggi, pola lemah sedang). Jika LLM berhasil tetapi tidak menandai ciri yang hanya ditemukan regex lemah, ciri itu dibuang. Bukti selalu potongan persis dari `teks_terbaca` (dengan perbedaan spasi diabaikan). Penjelasan selalu dari template. Pengaman struktural pada kutipan LLM (tidak bergantung model): bukti `link_mencurigakan` harus berbentuk tautan atau domain; bukti `kapital_tanda_seru` harus didominasi huruf kapital atau memuat tanda seru berulang; bukti ciri yang hanya ditemukan LLM minimal tiga kata (kecuali tautan). Bukti yang gagal dibuang satu per satu dan ciri hilang hanya bila tidak ada bukti tersisa. Ciri `permintaan_data_rahasia` membuang kalimat larangan dan edukasi: kata larangan hanya berlaku dalam klausa yang sama dan mendahului kata kerja permintaan dalam tiga token, dan "jangan lupa", "jangan ragu", dan sejenisnya bukan larangan. Qwen dan classifier IndoBERT tidak dipakai di jalur utama; classifier tetap jalur opsional di §13.
 
-## 9. Tingkat indikasi (draf logika)
+## 9. Tingkat indikasi (logika Sesi 5.5)
 
-1. Ada artikel cek fakta dengan kemiripan di atas ambang, dan artikel tersebut menyatakan klaimnya salah atau hoaks: **Indikasi kuat hoaks**.
-2. Tidak ada artikel yang cocok, tetapi ditemukan beberapa ciri berkeyakinan tinggi: **Perlu hati-hati**.
-3. Selain itu: **Tidak ditemukan indikasi hoaks**, disertai pesan bahwa ini bukan jaminan kebenaran dan saran untuk mengecek sumbernya.
+Logika ada di `server/app/pipeline/tingkat.py`, sepenuhnya buatan sendiri; LLM tidak ikut menentukan. Artikel dihitung hanya bila *relevan*: bagian bobot IDF kata isi judul artikel yang muncul di teks sedikitnya 0,40 (artikel peringkat satu dengan skor sedikitnya 0,88 lolos tanpa syarat ini).
 
-Keyakinan ciri dianggap tinggi jika terdeteksi oleh aturan, atau oleh minimal dua sumber deteksi. Nilai ambang dan jumlah ciri ditentukan dengan data uji di tahap 5. Perbandingan antara penilaian pengguna dan temuan sistem cukup memakai logika perbandingan himpunan, tanpa LLM.
+1. **Indikasi kuat hoaks:** ada artikel berlabel `salah` atau `penipuan` yang relevan, skor kemiripan sedikitnya 0,88, dan unggul lebih dari 0,02 dari semua artikel berlabel `benar`, `klarifikasi`, atau `satir`. Kalau tidak unggul, terjadi konflik: hasilnya **Perlu hati-hati** (varian `konflik`) dan `pernah_dibantah` berkeyakinan sedang.
+2. **Perlu hati-hati:** artikel `salah` atau `penipuan` yang relevan di rentang skor 0,85-0,88 (varian `mirip`); artikel `satir` dengan skor sedikitnya 0,88 (varian `satir`); atau tanpa artikel, ada sedikitnya satu ciri berkeyakinan tinggi atau dua ciri berkeyakinan sedang (varian `ciri_saja`).
+3. **Tidak ditemukan indikasi hoaks:** selain itu, selalu disertai keterangan bahwa ini bukan jaminan informasi benar. Bila ada artikel berlabel lain yang tampil, keterangannya memakai varian `rujukan`. Satu ciri berkeyakinan sedang yang berdiri sendiri tidak ditampilkan (tercatat di diagnostik server).
+
+Keyakinan ciri tinggi jika terdeteksi aturan berpola kuat atau dua sumber (aturan dan LLM), sedang jika satu sumber; tidak ada angka persentase. Bukti `pernah_dibantah` adalah kalimat layar yang paling mirip dengan artikel (kata judul didahulukan). Semua ambang masih titik awal dan ditetapkan final di Sesi 5.6. Perbandingan antara penilaian pengguna dan temuan sistem cukup memakai logika perbandingan himpunan, tanpa LLM.
 
 ## 10. Data dan lisensi (untuk tahap 5)
 
@@ -226,7 +229,7 @@ Pengumpulan data dan fine-tuning classifier dikerjakan paralel mulai minggu 2 di
     - 5.2b Pemasangan RapidOCR ke server (selesai; uji manual lulus).
     - 5.3 Database cek fakta dan pencarian vektor.
     - 5.4 Daftar ciri, regex, template penjelasan (daftar ciri di §8 difinalkan di sini).
-    - 5.5 Penyatuan pipeline di `/analisis` (parameter `ctx` khusus dummy dan `skenario` dihapus dari modul pipeline).
+    - 5.5 Penyatuan pipeline di `/analisis` (selesai kode dan uji otomatis; menunggu uji manual di HP; rincian di bagian Sesi 5.5).
     - 5.6 Evaluasi dan penetapan ambang.
     - Opsional, setelah Tahap 6-7 aman: classifier IndoBERT/IndoBERTweet. (LLM untuk `klaim_utama` sudah diputuskan lewat API di Sesi 5.4a.)
   - **Keputusan yang sudah diambil:**
@@ -321,7 +324,7 @@ Pengumpulan data dan fine-tuning classifier dikerjakan paralel mulai minggu 2 di
     - **Label di kontrak API (`docs/API.md`, tidak diubah di sesi ini):** `cek_fakta[].label` bertipe string bebas (`str` di `server/app/skema.py`, `String` di `KontrakApi.kt`), dan dokumen hanya memberi contoh "misalnya salah, hoaks, menyesatkan", sehingga nilai `satir` tidak melanggar kontrak. **Disetujui developer:** pembaruan daftar nilai label di `docs/API.md` masuk **Sesi 5.5**, dan teks label per nilai beserta teks cadangan untuk nilai tak dikenal masuk **Tahap 6**. Rinciannya: (1) contoh di API.md memuat `hoaks` dan `menyesatkan` yang tidak ada di himpunan label alat ini, jadi API.md perlu mendaftar nilai yang sungguh dikirim server (`salah`, `penipuan`, `belum_terbukti`, `benar`, `klarifikasi`, `satir`, `lainnya`); (2) aplikasi menampilkan label dari `strings.xml` berdasarkan nilainya, jadi Tahap 6 perlu teks untuk tiap nilai dan satu teks cadangan untuk nilai yang tidak dikenal. Baris yang hanya punya URL format lama (`url_format_lama`) kemungkinan 404; cara menampilkannya diputuskan di sesi yang sama.
     - **Keterbatasan:** parafrase ditulis oleh Claude; 50 kueri membuat selisih kecil tidak bermakna dan ukuran kueri negatif (30) kecil; hanya sebagian kegagalan pernah diperiksa manual (pada pengukuran sebelumnya); kueri negatif berita sengaja berat (topik politik tumpang tindih dengan hoaks); narasi untuk baris tanpa narasi hanya berasal dari judul; 3.074 artikel (14%) hanya punya tautan format lama yang mati; artikel 2018 sampai 2020 hanya sebagian ada di situs sehingga label dan tanggalnya bergantung pada Kaggle; pemetaan label dari "Hasil Periksa Fakta" tidak diperiksa satu per satu untuk 289 baris yang berubah; lisensi dataset Kaggle belum diperiksa developer; turnbackhoax.id menyatakan semua materinya milik MAFINDO dan izin tertulis belum diminta (lihat `docs/REFERENSI.md`).
   - **Sesi 5.4a (pengukuran API LLM untuk analisis teks), status: selesai, keputusan sudah diambil developer (lihat "Keputusan Sesi 5.4a" di bawah).** Alat ada di `server/alat/ukur_llm/` (README di sana berisi semua perintah). Sesi ini hanya mengukur; belum ada yang dipasang ke `server/app/`. Data mentah dan CSV ada di `server/data_lokal/hasil_llm/` (tidak masuk repo). Ketentuan kuota dan data tiap penyedia ada di `docs/REFERENSI.md`.
-    - **Prinsip yang diukur:** gambar tidak dikirim; hanya teks OCR yang data pribadinya disamarkan (nomor telepon, email, `@akun`; tautan dibiarkan). LLM tidak menentukan tingkat dan tidak menyatakan benar atau salah; tugasnya mengekstrak `klaim_utama` dan menandai kandidat ciri beserta kutipan bukti yang diverifikasi server terhadap teks OCR. `pernah_dibantah` tidak ditawarkan ke LLM (ditentukan pencarian database), jadi LLM memilih dari 7 id.
+    - **Prinsip yang diukur:** gambar tidak dikirim; hanya teks OCR yang data pribadinya disamarkan (nomor telepon, email, `@akun`; tautan dibiarkan). LLM tidak menentukan tingkat dan tidak menyatakan benar atau salah; tugasnya mengekstrak `klaim_utama` dan menandai kandidat ciri beserta kutipan bukti yang diverifikasi server terhadap teks OCR. `pernah_dibantah` tidak ditawarkan ke LLM (ditentukan pencarian database), jadi LLM memilih dari 7 id (Sesi 5.5 menambah `permintaan_data_rahasia`, sehingga menjadi 8 id).
     - **Kandidat:** Gemini `gemini-3.5-flash`, `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`; Groq `openai/gpt-oss-120b`, `qwen/qwen3.8-27b`. Mistral dilewati karena kuncinya kosong. Nama model diperiksa lewat API pada 2026-10-09. `gemini-2.5-flash-lite` muncul di daftar model tetapi API menolaknya ("tidak lagi tersedia untuk pengguna baru"), jadi diganti `gemini-3.1-flash-lite`. Daftar model API tidak menjamin sebuah model bisa dipakai.
     - **Metodologi:** endpoint `chat/completions` kompatibel OpenAI untuk semua penyedia, temperature 0, keluaran JSON bersekema (`json_schema`; diterima semua model), validasi sendiri, ulang sekali kalau tidak valid. 17 teks OCR (gambar 15 kosong tidak dikirim) ditambah 6 ulangan stabilitas (gambar 01, 04, 09, 11, 14, 17) = 23 permintaan per model. Syarat minimum ditetapkan sebelum melihat hasil: valid minimal 95%, tidak ada id di luar daftar, tidak ada klaim yang memuat kata penilaian, median di bawah 4 detik. Kata penilaian (benar, salah, hoaks, hoax, fakta, bohong, palsu, dusta, menyesatkan, terbukti, keliru, penipuan, disinformasi) hanya ditandai kalau ada di klaim tetapi tidak ada di teks masukan (OCR sering menempelkan kata, misalnya "TERDETEKSIPALSU", jadi di teks masukan cukup dicek sebagai potongan). Persen valid dihitung dari permintaan yang menghasilkan isi; permintaan yang gagal karena kuota atau 503 dilaporkan terpisah.
     - **Pengaturan berpikir dan format per model** (parameter dicoba dari yang paling minimal, turun kalau API menolak): `gemini-3.5-flash` `reasoning_effort=none`; `gemini-3.5-flash-lite` `none` ditolak, dipakai `minimal`; `gemini-3.1-flash-lite` `none` diterima tetapi waktu tetap panjang (median 12 detik); `gpt-oss-120b` `low`; `qwen3.8-27b` `none`. Semua memakai `response_format=json_schema` strict. Groq kadang membalas 400 `json_validate_failed` secara acak untuk permintaan yang sama (sekali dari tiga percobaan pada probe gpt-oss gambar 05); klien mengirim ulang permintaan yang sama. Pada pengukuran pertama gpt-oss, klien salah mengira penyebabnya parameter berpikir dan mencabutnya di tengah jalan; kesalahan itu diperbaiki dan gpt-oss diukur ulang penuh dengan `low`.
@@ -356,6 +359,20 @@ Pengumpulan data dan fine-tuning classifier dikerjakan paralel mulai minggu 2 di
       - (c) Verifikasi kutipan ciri terhadap teks OCR tetap dilakukan. Pengukuran menemukan kutipan yang diambil dari contoh di prompt, kalimat penjelasan model sendiri, dan tautan yang disambung lintas baris; yang terakhir perlu normalisasi saat verifikasi supaya tautan sah tidak ikut terbuang.
       - (d) Cadangan Gemini hanya dipakai kalau Groq gagal (galat, 429, atau batas waktu). Batas Groq gratis: 30 permintaan dan 8.000 token per menit, 1.000 permintaan dan 200.000 token per hari per model. Penyamaran data pribadi (`samarkan.py`) dipindah ke server dan dijalankan sebelum teks dikirim ke penyedia mana pun. Klien menangani 400 `json_validate_failed` acak dari Groq dengan mengirim ulang permintaan yang sama.
     - **Catatan untuk Tahap 6:** onboarding aplikasi harus memberi tahu pengguna bahwa teks yang terbaca dari area yang dipilih dikirim ke penyedia AI pihak ketiga setelah data pribadi (nomor telepon, email, nama akun) disamarkan, dan bahwa gambarnya tidak dikirim. Nama dan isi pesan tidak ikut disamarkan, jadi pemberitahuan tidak boleh menyiratkan semua data pribadi tertutup. Teks pemberitahuan ditulis di `strings.xml` tanpa kata ganti orang kedua.
+  - **Sesi 5.5 (penyatuan pipeline di `/analisis`), status: kode selesai, menunggu uji manual di HP.** Kontrak 0.5, server 0.6.0. Giliran hasil dummy dihapus; `PAKSA_TINGKAT` tetap sebagai cadangan demo.
+    - **Alur:** baca (RapidOCR) → bersih → gabung tautan terpecah (`tautan.py`) → ambang `teks_tidak_terbaca` dari teks bersih (20 karakter huruf-angka) → paralel: pencarian cek fakta (teks bersih) dan LLM (teks yang sudah disamarkan), ditambah ciri regex → penggabungan ciri → tingkat → klaim utama → template.
+    - **Pencarian** (`pipeline/cocok.py`): e5-base fp32 lewat onnxruntime dan tokenizers, tanpa PyTorch. Dimuat sekali saat server menyala (sekitar 4 detik, RAM tambahan sekitar 1,4 GB). Sakelar `CEKHOAKS_CEKFAKTA=mati`. `cek_fakta[]` hanya memuat artikel berskor sedikitnya 0,85 yang relevan, paling banyak 3.
+    - **Relevansi:** bagian bobot IDF kata isi judul artikel yang ada di teks. Minimum 0,40, kecuali artikel peringkat satu dengan skor sedikitnya 0,88. Alasannya skor e5 saja tidak memisahkan artikel sah dari artikel yang kebetulan mirip (catatan Sesi 5.3).
+    - **Tingkat:** lihat §9. Bukti `pernah_dibantah` adalah potongan teks layar yang paling mirip dengan artikel.
+    - **Ciri:** sembilan id terkunci. `permintaan_data_rahasia` (nama tampil "Permintaan kode, data rahasia, atau uang") ditambahkan di sesi ini sebagai ciri kedelapan yang bisa ditandai; LLM ditawari delapan id (tanpa `pernah_dibantah`). Aturan gabung dan pengaman struktural di §8. Template `link_mencurigakan` punya varian per jenis tautan (pemendek, situs gratis, umum). Urutan bukti: sama dari LLM dan regex, regex kuat, LLM saja, regex lemah; bukti identik dideduplikasi.
+    - **Rantai LLM** (`pipeline/llm.py`, lewat urllib di kolam thread): Groq `openai/gpt-oss-120b` (`reasoning_effort` low) → Gemini `gemini-3.5-flash-lite` (minimal) → tanpa LLM. Batas waktu 4, 6, dan total 9 detik (dijaga `asyncio.wait_for`). `json_validate_failed` dicoba ulang sekali. 429 dengan waktu tunggu paling lama 3 detik (dan anggaran cukup) ditunggu lalu Groq dicoba sekali lagi; kegagalan lain (429 panjang, 5xx, batas waktu, galat jaringan, JSON rusak, balasan terpotong) langsung pindah penyedia. Klaim kosong tidak dicoba ulang. `max_tokens` 1.000 (completion terukur paling banyak 438). Sakelar `CEKHOAKS_LLM=mati` dan `CEKHOAKS_LLM_CADANGAN=mati` (hanya Groq; teks pasti tidak ke Google).
+    - **Temuan penting (13 Oktober 2026):** Groq tidak pernah terpakai pada putaran pertama karena `urllib` mengirim `User-Agent: Python-urllib/3.x` dan Cloudflare di depan Groq membalas 403 (`cf_1010`); Gemini tidak mempermasalahkannya, sehingga kegagalannya tersembunyi. Dibuktikan dengan diagnosa (UA lain 200) dan jumlah panggilan di dasbor Groq. Sekarang setiap permintaan membawa `User-Agent: CekHoaks/<versi>`, dan jejak percobaan (penyedia, status, kode galat, token, durasi) tercatat di log, `app.cek`, dan alat tabel sebagai diagnostik permanen.
+    - **Penyamaran** (`samarkan.py`): `[NOMOR]`, `[EMAIL]`, `[AKUN]`, ditambah baris deret akun. `kutipan_ke_asli` memetakan kutipan LLM kembali ke teks asli. Nama orang dan isi pesan tidak disamarkan. Log hanya memuat penyedia, status, kode galat, angka token, dan durasi.
+    - **Klaim utama:** berurutan (1) klaim LLM bila kesetiaan sedikitnya 0,5 (rasio kata isi yang ada di teks), tanpa kata penilaian baru, dan tanpa kata ganti orang kedua; (2) bukti `pernah_dibantah` (sedikitnya 4 kata, tanpa kata ganti kedua atau orang pertama, kata sambung di ujung dibuang); (3) heuristik ekstraktif (skor minimum 3,0, atau 4,0 bila klaim LLM tidak kosong tetapi ditolak; kalimat berkata ganti kedua, orang pertama, atau sapaan tidak dipertimbangkan; bonus hanya dari ciri berkeyakinan tinggi); (4) kosong.
+    - **Kontrak 0.5:** `url_format_lama` per artikel, `pemeriksaan_terbatas` (`"cek_fakta"` dan/atau `"ai"`; kosong berarti semuanya berjalan; selalu kosong dalam mode paksa), sembilan id ciri. `KontrakApi.kt` diperbarui (`ignoreUnknownKeys = true`).
+    - **Alat:** `server/alat/uji_analisis/tahap_b.py` menjalankan 18 gambar dengan atau tanpa LLM (`--tanpa-llm`), dengan jeda dan penghormatan Retry-After, lalu menulis tabel, perbandingan, konfirmasi 03/06/08/07, token, dan daftar bukti yang dibuang. `diagnosa_llm.py` menguji penyedia dengan teks contoh.
+    - **Hasil terukur pada 18 gambar uji** (17 terbaca; gambar 15 `teks_tidak_terbaca`): Groq melayani seluruh 17 permintaan tanpa 429 dengan jeda 10 detik; token rata-rata sekitar 1.100 per permintaan (maksimum 1.528); tahap LLM median sekitar 1,0 detik (p95 sekitar 1,5 detik). Tingkat identik dengan Tahap A (tanpa LLM) pada seluruh 17 gambar yang terbaca. Pada Gemini, gambar 07 (infografis edukasi Polres) naik ke `hati_hati` karena satu ciri `judul_clickbait` dari LLM saja; pada Groq tetap `tidak_ditemukan`, dan aturan ciri sedang tunggal menjadi pengaman. Setelah revisi prompt dan pengaman (`tahap_b_groq3`): konfirmasi 03/06/08/07 sesuai, kutipan ditolak 0, klaim 09/13/18 terisi, dan semua bukti yang dibuang layak dibuang. Perbandingan dengan Gemini (`tahap_b`): ciri LLM-saja yang keliru jauh lebih sedikit pada Groq (misalnya `sumber_tidak_jelas` 10 dari 17 gambar menjadi 4 sebelum aturan baru).
+    - **Daftar uji manual Sesi 5.5** ada di laporan sesi dan dilengkapi setelah uji HP.
   - **Daftar uji Sesi 5.1** (perintah lengkap di `server/README.md`):
     - [ ] `pytest` lulus (54 test).
     - [ ] `app.cek` pada satu gambar mencetak JSON berformat respons API; dengan `PAKSA_TINGKAT=teks_tidak_terbaca` mencetak galat seragam dan kode keluar 1.
@@ -369,6 +386,57 @@ Pengumpulan data dan fine-tuning classifier dikerjakan paralel mulai minggu 2 di
   - Alamat IP laptop di hotspot HP berubah setiap kali tersambung ulang (contoh: 10.248.150.58 lalu 10.190.18.58). Setiap kali server dijalankan, cek alamat yang dicetak dan perbarui di aplikasi.
   - `adb reverse` hilang setiap kali kabel dicabut atau HP di-restart.
 - **Umum:** sistem atau aplikasi tertentu (misalnya halaman pengaturan izin dan aplikasi perbankan) dapat menyembunyikan overlay. Ini perilaku normal.
+
+### Catatan terbuka
+
+Daftar ini dikumpulkan dari sesi 5.1-5.5 supaya tidak hilang antar sesi. Hapus butir yang sudah dikerjakan dan catat keputusannya di bagian tahap masing-masing.
+
+#### Sesi 5.6 (evaluasi dan penetapan ambang)
+
+- **Data uji berlabel** (target awal 120-150), termasuk konten biasa dan edukasi sebagai contoh negatif.
+- **Ambang skor dan relevansi:**
+  - Gambar 12 kuat dengan skor 0,881 (rapuh).
+  - Gambar 18 hanya `hati_hati` padahal klaimnya sama persis dengan artikel (skor 0,860, relevansi 0,74). Pertimbangkan kombinasi skor dan relevansi untuk `kuat`.
+  - Ambang relevansi tipis: sah terendah 0,48, tersaring tertinggi 0,34, dan "Vaksin Mengandung Racun Berbahaya" 0,45 masih lolos.
+  - Relevansi terlalu tinggi untuk judul pendek (gambar 05: 1,00).
+  - Artikel Komdigi yang sama persis dengan gambar 14 (skor 0,842, relevansi 0,44) tidak tampil.
+  - Salah eja OCR pada nama ("Suhasasil" lawan "Suahasil") menurunkan relevansi.
+- **Pencarian e5:** uji 512 token untuk kueri (gambar 11 terpotong di 256); ketidakcocokan teks layar dengan passage judul + narasi; tinjau ulang e5-base int8.
+- **Kesetiaan klaim LLM:**
+  - Ambang 0,5 longgar. Pertimbangkan syarat bahwa angka dan nama di klaim harus ada di teks (toleran salah eja OCR); klaim gambar 14 dari salah satu model menambahkan "Wakil Menteri".
+  - Klaim bisa mengganti kata dengan arti berbeda dan tetap lolos: "digelandang" menjadi "digelapkan" (18), dan kata "penipu" ditambahkan di 07. Pertimbangkan pemeriksaan kata kerja dan kata penting selain angka dan nama.
+  - Klaim terlalu samar (13: "Laut kering dianggap pertanda sesuatu") atau menyesatkan untuk obrolan (08: "COVID-19 butuh verifikasi 2 langkah").
+- **Stabilitas ciri LLM:** `bahasa_provokatif` turun ke 0 gambar di `tahap_b_groq3`, termasuk gambar 16 ("PASTI TUMBANG DAN PASTI DIBENCI SAMA RAKYAT", menyasar partai) dan 11; `judul_clickbait` "SKANDAL VAKSIN…" di 11 juga hilang. Nilai dengan data berlabel apakah definisi baru di prompt terlalu ketat atau ini variasi antar-jalan. Tambahkan opsi di alat tabel untuk menjalankan gambar yang sama beberapa kali dan mengukur stabilitas ciri.
+- **Ciri yang dibuang aturan baru:** periksa dengan data berlabel apakah `sumber_tidak_jelas` yang hanya lewat regex (atribusi samar) terlalu sempit, dan apakah membuang ciri sedang tunggal saat `tidak_ditemukan` menghilangkan sinyal yang berguna. `judul_clickbait` hilang di 13 dan 17 setelah LLM tidak menandainya.
+- **Klaim heuristik:** kata sapaan "mas", "mbak", "pak", "bu" sengaja tidak termasuk filter obrolan (juga gelar di berita); nilai dengan data. Catat berapa kandidat gugur karena filter (alat tabel melaporkannya).
+- **Prompt:** pengukuran Sesi 5.4a memakai prompt lama; ukur ulang kejujuran kutipan dan stabilitas dengan prompt Sesi 5.5 pada `ukur_llm`.
+- **Ambang teks final:** ada temuan area tanpa tulisan terbaca 25 karakter.
+- **Uji salah tandai regex** dengan dataset teks biasa (Indonesia False News Dataset dari Kaggle, belum diunduh).
+
+#### Tahap 6 (UI)
+
+- Tampilkan keterangan bila `pemeriksaan_terbatas` tidak kosong.
+- Artikel `url_format_lama`: tombol membuka pencarian web dengan judul artikel.
+- Sorot bukti di `teks_terbaca` (pencocokan tanpa memperhatikan spasi).
+- Teks label per nilai dengan teks cadangan untuk nilai tak dikenal, termasuk nama ciri `permintaan_data_rahasia`.
+- Kartu hasil saat ini baru menampilkan judul tingkat dan jumlah ciri.
+- Label tampilan `klaim_utama` sebaiknya netral, misalnya "Inti pesan", karena untuk obrolan penipuan dan konten edukasi istilah "klaim" kurang cocok.
+- Seragamkan warna navy `#1b3a6b`.
+- Onboarding: teks yang terbaca dikirim ke penyedia AI pihak ketiga setelah nomor, email, dan @akun disamarkan; gambar tidak dikirim; jangan menyiratkan semua data pribadi tertutup.
+- Catat keputusan desain di §11 dan perbarui rujukan ke berkas prototipe lama.
+
+#### Tahap 8 (showcase)
+
+- Banner server sudah menyembunyikan adaptor virtual.
+- Hotspot HP bisa memberi alamat `10.x`, jadi Wi-Fi kampus tetap perlu diuji sendiri.
+- Laptop butuh internet untuk LLM; tanpa internet, `pemeriksaan_terbatas` berisi `"ai"` (uji dengan memutus internet, bukan hanya `CEKHOAKS_LLM=mati`).
+- Jalankan `kumpul_tbh.py` mode pembaruan menjelang showcase.
+- **Batas token Groq saat beberapa pengunjung berdekatan.** Kuota gratis: 8.000 token per menit per model, sekitar 1.100 token per permintaan, jadi sekitar 7 permintaan per menit (kuota harian 200.000 token, sekitar 180 permintaan). Permintaan yang kena 429 pindah ke cadangan atau kehilangan pemeriksaan AI. Pilihan untuk demo (keputusan di developer):
+  - Cadangan Gemini tetap aktif (bawaan): kualitas ciri LLM tetap ada, tetapi teks (setelah penyamaran) bisa sampai ke Google, yang pada kuota gratis boleh memakai dan meninjau isi permintaan.
+  - `CEKHOAKS_LLM_CADANGAN=mati`: teks pasti tidak ke Google, tetapi pemeriksaan AI bisa dilewati saat Groq penuh (`pemeriksaan_terbatas` berisi `"ai"`); regex dan cek fakta tetap berjalan.
+  - Model Groq kedua (misalnya `qwen/qwen3.8-27b`, terukur di Sesi 5.4a) sebagai cadangan sebelum Gemini: kuota terpisah per model, jadi kapasitas ganda tanpa mengirim teks ke Google. Butuh persetujuan dan pengukuran ulang.
+  - `CEKHOAKS_LLM=mati` atau `PAKSA_TINGKAT` sebagai cadangan terakhir (tanpa internet).
+  - Atur giliran pengunjung (satu demi satu) sebagai langkah paling murah.
 
 ## 14. Di luar cakupan MVP (roadmap)
 

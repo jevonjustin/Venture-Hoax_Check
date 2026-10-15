@@ -1,6 +1,6 @@
 # Kontrak API Server Cek Hoaks
 
-Versi kontrak: **0.4** (ditetapkan di tahap 4, dipakai tahap 5 dan 6). Kalau kontrak berubah, perbarui dokumen ini, `server/app/skema.py`, dan `app/src/main/java/com/example/cekhoaks/KontrakApi.kt` sekaligus.
+Versi kontrak: **0.5** (ditetapkan di tahap 4, diperluas di Sesi 5.5 dengan `pemeriksaan_terbatas`, `url_format_lama`, dan id ciri baru `permintaan_data_rahasia`). Versi server: 0.6.0. Kalau kontrak berubah, perbarui dokumen ini, `server/app/skema.py`, dan `app/src/main/java/com/example/cekhoaks/KontrakApi.kt` sekaligus.
 
 - Semua field memakai Bahasa Indonesia dengan gaya `snake_case`.
 - Respons berformat JSON UTF-8.
@@ -12,7 +12,7 @@ Versi kontrak: **0.4** (ditetapkan di tahap 4, dipakai tahap 5 dan 6). Kalau kon
 Dipakai tombol "Uji koneksi" di aplikasi.
 
 ```json
-{"status": "ok", "versi": "0.4.0"}
+{"status": "ok", "versi": "0.6.0"}
 ```
 
 ## `POST /analisis`
@@ -25,7 +25,7 @@ Body berupa `multipart/form-data` dengan satu field:
 
 Aplikasi memperkecil potongan sampai sisi terpanjangnya paling besar 2000 px, lalu menyandikannya sebagai JPEG kualitas 90.
 
-**Khusus server dummy:** query `?paksa=kuat|hati_hati|tidak_ditemukan|teks_tidak_terbaca` memaksa hasil tertentu. Nilai yang sama bisa diberikan lewat variabel lingkungan `PAKSA_TINGKAT`. Kalau keduanya ada, query yang dipakai. Kalau keduanya kosong, tingkat hasil bergiliran: `kuat` → `hati_hati` → `tidak_ditemukan`. Server sungguhan (tahap 5) tidak memiliki parameter ini.
+**Mode demo:** query `?paksa=kuat|hati_hati|tidak_ditemukan|teks_tidak_terbaca` memaksa hasil tertentu dengan data contoh (teks tetap dibaca sungguhan). Nilai yang sama bisa diberikan lewat variabel lingkungan `PAKSA_TINGKAT`. Kalau keduanya ada, query yang dipakai. Kalau keduanya kosong, hasil berasal dari analisis sungguhan; tidak ada lagi hasil bergiliran. Dalam mode demo `pemeriksaan_terbatas` selalu kosong.
 
 ### Respons sukses (200)
 
@@ -50,11 +50,13 @@ Aplikasi memperkecil potongan sampai sisi terpanjangnya paling besar 2000 px, la
       "url": "https://example.com/cek-fakta/air-keran-penyakit-misterius",
       "skor_kemiripan": 0.87,
       "label": "salah",
-      "tanggal": "2025-11-04"
+      "tanggal": "2025-11-04",
+      "url_format_lama": false
     }
   ],
   "teks_terbaca": "VIRAL!! Air keran di Jakarta ... SEBARKAN ke keluarga sebelum dihapus!!!",
-  "durasi_ms": 1876
+  "durasi_ms": 1876,
+  "pemeriksaan_terbatas": []
 }
 ```
 
@@ -62,22 +64,52 @@ Aplikasi memperkecil potongan sampai sisi terpanjangnya paling besar 2000 px, la
 |---|---|---|
 | `id_permintaan` | string | UUID tanpa tanda hubung. Dipakai untuk mencocokkan log HP dengan log server |
 | `tingkat` | `"kuat"` \| `"hati_hati"` \| `"tidak_ditemukan"` | Tingkat indikasi (RANCANGAN §9) |
-| `klaim_utama` | string \| null | Ringkasan satu kalimat tentang hal yang dicek. Bernilai null jika tidak ada klaim yang jelas |
-| `ciri` | daftar | Ciri hoaks yang ditemukan, diurutkan dari yang paling penting. Boleh kosong |
-| `ciri[].id` | string | Id tetap dari daftar ciri di RANCANGAN §8. **Id ini bagian dari kontrak** karena dipakai untuk membandingkan penilaian pengguna dengan temuan sistem (tahap 6) |
+| `klaim_utama` | string \| null | Satu kalimat inti pesan yang dicek. Kata-katanya diambil dari teks layar (hasil rangkuman model bahasa yang diperiksa kesetiaannya, atau potongan teks), tidak pernah menyatakan benar atau salah, dan tanpa kata ganti orang kedua. Bernilai null jika tidak ada kalimat yang layak |
+| `ciri` | daftar | Ciri hoaks yang ditemukan, diurutkan dari keyakinan tinggi lebih dulu. Boleh kosong. Satu ciri berkeyakinan `sedang` yang tidak didukung ciri lain dan tidak disertai artikel tidak ditampilkan: tingkatnya `tidak_ditemukan` dan daftar ini kosong |
+| `ciri[].id` | string | Salah satu dari sembilan id tetap di bawah. **Id ini bagian dari kontrak** karena dipakai untuk membandingkan penilaian pengguna dengan temuan sistem (tahap 6). Aplikasi sebaiknya punya teks cadangan untuk id yang tidak dikenal (tahap 6) |
 | `ciri[].nama` | string | Nama ciri untuk ditampilkan |
-| `ciri[].bukti` | daftar string | Potongan teks dari gambar yang menunjukkan ciri ini. Minimal satu |
+| `ciri[].bukti` | daftar string | Potongan teks dari gambar yang menunjukkan ciri ini. Minimal satu. Setiap bukti adalah potongan **persis** dari `teks_terbaca` sampai perbedaan spasi dan baris baru (keduanya sudah dirapikan menjadi satu spasi), sehingga aplikasi bisa menyorotnya dengan membandingkan teks tanpa memperhatikan spasi. Untuk `pernah_dibantah`, buktinya kalimat di layar yang paling mirip dengan artikel |
 | `ciri[].penjelasan` | string | Teks template yang ditulis sendiri, bukan buatan LLM, dan tanpa kata ganti orang kedua |
-| `ciri[].keyakinan` | `"tinggi"` \| `"sedang"` | Tinggi jika terdeteksi oleh aturan atau oleh minimal dua sumber deteksi |
-| `cek_fakta` | daftar | Artikel cek fakta yang mirip dengan klaim, diurutkan dari skor tertinggi. Boleh kosong |
+| `ciri[].keyakinan` | `"tinggi"` \| `"sedang"` | Tinggi jika terdeteksi oleh aturan berpola kuat atau oleh dua sumber (aturan dan model bahasa). Sedang jika hanya satu sumber. Tidak ada angka persentase |
+| `cek_fakta` | daftar | Artikel cek fakta yang mirip, diurutkan dari skor tertinggi, paling banyak 3. Hanya artikel dengan skor sedikitnya 0,85 yang judulnya juga relevan dengan teks. Boleh kosong |
 | `cek_fakta[].judul` | string | |
 | `cek_fakta[].sumber` | string | Nama media cek fakta |
 | `cek_fakta[].url` | string | |
 | `cek_fakta[].skor_kemiripan` | angka 0-1 | |
-| `cek_fakta[].label` | string | Kesimpulan artikel, misalnya `salah`, `hoaks`, `menyesatkan`. Tingkat `kuat` hanya boleh muncul jika ada artikel dengan label yang menyatakan klaimnya salah |
+| `cek_fakta[].label` | string | Kesimpulan artikel di database: `salah`, `penipuan`, `klarifikasi`, `benar`, `satir`, `belum_terbukti`, atau `lainnya`. Hanya `salah` dan `penipuan` yang bisa menaikkan tingkat ke `kuat`; label lain tampil sebagai rujukan |
 | `cek_fakta[].tanggal` | string \| null | Tanggal terbit artikel (ISO 8601, contoh `2025-11-04`). Bernilai null jika tidak diketahui |
-| `teks_terbaca` | string | Seluruh teks yang dibaca dari gambar |
+| `cek_fakta[].url_format_lama` | boolean | `true` jika `url` berformat lama turnbackhoax.id yang sudah mati (404); judul artikel tetap bisa dicari di web. Bawaan `false` |
+| `teks_terbaca` | string | Teks bersih hasil baca gambar (elemen antarmuka sudah dibuang). Setiap `bukti[]` adalah potongan teks ini, dengan spasi dan baris baru dirapikan menjadi satu spasi |
 | `durasi_ms` | integer | Lama pemrosesan di server |
+| `pemeriksaan_terbatas` | daftar string | Bagian pemeriksaan yang tidak berjalan pada analisis ini: `"cek_fakta"` (pencarian database nonaktif atau gagal) dan `"ai"` (analisis teks oleh model bahasa gagal atau dimatikan). Kosong berarti semuanya berjalan. Tingkat `tidak_ditemukan` dengan daftar tidak kosong bukan hasil pemeriksaan lengkap. Tidak memuat nama penyedia. Bawaan kosong |
+
+### Nilai `ciri[].id` (kontrak 0.5)
+
+| id | Ciri |
+|---|---|
+| `permintaan_data_rahasia` | Permintaan kode, data rahasia, atau uang |
+| `ajakan_menyebarkan` | Ajakan menyebarkan |
+| `desakan_waktu` | Desakan waktu |
+| `kapital_tanda_seru` | Huruf kapital dan tanda seru berlebihan |
+| `link_mencurigakan` | Tautan pemendek atau tidak resmi |
+| `sumber_tidak_jelas` | Merujuk sumber samar tanpa nama |
+| `judul_clickbait` | Judul memancing klik |
+| `bahasa_provokatif` | Bahasa provokatif |
+| `pernah_dibantah` | Klaim serupa sudah dibantah media cek fakta (ditentukan pencarian, bukan model bahasa) |
+
+`permintaan_data_rahasia` baru di kontrak 0.5. Aplikasi lama yang tidak mengenalnya tetap menampilkannya dengan nama dan penjelasan dari server.
+
+### Nilai `cek_fakta[].label`
+
+`salah`, `penipuan`, `klarifikasi`, `benar`, `satir`, `belum_terbukti`, `lainnya`. Hanya `salah` dan `penipuan` yang menentukan tingkat `kuat`. Artikel berlabel `benar`, `klarifikasi`, atau `satir` tampil sebagai rujukan dan, bila skornya setara atau lebih tinggi dari artikel `salah` atau `penipuan`, menurunkan hasil ke `hati_hati`. Server tidak pernah menyatakan sebuah informasi benar atas dasar pendapatnya sendiri.
+
+### `pemeriksaan_terbatas`
+
+Daftar bagian yang tidak berjalan: `"cek_fakta"` dan/atau `"ai"`. Aplikasi (tahap 6) sebaiknya menampilkan keterangan ketika daftarnya tidak kosong, terutama untuk `tidak_ditemukan`. Dalam mode demo (`?paksa=`) daftar selalu kosong karena hasilnya contoh dan bukan pemeriksaan.
+
+### Mode demo
+
+`?paksa=` atau `PAKSA_TINGKAT` mengembalikan hasil contoh dengan `teks_terbaca` yang asli. Pembersihan teks dan pembacaan tetap berjalan; ambang `teks_tidak_terbaca` dilewati (kecuali nilai `teks_tidak_terbaca`, yang langsung mengembalikan galat), serta pencarian dan model bahasa tidak dipakai. `bukti` pada hasil contoh tidak berasal dari `teks_terbaca`.
 
 Tingkat `tidak_ditemukan` hanya dipakai jika teks berhasil dibaca dan dianalisis. Gambar tanpa teks yang terbaca mendapat galat `teks_tidak_terbaca`, bukan tingkat `tidak_ditemukan`. Kalau yang dikembalikan `tidak_ditemukan`, pengguna bisa mengira informasinya sudah diperiksa dan aman.
 
@@ -107,7 +139,7 @@ Semua respons dengan status selain 2xx memakai format berikut:
 | `galat_http` | sesuai galat aslinya (selain 404 dan 405) | Galat HTTP lain yang dihasilkan kerangka server dan tidak punya kode khusus di tabel ini. Aplikasi menampilkannya sebagai kartu galat umum |
 | `galat_server` | 500 | Galat internal yang tidak terduga di server |
 
-Kalau aplikasi memutus koneksi (tombol Batal), server dummy menghentikan pemrosesan dan mencatat `Permintaan <id> dibatalkan klien` di log.
+Kalau aplikasi memutus koneksi (tombol Batal), server menghentikan pemrosesan dan mencatat `Permintaan <id> dibatalkan klien` di log.
 
 ## Batas waktu di aplikasi
 

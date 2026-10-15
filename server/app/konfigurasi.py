@@ -7,8 +7,15 @@ nilai yang tidak sah membuat server menolak jalan (lihat __main__.py).
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass
+from pathlib import Path
 
 from .skema import Tingkat
+
+# server/data_lokal/ (masuk .gitignore): database cek fakta dan model e5 ada di dalamnya.
+DATA_LOKAL = Path(__file__).resolve().parents[1] / "data_lokal"
+
+# Versi server: dipakai /status, banner, dan User-Agent permintaan ke penyedia LLM.
+VERSI_SERVER = "0.6.0"
 
 PAKSA_TEKS_TIDAK_TERBACA = "teks_tidak_terbaca"
 # Satu-satunya sumber daftar nilai sah PAKSA_TINGKAT dan query ?paksa= (selaras dengan docs/API.md).
@@ -53,10 +60,56 @@ class Pengaturan:
     # Klaim utama heuristik (pipeline/klaim.py).
     klaim_min_kata: int = 5
     klaim_maks_karakter: int = 200
-    klaim_skor_minimum: float = 2.0
+    klaim_skor_minimum: float = 3.0  # Sesi 5.5: naik dari 2,0 supaya infografis dan obrolan tanpa pernyataan kosong
     # Baris OCR yang tidak berakhir tanda baca disambung ke baris berikutnya kalau panjangnya sedikitnya
     # sekian kali baris terpanjang (kalimat yang terbelah karena lebar layar).
     klaim_rasio_baris_panjang: float = 0.8
+    # Pencarian cek fakta (pipeline/cocok.py). Dimatikan lewat CEKHOAKS_CEKFAKTA=mati.
+    cek_fakta_aktif: bool = True
+    cek_fakta_folder: Path = DATA_LOKAL / "cek_fakta"
+    model_folder: Path = DATA_LOKAL / "model"
+    cek_fakta_ukuran: str = "base"  # vektor dan model harus berukuran sama (small | base)
+    cek_fakta_varian: str = "fp32"
+    cocok_top_k: int = 5  # kandidat yang diambil dari pencarian
+    cek_fakta_maks: int = 3  # artikel paling banyak di respons
+    # Ambang skor e5-base fp32 (titik awal Sesi 5.3; ditetapkan final di Sesi 5.6).
+    ambang_cocok: float = 0.88  # "cocok": boleh menaikkan tingkat ke kuat
+    ambang_mirip: float = 0.85  # "mirip": hanya hati_hati, dan batas bawah artikel yang ditampilkan
+    # Artikel benar, klarifikasi, atau satir yang skornya tidak lebih rendah dari artikel salah/penipuan terbaik
+    # dikurangi selisih ini dianggap berkonflik, sehingga tingkat kuat turun menjadi hati_hati.
+    selisih_konflik: float = 0.02
+    # Artikel yang tampil dan dihitung hanya bila bobot kata isi judulnya yang ada di teks sedikitnya sekian
+    # (0-1). Artikel peringkat 1 dengan skor >= ambang_cocok lolos tanpa syarat ini. Aturan sementara: ambang
+    # final ditetapkan di Sesi 5.6.
+    relevansi_minimum: float = 0.40
+    # Satir dengan skor >= ambang_cocok memberi hati_hati (tidak pernah kuat).
+    satir_hati_hati: bool = True
+    # Model bahasa (pipeline/llm.py). Dimatikan lewat CEKHOAKS_LLM=mati (uji tanpa internet, cadangan demo).
+    llm_aktif: bool = True
+    # False (CEKHOAKS_LLM_CADANGAN=mati): rantai hanya Groq lalu None, supaya teks pasti tidak dikirim ke Google.
+    llm_cadangan_aktif: bool = True
+    llm_timeout_groq: float = 4.0  # detik; p95 terukur gpt-oss-120b 1,4 detik (Sesi 5.4a)
+    llm_timeout_gemini: float = 6.0  # detik; p95 terukur gemini-3.5-flash-lite 4,7 detik
+    llm_anggaran_total: float = 9.0  # detik untuk semua penyedia dan percobaan ulang; aplikasi menunggu 60 detik
+    # Completion terukur paling banyak 438 token (Sesi 5.4a, 5.5); 1.000 memberi ruang dan menjaga kuota per menit.
+    llm_maks_token: int = 1000
+    # Balasan 429 dengan waktu tunggu sampai sekian detik (dan sisa anggaran cukup untuk satu panggilan lagi)
+    # ditunggu lalu penyedia yang sama dicoba sekali lagi; selain itu langsung pindah penyedia.
+    llm_tunggu_429_maks: float = 3.0
+    # Klaim LLM dipakai hanya bila bagian kata isinya yang ada di teks sedikitnya ini; selain itu klaim heuristik.
+    # Dari 98 klaim hasil_llm (5 model): 0,5 meloloskan 91; 0,7 hanya 69 karena parafrase sah ("mengusulkan" vs
+    # "usul") dan salah baca OCR menurunkan nilai. Klaim yang mengarang ("Wakil Menteri", gambar 14) bernilai 0,40.
+    klaim_kesetiaan_minimum: float = 0.5
+    # Bila klaim LLM tidak kosong tetapi ditolak (tidak setia atau memuat kata ganti kedua), heuristik hanya
+    # dipakai pada skor sedikitnya ini: LLM menilai ada klaim, jadi kalimat yang kebetulan lolos tidak cukup.
+    klaim_skor_setelah_tolak: float = 4.0
+    # Bukti pernah_dibantah dipakai sebagai klaim bila sedikitnya sekian kata (potongan pendek seperti
+    # "700 Kepala Desa" bukan klaim).
+    klaim_bukti_min_kata: int = 4
+    # Pengaman struktural untuk kutipan ciri dari LLM (pipeline/ciri.py).
+    ciri_llm_min_kata: int = 3  # bukti ciri yang hanya ditemukan LLM; tidak berlaku untuk link_mencurigakan
+    ciri_llm_kapital_rasio: float = 0.5  # bagian huruf kapital pada bukti kapital_tanda_seru
+    ciri_llm_seru_min: int = 2  # atau sekian tanda seru
 
 
 def _angka(env: Mapping[str, str], nama: str, tipe: type, bawaan):
@@ -80,7 +133,23 @@ def muat(env: Mapping[str, str] = os.environ) -> Pengaturan:
             f"PAKSA_TINGKAT berisi nilai yang tidak dikenal: {paksa!r}. "
             f"Nilai yang sah: {', '.join(NILAI_PAKSA)} (atau kosong agar hasil bergiliran)."
         )
+    sakelar = env.get("CEKHOAKS_CEKFAKTA", "").strip().lower()
+    if sakelar not in ("", "aktif", "mati"):
+        raise KonfigurasiTidakValid(f"CEKHOAKS_CEKFAKTA harus 'aktif' atau 'mati', diterima: {sakelar!r}")
+    sakelar_llm = env.get("CEKHOAKS_LLM", "").strip().lower()
+    if sakelar_llm not in ("", "aktif", "mati"):
+        raise KonfigurasiTidakValid(f"CEKHOAKS_LLM harus 'aktif' atau 'mati', diterima: {sakelar_llm!r}")
+    sakelar_cadangan = env.get("CEKHOAKS_LLM_CADANGAN", "").strip().lower()
+    if sakelar_cadangan not in ("", "aktif", "mati"):
+        raise KonfigurasiTidakValid(f"CEKHOAKS_LLM_CADANGAN harus 'aktif' atau 'mati', diterima: {sakelar_cadangan!r}")
+    folder_cek = env.get("CEKHOAKS_CEKFAKTA_FOLDER", "").strip()
+    folder_model = env.get("CEKHOAKS_MODEL_FOLDER", "").strip()
     pengaturan = Pengaturan(
+        cek_fakta_aktif=sakelar != "mati",
+        llm_aktif=sakelar_llm != "mati",
+        llm_cadangan_aktif=sakelar_cadangan != "mati",
+        cek_fakta_folder=Path(folder_cek) if folder_cek else bawaan.cek_fakta_folder,
+        model_folder=Path(folder_model) if folder_model else bawaan.model_folder,
         host=env.get("CEKHOAKS_HOST", "").strip() or bawaan.host,
         port=_angka(env, "CEKHOAKS_PORT", int, bawaan.port),
         batas_gambar_byte=_angka(env, "CEKHOAKS_BATAS_GAMBAR_BYTE", int, bawaan.batas_gambar_byte),

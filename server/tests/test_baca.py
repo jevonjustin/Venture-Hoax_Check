@@ -10,7 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from app import contoh, main
+from app import main
 from app.galat import DibatalkanKlien, GalatApi
 from app.konfigurasi import pengaturan
 from app.pipeline import baca, orkestrator
@@ -31,7 +31,6 @@ def anyio_backend():
 def bersih(monkeypatch):
     monkeypatch.setattr(pengaturan, "paksa_tingkat", None)
     monkeypatch.setattr(pengaturan, "ambang_teks_karakter", 20)
-    contoh.atur_ulang_giliran()
 
 
 def gambar() -> bytes:
@@ -54,13 +53,13 @@ def pakai(monkeypatch, teks: str) -> PembacaPalsu:
     return palsu
 
 
-async def test_teks_di_bawah_ambang_menjadi_galat_dan_giliran_tidak_maju(monkeypatch):
+async def test_teks_di_bawah_ambang_menjadi_galat(monkeypatch):
     pakai(monkeypatch, "Halo dunia")  # 9 huruf
     with pytest.raises(GalatApi) as e:
         await orkestrator.jalankan(gambar(), konteks())
     assert (e.value.status, e.value.kode) == (422, "teks_tidak_terbaca")
     pakai(monkeypatch, TEKS_PALSU)
-    assert (await orkestrator.jalankan(gambar(), konteks())).tingkat == Tingkat.KUAT
+    assert (await orkestrator.jalankan(gambar(), konteks())).tingkat == Tingkat.HATI_HATI
 
 
 async def test_tepat_di_ambang_lolos_dan_tanda_baca_tidak_dihitung(monkeypatch):
@@ -101,8 +100,7 @@ async def test_klien_putus_setelah_baca_menghentikan_pipeline(monkeypatch, caplo
         await orkestrator.jalankan(gambar(), konteks(klien_putus=putus_setelah_baca))
     assert pemeriksaan[-1] == 1  # terdeteksi setelah pembacaan selesai
     assert not any("tahap:" in r.getMessage() for r in caplog.records)
-    contoh.atur_ulang_giliran()
-    assert (await orkestrator.jalankan(gambar(), konteks())).tingkat == Tingkat.KUAT
+    assert (await orkestrator.jalankan(gambar(), konteks())).tingkat == Tingkat.HATI_HATI
 
 
 async def test_log_memuat_durasi_dan_jumlah_karakter_tanpa_teks(monkeypatch, caplog):
@@ -142,10 +140,11 @@ async def test_pembacaan_berjalan_satu_per_satu_di_luar_event_loop():
 
 def test_startup_memuat_pembaca_dan_mencetak_pesan(pembaca_palsu, capsys):
     with TestClient(main.app) as klien:
-        assert klien.get("/health").json()["versi"] == "0.5.1"
+        assert klien.get("/health").json()["versi"] == "0.6.0"
     keluaran = capsys.readouterr().out
     assert pembaca_palsu.siap
     assert "Pembaca teks siap" in keluaran and "dimuat dalam 0,5 detik" in keluaran
+    assert "Pencarian cek fakta siap" in keluaran
 
 
 def test_teks_terbaca_di_respons_api_dari_pembaca():
