@@ -44,3 +44,39 @@ Proyek open source di `docs/REFERENSI.md` dipakai sebagai bahan belajar dan sumb
 ## Perintah
 
 - Build debug: `./gradlew assembleDebug` (Windows: `gradlew.bat assembleDebug`)
+
+## Harness
+- **Spec**:
+  - file: docs/RANCANGAN_PROYEK.md (kontrak API: docs/API.md; referensi dan lisensi: docs/REFERENSI.md)
+  - log deviasi: docs/RANCANGAN_PROYEK.md (keputusan dicatat di bagian tahap/sesi masing-masing, butir terbuka di "Catatan terbuka"; tidak ada file log terpisah)
+- **Area kritis**:
+  - logika tingkat dan pemeriksaan ciri di `server/app/pipeline/`;
+  - kontrak API: `docs/API.md`, `server/app/skema.py`, `KontrakApiTest`, dan model data respons di Android;
+  - aturan privasi: apa yang disamarkan, dikirim ke LLM, atau ditulis ke log;
+  - teks UI yang menyangkut prinsip produk: label dan keterangan tingkat (termasuk "bukan jaminan" pada `tidak_ditemukan`), teks onboarding tentang data yang dikirim, larangan kata ganti orang kedua, larangan persentase keyakinan, dan larangan menyatakan informasi "benar"/"fakta".
+- **Perintah** (shell tool Bash = Git Bash/MINGW64; semua perintah dijalankan dari root repo):
+  - test: `(cd server && .venv/Scripts/python -m pytest -m "not rapidocr")`
+  - test lengkap (RapidOCR sungguhan): `(cd server && .venv/Scripts/python -m pytest)`
+  - test Android: `JAVA_HOME="/c/Program Files/Android/Android Studio/jbr" ./gradlew testDebugUnitTest`
+  - run: `(cd server && .venv/Scripts/python -m app)`; hanya dijalankan pemilik di jendela PowerShell terpisah, agent tidak menjalankannya
+  - lint: `JAVA_HOME="/c/Program Files/Android/Android Studio/jbr" ./gradlew lintDebug`
+  - build: `JAVA_HOME="/c/Program Files/Android/Android Studio/jbr" ./gradlew assembleDebug`
+  - baseline (2026-10-15, commit 5b72189): pytest tanpa rapidocr 757 lulus (5 deselected); pytest lengkap 762 lulus; tes unit Android 68 lulus (0 gagal, 0 dilewati); lint 0 error, 22 warning; build berhasil
+- **Resource berat**:
+  - Gradle (build, test, lint): satu per satu, tidak pernah paralel;
+  - server (port 8000, RAM tambahan sekitar 1,5 GB untuk pencarian e5);
+  - pytest dengan marker `rapidocr`;
+  - panggilan API LLM sungguhan (Groq/Gemini, termasuk alat di `server/alat/`): dibatasi per tugas, batasnya ditentukan di prompt tugas, dengan jeda minimal 8 detik antarpanggilan;
+  - HP lewat adb: hanya tersedia setelah pemilik menyatakan HP sudah tersambung.
+- **Path terlarang**:
+  - dilarang dibaca dan diubah: `server/.env`;
+  - hanya boleh dibaca, tidak boleh diubah atau dihapus: `server/data_lokal/`, `_referensi/`; pengecualian: berkas BARU boleh ditambahkan di `server/data_lokal/uji_hp/tahap6/` (dan subfolder `uji_hp/` lain untuk tahap berikutnya);
+  - tidak boleh diubah: `server/.venv*/`, `local.properties`, `build/`, `app/build/`.
+- **Install/unduh**: dilarang tanpa izin
+- **Branch**:
+  - default: main
+  - prefix run: tidak ada. Tanpa branch run dan tanpa worktree; semua agent bekerja langsung di working tree pada `main`. Hanya pemilik yang menjalankan perintah git yang mengubah repo (commit dilakukan pemilik); agent hanya boleh `git status`, `git diff`, dan perintah baca lainnya.
+- **State**:
+  - path: .orkestrasi/
+  - commit: tidak
+- **Paralel maksimal**: 3 (Gradle tetap satu per satu)

@@ -31,3 +31,6 @@ __pycache__/
 # Salinan repositori referensi (tidak ikut build)
 /_referensi/
 /.idea/
+
+# State /orkestrasi (lokal, tidak masuk repo)
+/.orkestrasi/
