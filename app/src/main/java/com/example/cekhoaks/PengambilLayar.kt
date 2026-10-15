@@ -12,6 +12,7 @@ import android.media.projection.MediaProjection
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
+import android.os.SystemClock
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.Display
@@ -21,8 +22,9 @@ import androidx.core.graphics.createBitmap
  * Menyimpan satu sesi rekam layar selama tombol cek aktif dan menghasilkan Bitmap layar penuh.
  *
  * Cara kerjanya: MediaProjection "menyalin" layar HP ke sebuah layar virtual (VirtualDisplay).
- * Isi layar virtual itu dikirim ke ImageReader sebagai rangkaian frame. Kelas ini selalu
- * memegang satu frame terbaru, lalu mengubahnya menjadi Bitmap saat [ambil] dipanggil.
+ * Isi layar virtual itu dikirim ke ImageReader sebagai rangkaian frame, tetapi hanya saat isi
+ * layar berubah. Frame baru disimpan setelah [ambil] dipanggil, dan pemilihannya diatur oleh
+ * [PemilihFrame]. Di luar itu, frame yang masuk langsung ditutup.
  *
  * VirtualDisplay dan ImageReader dibuat satu kali saja. Sejak Android 14, createVirtualDisplay
  * tidak boleh dipanggil lebih dari sekali pada MediaProjection yang sama, jadi saat layar
@@ -46,11 +48,13 @@ class PengambilLayar(
     private val threadTangkap = HandlerThread("CekHoaksTangkap").apply { start() }
     private val handlerTangkap = Handler(threadTangkap.looper)
 
-    // Setelah mulai(), empat nilai ini hanya diakses dari threadTangkap.
+    // Setelah mulai(), nilai-nilai ini hanya diakses dari threadTangkap.
     private var virtualDisplay: VirtualDisplay? = null
     private var imageReader: ImageReader? = null
-    private var gambarTerakhir: Image? = null
     private var ukuran: Ukuran? = null
+    private val pemilih = PemilihFrame<Image>(jam = { SystemClock.uptimeMillis() })
+    private var onSelesaiTertunda: ((Bitmap?) -> Unit)? = null
+    private val periksaTertunda = Runnable { jalankan(pemilih.periksa()) }
 
     @Volatile
     private var berhenti = false
@@ -65,15 +69,17 @@ class PengambilLayar(
     }
 
     private val pendengarFrame = ImageReader.OnImageAvailableListener { reader ->
-        // Frame lama ditutup lebih dulu. ImageReader hanya punya beberapa slot buffer, dan
-        // frame yang tidak ditutup membuat frame baru tidak bisa masuk.
-        gambarTerakhir?.close()
-        gambarTerakhir = try {
+        // acquireLatestImage mengambil semua frame yang antre sekaligus. Pendengar ini bisa
+        // berjalan lagi untuk frame yang sudah ikut terambil, dan saat itu hasilnya null.
+        // ImageReader hanya punya beberapa slot buffer, jadi setiap frame tetap harus diambil
+        // lalu ditutup; PemilihFrame yang memutuskan frame mana yang disimpan.
+        val baru = try {
             reader.acquireLatestImage()
         } catch (e: IllegalStateException) {
             // ImageReader sudah ditutup (misalnya tepat saat layar diputar).
             null
         }
+        pemilih.frameMasuk(baru)?.let(::jalankan)
     }
 
     /** Memulai layar virtual. Dipanggil sekali dari thread utama. Mengembalikan false jika gagal. */
@@ -107,23 +113,73 @@ class PengambilLayar(
     }
 
     /**
-     * Mengubah frame terbaru menjadi Bitmap. [onSelesai] dipanggil di thread utama dengan
-     * Bitmap hasilnya, atau null jika belum ada frame atau konversi gagal.
+     * Mengambil layar sebagai Bitmap. Dipanggil tepat setelah tombol cek disembunyikan, karena
+     * hanya frame yang digambar setelah itu yang dipakai. [onSelesai] dipanggil di thread utama
+     * dengan Bitmap hasilnya, atau null jika tidak ada frame atau konversi gagal.
      */
     fun ambil(onSelesai: (Bitmap?) -> Unit) {
         handlerTangkap.post {
-            val gambar = gambarTerakhir
-            gambarTerakhir = null
-            val bitmap = try {
-                gambar?.let(::keBitmap)
-            } catch (e: RuntimeException) {
-                Log.e(TAG, "Gagal mengubah frame menjadi Bitmap", e)
-                null
-            } finally {
-                gambar?.close()
-            }
-            handlerUtama.post { if (!berhenti) onSelesai(bitmap) }
+            onSelesaiTertunda = onSelesai
+            jalankan(pemilih.mulai())
         }
+    }
+
+    /** Menjalankan keputusan PemilihFrame. Hanya dipanggil dari threadTangkap. */
+    private fun jalankan(keputusan: PemilihFrame.Keputusan<Image>) {
+        handlerTangkap.removeCallbacks(periksaTertunda)
+        when (keputusan) {
+            is PemilihFrame.Keputusan.PeriksaLagi ->
+                handlerTangkap.postDelayed(periksaTertunda, keputusan.setelahMs)
+            is PemilihFrame.Keputusan.PaksaFrameBaru -> {
+                Log.d(TAG, "Belum ada frame setelah tombol disembunyikan, memaksa frame baru")
+                paksaFrameBaru()
+                handlerTangkap.postDelayed(periksaTertunda, keputusan.setelahMs)
+            }
+            is PemilihFrame.Keputusan.Pakai -> {
+                catatWaktu("Frame dipakai", keputusan.info)
+                val gambar = keputusan.frame
+                val bitmap = try {
+                    keBitmap(gambar)
+                } catch (e: RuntimeException) {
+                    Log.e(TAG, "Gagal mengubah frame menjadi Bitmap", e)
+                    null
+                } finally {
+                    gambar.close()
+                }
+                selesaikan(bitmap)
+            }
+            is PemilihFrame.Keputusan.Gagal -> {
+                catatWaktu("Tidak ada frame", keputusan.info)
+                selesaikan(null)
+            }
+            PemilihFrame.Keputusan.TidakMenunggu -> Unit
+        }
+    }
+
+    private fun selesaikan(bitmap: Bitmap?) {
+        val onSelesai = onSelesaiTertunda
+        onSelesaiTertunda = null
+        handlerUtama.post { if (!berhenti) onSelesai?.invoke(bitmap) }
+    }
+
+    // Hanya waktu dan jumlah frame, tanpa isi gambar.
+    private fun catatWaktu(status: String, info: PemilihFrame.InfoFrame) {
+        Log.d(
+            TAG,
+            "$status: tiba ${info.tibaMs ?: "-"} ms, diputuskan ${info.selesaiMs} ms setelah tombol " +
+                "disembunyikan, ${info.jumlahFrame} frame masuk, cadangan ${if (info.cadanganDipakai) "dipakai" else "tidak"}",
+        )
+    }
+
+    /**
+     * Cadangan saat layar diam dan tidak ada frame yang datang. Melepas lalu memasang lagi surface
+     * tujuan membuat sistem menggambar ulang isi layar virtual ke surface itu.
+     */
+    private fun paksaFrameBaru() {
+        val display = virtualDisplay ?: return
+        val surface = imageReader?.surface ?: return
+        display.surface = null
+        display.surface = surface
     }
 
     /** Menyesuaikan ukuran layar virtual dengan ukuran layar HP saat ini, misalnya setelah diputar. */
@@ -139,8 +195,11 @@ class PengambilLayar(
             display.resize(ukuranBaru.lebar, ukuranBaru.tinggi, ukuranBaru.dpi)
             display.surface = readerBaru.surface
 
-            gambarTerakhir?.close()
-            gambarTerakhir = null
+            // Pengambilan yang sedang menunggu dibatalkan; frame dari ukuran lama tidak dipakai.
+            if (pemilih.batalkan()) {
+                handlerTangkap.removeCallbacks(periksaTertunda)
+                selesaikan(null)
+            }
             readerLama?.setOnImageAvailableListener(null, null)
             readerLama?.close()
             imageReader = readerBaru
@@ -159,8 +218,9 @@ class PengambilLayar(
         handlerTangkap.post {
             virtualDisplay?.release()
             virtualDisplay = null
-            gambarTerakhir?.close()
-            gambarTerakhir = null
+            handlerTangkap.removeCallbacks(periksaTertunda)
+            pemilih.batalkan()
+            onSelesaiTertunda = null
             imageReader?.setOnImageAvailableListener(null, null)
             imageReader?.close()
             imageReader = null

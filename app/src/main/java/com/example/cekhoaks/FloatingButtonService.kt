@@ -311,13 +311,11 @@ class FloatingButtonService : Service() {
         }
         status = Status.MENGAMBIL
 
-        // Tombol dan kartu hasil sebelumnya disingkirkan dulu agar tidak ikut tertangkap. Jeda
-        // memberi waktu sistem menggambar ulang layar tanpa keduanya sebelum frame diambil.
+        // Tombol dan kartu hasil sebelumnya disingkirkan dulu agar tidak ikut tertangkap.
+        // PengambilLayar hanya memakai frame yang digambar setelah keduanya hilang.
         tutupKartu()
         view.visibility = View.INVISIBLE
-        handlerUtama.postDelayed({
-            pengambilAktif.ambil(::selesaiMengambil)
-        }, JEDA_SEMBUNYI_MS)
+        pengambilAktif.ambil(::selesaiMengambil)
     }
 
     private fun selesaiMengambil(bitmap: Bitmap?) {
@@ -512,7 +510,6 @@ class FloatingButtonService : Service() {
         private const val EXTRA_KODE_HASIL = "com.example.cekhoaks.extra.KODE_HASIL"
         private const val EXTRA_DATA_HASIL = "com.example.cekhoaks.extra.DATA_HASIL"
         private const val POSISI_VERTIKAL = 0.4f
-        private const val JEDA_SEMBUNYI_MS = 150L
 
         private val _berjalan = MutableStateFlow(false)
 
