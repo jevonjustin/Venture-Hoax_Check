@@ -8,8 +8,8 @@ Rancangan lengkap ada di `docs/RANCANGAN_PROYEK.md`. Baca dokumen itu sebelum me
 
 ## Status tahap
 
-- Tahap aktif: **Tahap 5 berjalan (Sesi 5.1–5.5 selesai, Sesi 5.6 belum dimulai)**
-- Tahap selesai: Tahap 1 (tombol mengambang overlay), Tahap 2 (tombol bisa digeser, ketukan mengambil screenshot layar penuh sebagai Bitmap), Tahap 3 (layar pilih area, menghasilkan Bitmap potongan di memori; mode navigasi gestur belum diuji), Tahap 4 (server FastAPI dummy, kartu status, uji koneksi USB/hotspot/Wi-Fi rumah; Wi-Fi kampus dan mode navigasi gestur belum diuji), Tahap 5, Sesi 5.1–5.5: kerangka pipeline server, RapidOCR, database cek fakta, pengukuran API LLM, pembersih teks UI, detektor ciri, template, klaim; /analisis memakai pipeline sungguhan (pencarian e5, LLM Groq dengan cadangan Gemini, tingkat buatan sendiri); ambang final dan evaluasi data berlabel di Sesi 5.6
+- Tahap aktif: **Sesi 6.1 (penyempurnaan teks perbandingan dan istilah), lalu Sesi 5.6**
+- Tahap selesai: Tahap 1 (tombol mengambang overlay), Tahap 2 (tombol bisa digeser, ketukan mengambil screenshot layar penuh sebagai Bitmap), Tahap 3 (layar pilih area, menghasilkan Bitmap potongan di memori; mode navigasi gestur belum diuji), Tahap 4 (server FastAPI dummy, kartu status, uji koneksi USB/hotspot/Wi-Fi rumah; Wi-Fi kampus dan mode navigasi gestur belum diuji), Tahap 5, Sesi 5.1–5.5: kerangka pipeline server, RapidOCR, database cek fakta, pengukuran API LLM, pembersih teks UI, detektor ciri, template, klaim; /analisis memakai pipeline sungguhan (pencarian e5, LLM Groq dengan cadangan Gemini, tingkat buatan sendiri); ambang final dan evaluasi data berlabel di Sesi 5.6, Tahap 6 (kartu hasil lengkap, keadaan khusus, onboarding privasi, fixture debug; teruji HP tema gelap dan terang)
 
 Perbarui bagian ini setiap kali developer menyatakan sebuah tahap selesai.
 
@@ -68,6 +68,7 @@ Proyek open source di `docs/REFERENSI.md` dipakai sebagai bahan belajar dan sumb
   - pytest dengan marker `rapidocr`;
   - panggilan API LLM sungguhan (Groq/Gemini, termasuk alat di `server/alat/`): dibatasi per tugas, batasnya ditentukan di prompt tugas, dengan jeda minimal 8 detik antarpanggilan;
   - HP lewat adb: hanya tersedia setelah pemilik menyatakan HP sudah tersambung.
+  - output adb yang bisa memuat data aplikasi lain (`dumpsys notification`, `dumpsys activity`, `logcat`, `uiautomator dump` di luar aplikasi CekHoaks) wajib disaring ke `com.example.cekhoaks` sebelum ditampilkan, misalnya dengan `grep`; screencap panel notifikasi dipotong ke notifikasi CekHoaks saja.
 - **Path terlarang**:
   - dilarang dibaca dan diubah: `server/.env`;
   - hanya boleh dibaca, tidak boleh diubah atau dihapus: `server/data_lokal/`, `_referensi/`; pengecualian: berkas BARU boleh ditambahkan di `server/data_lokal/uji_hp/tahap6/` (dan subfolder `uji_hp/` lain untuk tahap berikutnya);
