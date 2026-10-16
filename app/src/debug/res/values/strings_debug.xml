@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Teks alat uji fixture. Sengaja dipisah dari main/res/values/strings.xml supaya tidak ikut
+    ke build release (alat ini hanya ada di debug).
+-->
+<resources>
+    <string name="fixture_judul">Fixture tampilan</string>
+    <string name="fixture_petunjuk">Ketuk salah satu nama untuk menampilkan lembar hasil atau galat tanpa server.</string>
+    <string name="fixture_izin_belum">Izin tampil di atas aplikasi lain belum diberikan. Berikan izin lalu ketuk fixture lagi.</string>
+    <string name="fixture_tidak_ada">Fixture tidak ditemukan: %1$s</string>
+    <string name="fixture_gagal_baca">Fixture gagal dibaca: %1$s</string>
+</resources>

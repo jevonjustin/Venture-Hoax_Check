@@ -87,6 +87,102 @@ class KontrakApiTest {
         assertNull(jsonApi.decodeFromString(HasilAnalisis.serializer(), tanpaKlaim).klaimUtama)
     }
 
+    // Contoh kontrak 0.5 dengan field tambahan tak dikenal di level atas dan di dalam objek bersarang.
+    private val contohKontrak05 = """
+        {
+          "id_permintaan": "abc",
+          "tingkat": "hati_hati",
+          "klaim_utama": null,
+          "ciri": [
+            {
+              "id": "ciri_dari_masa_depan",
+              "nama": "Ciri Baru",
+              "bukti": ["bukti satu"],
+              "penjelasan": "Penjelasan.",
+              "keyakinan": "sedang",
+              "field_ciri_baru": {"a": 1}
+            }
+          ],
+          "cek_fakta": [
+            {
+              "judul": "Judul lama",
+              "sumber": "TurnBackHoax",
+              "url": "https://turnbackhoax.id/lama",
+              "skor_kemiripan": 0.6,
+              "label": "label_baru",
+              "tanggal": null,
+              "url_format_lama": true,
+              "field_artikel_baru": [1, 2]
+            }
+          ],
+          "teks_terbaca": "bukti satu",
+          "durasi_ms": 10,
+          "pemeriksaan_terbatas": ["cek_fakta", "ai"],
+          "field_level_atas": "x"
+        }
+    """.trimIndent()
+
+    private fun urai(json: String) = jsonApi.decodeFromString(HasilAnalisis.serializer(), json)
+
+    @Test
+    fun kontrak05DenganFieldTambahanDiTiapLevel() {
+        val hasil = urai(contohKontrak05)
+        assertEquals(Tingkat.HATI_HATI, hasil.tingkat)
+        assertEquals("ciri_dari_masa_depan", hasil.ciri.single().id)
+        assertEquals(listOf("cek_fakta", "ai"), hasil.pemeriksaanTerbatas)
+        assertEquals(true, hasil.cekFakta.single().urlFormatLama)
+        assertNull(hasil.cekFakta.single().tanggal)
+        assertEquals("label_baru", hasil.cekFakta.single().label)
+    }
+
+    @Test
+    fun cekFaktaKosong() {
+        val json = contohKuat.replace(Regex("\"cek_fakta\": \\[.*?\\],\\s*\"teks_terbaca\"", RegexOption.DOT_MATCHES_ALL), "\"cek_fakta\": [], \"teks_terbaca\"")
+        assertEquals(emptyList<ArtikelCekFakta>(), urai(json).cekFakta)
+    }
+
+    @Test
+    fun klaimUtamaTidakAdaSamaDenganNull() {
+        val tanpaField = contohKuat.replace(Regex("\"klaim_utama\": \".*?\",\\s*"), "")
+        assertNull(urai(tanpaField).klaimUtama)
+    }
+
+    @Test
+    fun defaultUntukFieldKontrak05YangTidakAda() {
+        val hasil = urai(contohKuat)
+        assertEquals(emptyList<String>(), hasil.pemeriksaanTerbatas)
+        assertEquals(false, hasil.cekFakta[0].urlFormatLama)
+    }
+
+    @Test
+    fun tingkatTakDikenalMenjadiCadangan() {
+        val baru = contohKuat.replace("\"kuat\"", "\"sangat_kuat\"")
+        assertEquals(Tingkat.TIDAK_DIKENAL, urai(baru).tingkat)
+        val kosong = contohKuat.replace("\"kuat\"", "\"\"")
+        assertEquals(Tingkat.TIDAK_DIKENAL, urai(kosong).tingkat)
+        // Huruf besar bukan nilai kontrak, jadi juga cadangan.
+        assertEquals(Tingkat.TIDAK_DIKENAL, urai(contohKuat.replace("\"kuat\"", "\"KUAT\"")).tingkat)
+    }
+
+    @Test
+    fun tingkatYangDikenalTidakJatuhKeCadangan() {
+        for (t in listOf(Tingkat.KUAT, Tingkat.HATI_HATI, Tingkat.TIDAK_DITEMUKAN)) {
+            assertEquals(t, urai(contohKuat.replace("\"kuat\"", "\"${t.kode}\"")).tingkat)
+        }
+    }
+
+    @Test
+    fun tingkatDitulisKembaliSebagaiKode() {
+        assertEquals("\"hati_hati\"", jsonApi.encodeToString(Tingkat.serializer(), Tingkat.HATI_HATI))
+    }
+
+    @Test
+    fun fieldWajibKontrakTetapWajib() {
+        val tanpaCiri = contohKuat.replace("\"ciri\"", "\"ciri_x\"")
+        val galat = runCatching { urai(tanpaCiri) }.exceptionOrNull()
+        assertEquals(true, galat is kotlinx.serialization.SerializationException)
+    }
+
     @Test
     fun responsGalatTerbaca() {
         val galat = jsonApi.decodeFromString(

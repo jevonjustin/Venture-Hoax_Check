@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Opsi penilaian: terpilih berlatar navy lembut dengan garis navy -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/navy_lembut" />
+            <stroke
+                android:width="2dp"
+                android:color="@color/navy" />
+            <corners android:radius="16dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/white" />
+            <stroke
+                android:width="2dp"
+                android:color="@color/garis_opsi" />
+            <corners android:radius="16dp" />
+        </shape>
+    </item>
+</selector>

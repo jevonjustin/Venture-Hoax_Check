@@ -1,0 +1,38 @@
+{
+  "id_permintaan": "fx-hati-0001",
+  "tingkat": "hati_hati",
+  "klaim_utama": "Obat herbal tertentu diklaim menyembuhkan semua penyakit dalam tiga hari.",
+  "ciri": [
+    {
+      "id": "sumber_tidak_jelas",
+      "nama": "Sumber tidak jelas",
+      "bukti": [
+        "Menurut orang dalam"
+      ],
+      "penjelasan": "Pesan mengutip pihak yang tidak disebutkan identitasnya sehingga tidak bisa dicek.",
+      "keyakinan": "sedang"
+    },
+    {
+      "id": "ajakan_menyebarkan",
+      "nama": "Ajakan menyebarkan",
+      "bukti": [
+        "Bagikan sebelum dihapus"
+      ],
+      "penjelasan": "Pesan mendesak penerimanya untuk meneruskan ke banyak orang tanpa memeriksa kebenarannya.",
+      "keyakinan": "sedang"
+    },
+    {
+      "id": "judul_clickbait",
+      "nama": "Judul clickbait",
+      "bukti": [
+        "bisa menyembuhkan semua penyakit dalam tiga hari"
+      ],
+      "penjelasan": "Judul dibuat menggoda tetapi tidak menjelaskan isi sebenarnya.",
+      "keyakinan": "sedang"
+    }
+  ],
+  "cek_fakta": [],
+  "teks_terbaca": "Waspada! Katanya obat herbal ini bisa menyembuhkan semua penyakit dalam tiga hari. Menurut orang dalam, dokter sengaja menyembunyikannya. Bagikan sebelum dihapus!",
+  "durasi_ms": 4200,
+  "pemeriksaan_terbatas": []
+}

@@ -1,0 +1,39 @@
+{
+  "id_permintaan": "fx-urllama-0001",
+  "tingkat": "kuat",
+  "klaim_utama": "Vaksin tertentu disebut mengandung chip pelacak.",
+  "ciri": [
+    {
+      "id": "pernah_dibantah",
+      "nama": "Pernah dibantah",
+      "bukti": [
+        "mengandung chip pelacak"
+      ],
+      "penjelasan": "Klaim serupa pernah dibantah oleh artikel cek fakta yang tercantum di bawah.",
+      "keyakinan": "tinggi"
+    }
+  ],
+  "cek_fakta": [
+    {
+      "judul": "Contoh & Fakta: \"Chip pelacak\" di vaksin? Ini penjelasannya",
+      "sumber": "Contoh Cek Fakta",
+      "url": "https://example.com/lama/index.php?id=123&ref=x",
+      "skor_kemiripan": 0.88,
+      "label": "salah",
+      "tanggal": "2024-03-09",
+      "url_format_lama": true
+    },
+    {
+      "judul": "Apa benar vaksin berisi chip? 'Tidak', kata ahli & peneliti",
+      "sumber": "Contoh Klarifikasi",
+      "url": "",
+      "skor_kemiripan": 0.72,
+      "label": "klarifikasi",
+      "tanggal": "2024-03-11",
+      "url_format_lama": true
+    }
+  ],
+  "teks_terbaca": "Vaksin ini mengandung chip pelacak yang dipasang pemerintah.",
+  "durasi_ms": 4200,
+  "pemeriksaan_terbatas": []
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tombol sekunder: latar putih, garis dan teks navy -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/chip_bukti">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/white" />
+            <stroke
+                android:width="1.5dp"
+                android:color="@color/navy" />
+            <corners android:radius="28dp" />
+        </shape>
+    </item>
+</ripple>

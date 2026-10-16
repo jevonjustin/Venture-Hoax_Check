@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Satu artikel cek fakta: pil label, judul, sumber dan tanggal, lalu tombol atau catatan tautan -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="14dp"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/artikel_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_pil_dasar"
+        android:letterSpacing="0.05"
+        android:paddingStart="12dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="4dp"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/artikel_judul"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:lineSpacingMultiplier="1.1"
+        android:textColor="@color/teks_judul"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/artikel_sumber"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/teks_redup"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/artikel_catatan"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="@string/hasil_artikel_tautan_mati"
+        android:textColor="@color/teks_redup"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/artikel_tombol"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_tombol_garis"
+        android:minHeight="@dimen/lembar_tombol_sekunder"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:textColor="@color/navy"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+</LinearLayout>

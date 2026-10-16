@@ -24,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -83,7 +84,7 @@ fun BagianPengaturanServer(
                     onClick = onUji,
                     enabled = statusUji != StatusUji.Menguji,
                     modifier = Modifier.weight(1f).heightIn(min = 52.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.utama)),
+                    colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.navy), contentColor = Color.White),
                 ) {
                     Text(stringResource(R.string.server_tombol_uji))
                 }
@@ -126,7 +127,7 @@ private fun HasilUji(statusUji: StatusUji) {
             CircularProgressIndicator(
                 modifier = Modifier.size(18.dp),
                 strokeWidth = 2.dp,
-                color = colorResource(R.color.utama),
+                color = MaterialTheme.colorScheme.primary,
             )
             Text(stringResource(R.string.server_menguji), style = MaterialTheme.typography.bodyMedium)
         }
@@ -134,7 +135,7 @@ private fun HasilUji(statusUji: StatusUji) {
             text = stringResource(R.string.server_tersambung, statusUji.versi),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
-            color = colorResource(R.color.utama),
+            color = MaterialTheme.colorScheme.primary,
         )
         is StatusUji.Gagal -> Text(
             text = stringResource(statusUji.pesan),

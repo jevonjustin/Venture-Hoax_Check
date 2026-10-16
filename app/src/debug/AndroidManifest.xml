@@ -5,5 +5,13 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <application android:networkSecurityConfig="@xml/network_security_config" />
+    <application android:networkSecurityConfig="@xml/network_security_config">
+        <!-- Alat uji tampilan tanpa server. Diekspor agar bisa dijalankan lewat adb (am start). -->
+        <activity
+            android:name=".AktivitasFixture"
+            android:exported="true"
+            android:label="@string/fixture_judul"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.CekHoaks" />
+    </application>
 </manifest>

@@ -1,29 +1,22 @@
 package com.example.cekhoaks
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.ContextThemeWrapper
 import android.view.Display
-import android.view.Gravity
-import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.FrameLayout
-import android.window.OnBackInvokedCallback
-import android.window.OnBackInvokedDispatcher
-import androidx.annotation.RequiresApi
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.doOnPreDraw
 
 /**
  * Jendela layar penuh tempat pengguna memilih bagian layar yang ingin dicek.
@@ -88,7 +81,7 @@ class OverlayPilihArea(
         akarBaru.addView(kilatan, FrameLayout.LayoutParams(MATCH, MATCH))
 
         try {
-            windowManager.addView(akarBaru, buatLayoutParams())
+            windowManager.addView(akarBaru, buatParamsLayarPenuh())
         } catch (e: RuntimeException) {
             Log.e(TAG, "Gagal memasang layar pilih area", e)
             selesai = true
@@ -100,10 +93,19 @@ class OverlayPilihArea(
         panel = panelBaru
         displayManager.registerDisplayListener(pemantauLayar, Handler(Looper.getMainLooper()))
 
-        kilatan.animate().alpha(0f).setDuration(DURASI_ANIMASI_MS)
-            .withEndAction { kilatan.visibility = View.GONE }
-        panelBaru.alpha = 0f
-        panelBaru.animate().alpha(1f).setStartDelay(DURASI_ANIMASI_MS).setDuration(DURASI_ANIMASI_MS)
+        // Panel langsung tampil penuh di bawah kilatan; hanya kilatan yang dianimasikan. Keadaan
+        // akhir (kilatan hilang) tidak bergantung pada animasi: postDelayed di bawah memaksanya
+        // walau animasi tidak jalan, dibatalkan, atau skala animasi sistem 0. Animasi dimulai
+        // pada frame pertama jendela karena sebelum itu view belum terpasang.
+        val hilangkanKilatan = Runnable {
+            kilatan.animate().cancel()
+            kilatan.alpha = 0f
+            kilatan.visibility = View.GONE
+        }
+        akarBaru.doOnPreDraw {
+            kilatan.animate().alpha(0f).setDuration(DURASI_ANIMASI_MS).withEndAction(hilangkanKilatan)
+        }
+        akarBaru.postDelayed(hilangkanKilatan, DURASI_ANIMASI_MS * 3)
         return true
     }
 
@@ -188,84 +190,7 @@ class OverlayPilihArea(
         }
     }
 
-    private fun buatLayoutParams(): WindowManager.LayoutParams =
-        WindowManager.LayoutParams(
-            MATCH,
-            MATCH,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            // LAYOUT_IN_SCREEN + LAYOUT_NO_LIMITS: jendela menutupi seluruh layar fisik, termasuk
-            // di bawah status bar dan navigation bar, agar gambar beku sejajar dengan layar asli.
-            // Tanpa FLAG_NOT_FOCUSABLE, jendela ini menerima fokus sehingga tombol Back sampai
-            // ke sini. Fokus kembali ke aplikasi di bawahnya begitu jendela dilepas.
-            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
-                WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
-            PixelFormat.TRANSLUCENT,
-        ).apply {
-            gravity = Gravity.TOP or Gravity.START
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                // Izinkan jendela menutupi area cutout (poni kamera). Mode ALWAYS baru ada di Android 11.
-                layoutInDisplayCutoutMode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
-                } else {
-                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-                }
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                // Sejak Android 11, jendela otomatis dijauhkan dari status bar dan navigation bar.
-                // Nilai 0 mematikan perilaku itu agar jendela benar-benar selebar layar fisik.
-                fitInsetsTypes = 0
-            }
-        }
-
     private fun rotasiLayar(): Int = displayManager.getDisplay(Display.DEFAULT_DISPLAY)?.rotation ?: 0
-
-    /** Akar tampilan jendela; menerjemahkan tombol Back menjadi Batal. */
-    @SuppressLint("ViewConstructor")
-    private class AkarOverlay(context: Context, private val onKembali: () -> Unit) : FrameLayout(context) {
-
-        // Bertipe Any agar kelas OnBackInvokedCallback (Android 13+) tidak dimuat di versi lama.
-        private var callbackKembali: Any? = null
-
-        // Android 12 ke bawah (dan 13+ yang belum memakai "predictive back") mengirim Back
-        // sebagai KeyEvent biasa.
-        override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-            if (event.keyCode == KeyEvent.KEYCODE_BACK) {
-                if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) onKembali()
-                return true
-            }
-            return super.dispatchKeyEvent(event)
-        }
-
-        override fun onAttachedToWindow() {
-            super.onAttachedToWindow()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) daftarkanKembali()
-        }
-
-        override fun onDetachedFromWindow() {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) lepaskanKembali()
-            super.onDetachedFromWindow()
-        }
-
-        // Aplikasi dengan targetSdk 36 di Android 16 tidak lagi menerima Back sebagai KeyEvent,
-        // melainkan lewat OnBackInvokedCallback yang didaftarkan ke jendela.
-        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-        private fun daftarkanKembali() {
-            val callback = OnBackInvokedCallback { onKembali() }
-            findOnBackInvokedDispatcher()?.registerOnBackInvokedCallback(
-                OnBackInvokedDispatcher.PRIORITY_DEFAULT,
-                callback,
-            )
-            callbackKembali = callback
-        }
-
-        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-        private fun lepaskanKembali() {
-            val callback = callbackKembali as? OnBackInvokedCallback ?: return
-            findOnBackInvokedDispatcher()?.unregisterOnBackInvokedCallback(callback)
-            callbackKembali = null
-        }
-    }
 
     companion object {
         private const val TAG = "CekHoaks"

@@ -1,0 +1,13 @@
+{
+  "id_permintaan": "fx-batas-0001",
+  "tingkat": "tidak_ditemukan",
+  "klaim_utama": null,
+  "ciri": [],
+  "cek_fakta": [],
+  "teks_terbaca": "Harga cabai disebut naik tiga kali lipat besok pagi. Katanya pedagang pasar sudah sepakat.",
+  "durasi_ms": 4200,
+  "pemeriksaan_terbatas": [
+    "cek_fakta",
+    "ai"
+  ]
+}

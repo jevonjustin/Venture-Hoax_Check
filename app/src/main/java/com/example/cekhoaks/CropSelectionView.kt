@@ -80,7 +80,7 @@ class CropSelectionView(
     private val catPeganganTepi = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 2.5f * kepadatan
-        color = ContextCompat.getColor(context, R.color.utama)
+        color = ContextCompat.getColor(context, R.color.navy)
     }
     private val catPeganganSisi = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -130,7 +130,7 @@ class CropSelectionView(
         lubang.addRoundRect(kotakSeleksi, sudutKotak, sudutKotak, Path.Direction.CW)
         canvas.drawPath(lubang, catGelap)
 
-        // Cincin hijau tipis di luar kotak, lalu garis putih di dalam tepi kotak (seperti prototipe).
+        // Cincin hijau tipis di luar kotak, lalu garis putih di dalam tepi kotak (rujukan: docs/prototype/prototype.html).
         val setengah = tebalGaris / 2f
         kotakBantu.set(kotakSeleksi)
         kotakBantu.inset(-setengah, -setengah)

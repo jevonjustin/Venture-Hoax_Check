@@ -1,0 +1,29 @@
+{
+  "id_permintaan": "fx-rujukan-0001",
+  "tingkat": "tidak_ditemukan",
+  "klaim_utama": "Jadwal kereta tambahan saat libur panjang.",
+  "ciri": [],
+  "cek_fakta": [
+    {
+      "judul": "Contoh: Jadwal kereta tambahan libur panjang diumumkan",
+      "sumber": "Contoh Berita",
+      "url": "https://example.com/berita/kereta-tambahan",
+      "skor_kemiripan": 0.83,
+      "label": "benar",
+      "tanggal": "2025-12-20",
+      "url_format_lama": false
+    },
+    {
+      "judul": "Contoh: Panduan membeli tiket kereta libur panjang",
+      "sumber": "Contoh Panduan",
+      "url": "https://example.com/panduan/tiket-kereta",
+      "skor_kemiripan": 0.55,
+      "label": "lainnya",
+      "tanggal": null,
+      "url_format_lama": false
+    }
+  ],
+  "teks_terbaca": "Info: ada kereta tambahan selama libur panjang. Tiket dijual mulai pekan depan lewat aplikasi resmi.",
+  "durasi_ms": 4200,
+  "pemeriksaan_terbatas": []
+}

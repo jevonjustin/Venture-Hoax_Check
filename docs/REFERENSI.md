@@ -47,7 +47,7 @@ Sesi rekam layar dibuka sekali saat tombol diaktifkan dan dipertahankan selama t
 | SnapCrop | MIT (menurut README) | `SelectionView.kt` (enum mode sentuhan: kotak baru, pindah, empat sudut, empat sisi; sudut diperiksa sebelum sisi; batas kotak di dalam view; lapisan gelap di luar seleksi) | Pola diadaptasi, ditulis ulang. Atribusi ada di KDoc `CropSelectionView.kt` | Kotak di SnapCrop digeser secara bertahap per gerakan jari. Di proyek ini posisi dihitung dari posisi awal gestur, dan perhitungannya dipisah ke `GeometriSeleksi.kt` agar bisa diuji. SnapCrop menggambar Bitmap diregangkan ke seluruh view; di proyek ini skalanya seragam dan pemetaan ke piksel Bitmap dihitung eksplisit |
 | ScreenshotTile, ScreenshotApp | GPLv3 | Tidak dibaca untuk tahap ini | Tidak ada | |
 
-Ikon panah empat arah di kotak petunjuk (`ic_geser.xml`) digambar ulang dari prototipe proyek sendiri (`docs/prototype`).
+Ikon panah empat arah di kotak petunjuk (`ic_geser.xml`) digambar ulang dari prototipe proyek sendiri (`docs/prototype/prototype.html`).
 
 Aset pihak ketiga:
 

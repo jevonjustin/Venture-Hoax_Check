@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lingkaran dan tanda seru navy untuk lembar galat -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M12,2a10,10 0 1,0 0,20a10,10 0 1,0 0,-20 M12,7v6 M12,16.6v0.2"
+        android:strokeWidth="2.2"
+        android:strokeColor="@color/navy"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

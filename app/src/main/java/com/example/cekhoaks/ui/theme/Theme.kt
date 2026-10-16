@@ -9,7 +9,10 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
+import com.example.cekhoaks.R
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -36,18 +39,20 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun CekHoaksTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // Warna dinamis (Android 12+) dimatikan agar tampilan seragam di semua HP dan sesuai warna merek.
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
+    val navy = colorResource(R.color.navy)
+    val navyLembut = colorResource(R.color.navy_lembut)
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        darkTheme -> DarkColorScheme.copy(primary = navyLembut, onPrimary = navy)
+        else -> LightColorScheme.copy(primary = navy, onPrimary = Color.White)
     }
 
     MaterialTheme(

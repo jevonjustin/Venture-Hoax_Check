@@ -1,0 +1,29 @@
+{
+  "id_permintaan": "fx-klaim-0001",
+  "tingkat": "hati_hati",
+  "klaim_utama": null,
+  "ciri": [
+    {
+      "id": "kapital_tanda_seru",
+      "nama": "Huruf kapital dan tanda seru berlebihan",
+      "bukti": [
+        "BAGIKAN SEKARANG!!!"
+      ],
+      "penjelasan": "Penulisan dengan huruf kapital dan tanda seru berlebihan sering dipakai untuk menekan emosi pembaca.",
+      "keyakinan": "sedang"
+    },
+    {
+      "id": "ajakan_menyebarkan",
+      "nama": "Ajakan menyebarkan",
+      "bukti": [
+        "teruskan ke semua kontak"
+      ],
+      "penjelasan": "Pesan mendesak penerimanya untuk meneruskan ke banyak orang tanpa memeriksa kebenarannya.",
+      "keyakinan": "sedang"
+    }
+  ],
+  "cek_fakta": [],
+  "teks_terbaca": "BAGIKAN SEKARANG!!! Info penting, teruskan ke semua kontak Anda.",
+  "durasi_ms": 4200,
+  "pemeriksaan_terbatas": []
+}

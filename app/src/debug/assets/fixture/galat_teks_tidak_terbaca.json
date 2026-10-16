@@ -1,0 +1,7 @@
+{
+  "_status_http": 422,
+  "galat": {
+    "kode": "teks_tidak_terbaca",
+    "pesan": "Tidak ada teks yang terbaca dari gambar"
+  }
+}

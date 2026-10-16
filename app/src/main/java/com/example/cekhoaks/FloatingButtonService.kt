@@ -1,5 +1,6 @@
 package com.example.cekhoaks
 
+import android.Manifest
 import android.app.Activity
 import android.app.Notification
 import android.app.NotificationChannel
@@ -8,6 +9,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.content.res.Configuration
 import android.graphics.Bitmap
@@ -16,9 +18,7 @@ import android.hardware.display.DisplayManager
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Build
-import android.os.Handler
 import android.os.IBinder
-import android.os.Looper
 import android.provider.Settings
 import android.util.DisplayMetrics
 import android.util.Log
@@ -30,6 +30,7 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -58,7 +59,6 @@ import kotlinx.coroutines.withContext
 class FloatingButtonService : Service() {
 
     private lateinit var windowManager: WindowManager
-    private val handlerUtama = Handler(Looper.getMainLooper())
 
     private var pengambil: PengambilLayar? = null
     private var tombol: FloatingButtonView? = null
@@ -66,7 +66,15 @@ class FloatingButtonService : Service() {
     private var yTombolSaatDisentuh = 0
     private var status = Status.SIAP
     private var overlayPilih: OverlayPilihArea? = null
-    private var kartu: KartuAnalisis? = null
+
+    // Satu pengecekan = satu alur lembar: penilaian awal, lalu kartu memuat (bila analisis belum
+    // selesai), lalu lembar hasil atau galat. Semua data di bawah hanya hidup di memori selama
+    // alur terbuka dan dibuang di tutupAlur.
+    private var lembarAktif: LembarOverlay? = null
+    private var lembarPenilaian: LembarPenilaian? = null
+    private var luaran: Luaran? = null
+    private var penilaian: Penilaian? = null
+    private var jpegDiMemori: ByteArray? = null
 
     // Lingkup coroutine milik service: semua pekerjaan di dalamnya ikut dibatalkan di onDestroy.
     // Dispatchers.Main berarti kode berjalan di main thread kecuali dipindah dengan withContext.
@@ -132,6 +140,10 @@ class FloatingButtonService : Service() {
             return START_NOT_STICKY
         }
 
+        // Tombol cek aktif lagi, jadi pemberitahuan dan catatan "berhenti" sebelumnya tidak berlaku.
+        getSystemService(NotificationManager::class.java).cancel(ID_NOTIFIKASI_BERHENTI)
+        CatatanBerhenti.hapus(this)
+
         pasangTombol()
         return START_NOT_STICKY
     }
@@ -175,20 +187,23 @@ class FloatingButtonService : Service() {
         }
     }
 
-    /** Pengguna menghentikan perekaman dari panel sistem, atau sistem mengakhiri sesi. */
+    /**
+     * Pengguna menghentikan perekaman dari panel sistem, atau sistem mengakhiri sesi (misalnya HP
+     * dikunci). Tombol cek hilang, jadi pengguna diberi tahu lewat notifikasi dan catatan di layar
+     * utama. Tombol Matikan di notifikasi tidak lewat sini.
+     */
     private fun hentikanDariSistem() {
+        CatatanBerhenti.tandai(this)
+        tampilkanNotifikasiBerhenti()
         bersihkan()
         stopSelf()
     }
 
     /** Aman dipanggil lebih dari sekali. */
     private fun bersihkan() {
-        handlerUtama.removeCallbacksAndMessages(null)
         overlayPilih?.tutup()
         overlayPilih = null
-        pekerjaanKirim?.cancel()
-        pekerjaanKirim = null
-        tutupKartu()
+        tutupAlur()
         lepasTombol()
         pengambil?.hentikan()
         pengambil = null
@@ -304,16 +319,15 @@ class FloatingButtonService : Service() {
         val view = tombol ?: return
         val pengambilAktif = pengambil ?: return
         if (status != Status.SIAP) {
-            // Mencegah ketukan ganda: selama layar diambil, area sedang dipilih, atau potongan
-            // sedang dikirim, ketukan tidak memicu pengambilan baru.
+            // Mencegah ketukan ganda: selama layar diambil, area sedang dipilih, atau alur
+            // pengecekan terbuka, ketukan tidak memicu pengambilan baru.
             Log.d(TAG, "Ketukan diabaikan, status: $status")
             return
         }
         status = Status.MENGAMBIL
 
-        // Tombol dan kartu hasil sebelumnya disingkirkan dulu agar tidak ikut tertangkap.
-        // PengambilLayar hanya memakai frame yang digambar setelah keduanya hilang.
-        tutupKartu()
+        // Tombol disembunyikan dulu agar tidak ikut tertangkap. PengambilLayar hanya memakai
+        // frame yang digambar setelah tombol hilang. Lembar hasil sudah ditutup sebelum sampai sini.
         view.visibility = View.INVISIBLE
         pengambilAktif.ambil(::selesaiMengambil)
     }
@@ -364,69 +378,55 @@ class FloatingButtonService : Service() {
         status = Status.SIAP
     }
 
-    // --- Pengiriman ke server dan kartu status ---
+    // --- Alur pengecekan: lembar penilaian, kartu memuat, lembar hasil atau galat ---
 
     /**
-     * Mengirim potongan ke server sambil menampilkan kartu "sedang menganalisis".
+     * Memulai pengecekan: lembar penilaian tampil segera dan analisis berjalan di latar.
      * [potongan] selalu dibuang (recycle) di sini, termasuk saat dibatalkan atau gagal.
+     * Penilaian awal pengguna, hasil, dan JPEG hanya disimpan di memori service selama alur
+     * ini terbuka; semuanya dibuang di [tutupAlur].
      */
     private fun kirim(potongan: Bitmap) {
-        // Kartu memakai salinan kecil, sehingga potongan asli bisa dibuang segera setelah
+        // Lembar memakai salinan kecil, sehingga potongan asli bisa dibuang segera setelah
         // disandikan tanpa ada view yang masih menggambarnya.
-        val kecil = KartuAnalisis.buatThumbnail(potongan, resources.getDimensionPixelSize(R.dimen.kartu_thumbnail))
-        val kartuBaru = KartuAnalisis(
+        val kecil = LembarPenilaian.buatThumbnail(potongan, resources.getDimensionPixelSize(R.dimen.lembar_thumbnail))
+        val lembar = LembarPenilaian(
             this,
             windowManager,
             kecil,
-            onBatal = ::batalKirim,
-            onTutup = ::tutupKartu,
-            onBukaPengaturan = ::bukaPengaturanServer,
+            onPilih = ::penilaianDipilih,
+            onBatal = ::batalPengecekan,
         )
-        if (!kartuBaru.tampilkan()) {
+        if (!lembar.tampilkan()) {
             potongan.recycle()
             Toast.makeText(this, R.string.kartu_gagal_dibuka, Toast.LENGTH_SHORT).show()
             kembaliSiap()
             return
         }
-        kartu = kartuBaru
-        // Tombol tampil lagi, tetapi ketukannya diabaikan selama status MENGIRIM.
-        tombol?.visibility = View.VISIBLE
-        status = Status.MENGIRIM
+        lembarPenilaian = lembar
+        lembarAktif = lembar
+        luaran = null
+        penilaian = null
+        jpegDiMemori = null
+        // Tombol mengambang tetap tersembunyi selama alur terbuka; muncul lagi di tutupAlur.
+        status = Status.MENGECEK
 
         val urlServer = PengaturanServer.baca(this)
         val pekerjaan = lingkup.launch {
-            try {
-                if (urlServer.isBlank()) {
-                    kartuBaru.tampilkanGalat(JenisGagal.UrlBelumDiatur)
-                    return@launch
-                }
-                // Penyandian JPEG berat, jadi dipindah ke thread latar (Dispatchers.Default).
-                val jpeg = withContext(Dispatchers.Default) { PenyandiJpeg.sandikanLaluBuang(potongan) }
-                if (jpeg == null) {
-                    Log.w(TAG, "Penyandian JPEG gagal")
-                    kartuBaru.tampilkanGalat(R.string.galat_penyandian)
-                    return@launch
-                }
-                Log.i(TAG, "Mengirim JPEG ${jpeg.size} byte ke $urlServer")
-                when (val hasil = KlienApi.bersama.analisis(urlServer, jpeg)) {
-                    is HasilPanggilan.Berhasil -> {
-                        val data = hasil.data
-                        Log.i(TAG, "Hasil ${data.idPermintaan}: ${data.tingkat}, ${data.ciri.size} ciri, ${data.durasiMs} ms")
-                        kartuBaru.tampilkanHasil(data)
-                    }
-                    is HasilPanggilan.Gagal -> {
-                        Log.w(TAG, "Pengecekan gagal: ${hasil.jenis}")
-                        kartuBaru.tampilkanGalat(hasil.jenis)
-                    }
-                }
-            } finally {
-                // Hanya membereskan status milik pengecekan ini. Setelah Batal, pengecekan baru
-                // bisa sudah dimulai dengan kartu lain sebelum blok ini sempat berjalan.
-                if (kartu === kartuBaru) {
-                    pekerjaanKirim = null
-                    if (status == Status.MENGIRIM) status = Status.SIAP
-                }
+            if (urlServer.isBlank()) {
+                selesaiAnalisis(Luaran.Gagal(tampilanGalat(JenisGagal.UrlBelumDiatur)))
+                return@launch
             }
+            // Penyandian JPEG berat, jadi dipindah ke thread latar (Dispatchers.Default).
+            val jpeg = withContext(Dispatchers.Default) { PenyandiJpeg.sandikanLaluBuang(potongan) }
+            if (jpeg == null) {
+                Log.w(TAG, "Penyandian JPEG gagal")
+                selesaiAnalisis(Luaran.Gagal(tampilanGalatPenyandian()))
+                return@launch
+            }
+            // Disimpan di memori (tidak pernah ke disk) agar "Coba Lagi" bisa mengirim ulang.
+            jpegDiMemori = jpeg
+            kirimKeServer(urlServer, jpeg)
         }
         // Dipanggil saat pekerjaan benar-benar selesai, termasuk jika dibatalkan sebelum sempat
         // berjalan. Pekerjaan baru dianggap selesai setelah blok withContext di atas selesai,
@@ -435,28 +435,147 @@ class FloatingButtonService : Service() {
         if (pekerjaan.isActive) pekerjaanKirim = pekerjaan
     }
 
-    /** Tombol Batal di kartu menunggu: memutus permintaan HTTP dan menutup kartu. */
-    private fun batalKirim() {
-        Log.i(TAG, "Pengecekan dibatalkan pengguna")
-        pekerjaanKirim?.cancel()
-        pekerjaanKirim = null
-        tutupKartu()
-        kembaliSiap()
+    private suspend fun kirimKeServer(urlServer: String, jpeg: ByteArray) {
+        Log.i(TAG, "Mengirim JPEG ${jpeg.size} byte ke $urlServer")
+        when (val hasil = KlienApi.bersama.analisis(urlServer, jpeg)) {
+            is HasilPanggilan.Berhasil -> {
+                val data = hasil.data
+                Log.i(TAG, "Hasil ${data.idPermintaan}: ${data.tingkat}, ${data.ciri.size} ciri, ${data.durasiMs} ms")
+                selesaiAnalisis(Luaran.Berhasil(data))
+            }
+            is HasilPanggilan.Gagal -> {
+                Log.w(TAG, "Pengecekan gagal: ${hasil.jenis}")
+                selesaiAnalisis(Luaran.Gagal(tampilanGalat(hasil.jenis)))
+            }
+        }
     }
 
-    private fun tutupKartu() {
-        kartu?.tutup()
-        kartu = null
+    /**
+     * Analisis selesai. Bila pengguna sudah memilih (kartu memuat sedang tampil), hasil langsung
+     * ditampilkan; bila belum, hanya pil status di lembar penilaian yang diperbarui.
+     */
+    private fun selesaiAnalisis(hasil: Luaran) {
+        pekerjaanKirim = null
+        luaran = hasil
+        // JPEG hanya perlu untuk Coba Lagi saat galat; setelah sukses langsung dibuang.
+        if (hasil is Luaran.Berhasil) jpegDiMemori = null
+        if (penilaian != null) {
+            tampilkanLuaran()
+        } else {
+            lembarPenilaian?.aturStatus(
+                if (hasil is Luaran.Berhasil) StatusAnalisis.SELESAI else StatusAnalisis.TERKENDALA,
+            )
+        }
+    }
+
+    private fun penilaianDipilih(pilihan: Penilaian) {
+        penilaian = pilihan
+        // Lembar penilaian ditutup (dan thumbnail-nya dibuang) oleh gantiLembar setelah lembar baru tampil.
+        lembarPenilaian = null
+        if (luaran != null) tampilkanLuaran() else tampilkanMemuat()
+    }
+
+    private fun tampilkanMemuat() {
+        val kartu = KartuMemuat(this, windowManager, onBatal = ::batalPengecekan)
+        gantiLembar(kartu, kartu.tampilkan())
+    }
+
+    private fun tampilkanLuaran() {
+        val hasil = luaran ?: return
+        val pilihan = penilaian ?: Penilaian.DILEWATI
+        when (hasil) {
+            is Luaran.Berhasil -> {
+                val lembar = LembarHasil(this, windowManager, hasil.data, pilihan, onTutup = ::tutupAlur)
+                gantiLembar(lembar, lembar.tampilkan())
+            }
+            is Luaran.Gagal -> {
+                val lembar = LembarGalat(this, windowManager, hasil.tampilan, onAksi = ::aksiGalat, onTutup = ::tutupAlur)
+                gantiLembar(lembar, lembar.tampilkan())
+            }
+        }
+    }
+
+    /**
+     * Menjadikan [lembar] lembar aktif dan menutup lembar sebelumnya sesudah yang baru tampil
+     * (supaya layar tidak sempat kosong). Bila gagal dipasang, seluruh alur ditutup.
+     */
+    private fun gantiLembar(lembar: LembarOverlay, berhasil: Boolean) {
+        if (!berhasil) {
+            Toast.makeText(this, R.string.kartu_gagal_dibuka, Toast.LENGTH_SHORT).show()
+            tutupAlur()
+            return
+        }
+        val lama = lembarAktif
+        lembarAktif = lembar
+        lama?.tutup()
+    }
+
+    private fun aksiGalat(aksi: AksiGalat) {
+        when (aksi) {
+            AksiGalat.PILIH_ULANG -> {
+                // Sama dengan mengetuk tombol cek: alur ditutup, lalu layar diambil lagi.
+                tutupAlur()
+                ambilLayar()
+            }
+            AksiGalat.COBA_LAGI -> ulangiKirim()
+            AksiGalat.BUKA_PENGATURAN -> bukaPengaturanServer()
+        }
+    }
+
+    /** Mengirim ulang JPEG yang sama (tersimpan di memori) sambil menampilkan kartu memuat. */
+    private fun ulangiKirim() {
+        val jpeg = jpegDiMemori
+        if (jpeg == null) {
+            // Tidak ada yang bisa dikirim ulang; pengguna memilih area lagi.
+            tutupAlur()
+            ambilLayar()
+            return
+        }
+        luaran = null
+        tampilkanMemuat()
+        if (lembarAktif == null) return
+        val urlServer = PengaturanServer.baca(this)
+        val pekerjaan = lingkup.launch {
+            if (urlServer.isBlank()) {
+                selesaiAnalisis(Luaran.Gagal(tampilanGalat(JenisGagal.UrlBelumDiatur)))
+            } else {
+                kirimKeServer(urlServer, jpeg)
+            }
+        }
+        if (pekerjaan.isActive) pekerjaanKirim = pekerjaan
+    }
+
+    /** Batal di lembar penilaian atau kartu memuat: memutus permintaan HTTP dan menutup semuanya. */
+    private fun batalPengecekan() {
+        Log.i(TAG, "Pengecekan dibatalkan pengguna")
+        tutupAlur()
+    }
+
+    /**
+     * Menutup seluruh alur (lembar apa pun yang terbuka), membatalkan permintaan yang berjalan,
+     * membuang penilaian, hasil, dan JPEG dari memori, lalu memunculkan tombol mengambang lagi.
+     */
+    private fun tutupAlur() {
+        pekerjaanKirim?.cancel()
+        pekerjaanKirim = null
+        lembarAktif?.tutup()
+        lembarAktif = null
+        lembarPenilaian = null
+        luaran = null
+        penilaian = null
+        jpegDiMemori = null
+        tombol?.visibility = View.VISIBLE
+        status = Status.SIAP
     }
 
     private fun bukaPengaturanServer() {
-        tutupKartu()
-        // Aplikasi yang punya izin tampil di atas aplikasi lain boleh membuka Activity dari service.
+        // Activity dibuka dulu selagi jendela overlay masih tampil (batas start dari latar Android 14+).
         try {
             startActivity(MainActivity.intentPengaturanServer(this).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         } catch (e: RuntimeException) {
             Log.w(TAG, "Gagal membuka pengaturan server", e)
         }
+        tutupAlur()
     }
 
     // --- Notifikasi ---
@@ -469,7 +588,46 @@ class FloatingButtonService : Service() {
         ).apply {
             description = getString(R.string.notif_channel_deskripsi)
         }
-        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(channel)
+        manager.createNotificationChannel(
+            NotificationChannel(
+                ID_CHANNEL_BERHENTI,
+                getString(R.string.berhenti_channel_nama),
+                NotificationManager.IMPORTANCE_DEFAULT,
+            ).apply { description = getString(R.string.berhenti_channel_deskripsi) },
+        )
+    }
+
+    /** Memberi tahu bahwa tombol cek berhenti karena sesi rekam layar diakhiri sistem. */
+    private fun tampilkanNotifikasiBerhenti() {
+        // Android 13 ke atas: tanpa izin notifikasi, pemberitahuan dilewati tanpa suara.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        val bukaAplikasi = PendingIntent.getActivity(
+            this,
+            2,
+            Intent(this, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val isi = getString(R.string.berhenti_notif_isi)
+        val notifikasi = NotificationCompat.Builder(this, ID_CHANNEL_BERHENTI)
+            .setSmallIcon(R.drawable.ic_verified_user)
+            .setContentTitle(getString(R.string.berhenti_notif_judul))
+            .setContentText(isi)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(isi))
+            .setContentIntent(bukaAplikasi)
+            .setAutoCancel(true)
+            .build()
+        try {
+            getSystemService(NotificationManager::class.java).notify(ID_NOTIFIKASI_BERHENTI, notifikasi)
+        } catch (e: RuntimeException) {
+            Log.w(TAG, "Gagal menampilkan notifikasi tombol cek berhenti", e)
+        }
     }
 
     private fun buatNotifikasi(): Notification {
@@ -500,12 +658,21 @@ class FloatingButtonService : Service() {
             .build()
     }
 
-    private enum class Status { SIAP, MENGAMBIL, MEMILIH, MENGIRIM }
+    // MENGECEK: alur lembar pengecekan (penilaian, memuat, hasil atau galat) sedang terbuka.
+    private enum class Status { SIAP, MENGAMBIL, MEMILIH, MENGECEK }
+
+    /** Hasil akhir analisis untuk satu pengecekan: respons server, atau galat yang siap ditampilkan. */
+    private sealed interface Luaran {
+        data class Berhasil(val data: HasilAnalisis) : Luaran
+        data class Gagal(val tampilan: TampilanGalat) : Luaran
+    }
 
     companion object {
         private const val TAG = "CekHoaks"
         private const val ID_CHANNEL = "tombol_cek"
         private const val ID_NOTIFIKASI = 1
+        private const val ID_CHANNEL_BERHENTI = "pemeriksaan_berhenti"
+        private const val ID_NOTIFIKASI_BERHENTI = 2
         private const val ACTION_MATIKAN = "com.example.cekhoaks.action.MATIKAN_TOMBOL_CEK"
         private const val EXTRA_KODE_HASIL = "com.example.cekhoaks.extra.KODE_HASIL"
         private const val EXTRA_DATA_HASIL = "com.example.cekhoaks.extra.DATA_HASIL"

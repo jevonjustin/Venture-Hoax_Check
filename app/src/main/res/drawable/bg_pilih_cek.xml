@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Tombol "Cek Sekarang": latar putih, teks navy (rujukan: docs/prototype/prototype.html) -->
 <ripple xmlns:android="http://schemas.android.com/apk/res/android"
-    android:color="@color/pilih_efek_tekan">
+    android:color="@color/chip_bukti">
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="@color/aksen" />
+            <solid android:color="@color/white" />
             <corners android:radius="14dp" />
         </shape>
     </item>

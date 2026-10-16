@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lingkaran dan huruf i untuk tingkat tidak ditemukan; warna garis diganti lewat tint -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="26dp"
+    android:height="26dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M12,2a10,10 0 1,0 0,20a10,10 0 1,0 0,-20 M12,11v6 M12,7.4v0.2"
+        android:strokeWidth="2.4"
+        android:strokeColor="@color/white"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

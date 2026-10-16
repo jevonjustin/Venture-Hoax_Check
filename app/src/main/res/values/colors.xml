@@ -1,18 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="utama">#FF0F766E</color>
-    <color name="aksen">#FFF97316</color>
-    <!-- Warna utama dengan opacity sekitar 93% (alpha 0xED) -->
+    <!-- Teal tombol mengambang (tidak diubah). Layar pilih area dan semua lembar memakai navy. #0F766E dengan opacity sekitar 93% (alpha 0xED) -->
     <color name="tombol_cek_latar">#ED0F766E</color>
 
-    <!-- Layar pilih area (dari prototipe) -->
+    <!-- Layar pilih area (rujukan: docs/prototype/prototype.html) -->
     <!-- #080F1A dengan opacity 68% (alpha 0xAD) -->
     <color name="pilih_lapisan_gelap">#AD080F1A</color>
     <!-- Cincin hijau muda di luar garis seleksi, opacity 55% -->
@@ -29,20 +21,40 @@
     <color name="pilih_tombol_teks_latar">#990F172A</color>
     <color name="pilih_efek_tekan">#33FFFFFF</color>
 
-    <!-- Teks (rancangan §11) -->
-    <color name="teks_utama">#FF0F172A</color>
-    <color name="teks_sekunder">#FF64748B</color>
+    <!-- Palet Tahap 6: navy dan turunannya diambil dari docs/prototype/prototype.html (#1B3A6B). Satu-satunya sumber warna lembar baru. -->
+    <color name="navy">#FF1B3A6B</color>
+    <color name="navy_lembut">#FFEAF0FA</color>
+    <color name="latar_lembar">#FFF4F7FC</color>
+    <color name="teks_judul">#FF142033</color>
+    <color name="teks_isi">#FF2A3850</color>
+    <color name="teks_redup">#FF4A5A72</color>
+    <color name="garis_opsi">#FFD5DBE6</color>
+    <!-- Garis lingkaran radio yang belum dipilih -->
+    <color name="radio_garis">#FFB9C3D6</color>
+    <color name="kotak_kutip">#FFF1F4FA</color>
+    <!-- Latar pil status dan kotak "Penilaian awal" -->
+    <color name="chip_netral">#FFEEF2F9</color>
+    <!-- Latar chip bukti, juga latar sorotan bukti di teks terbaca -->
+    <color name="chip_bukti">#FFDFE8F7</color>
+    <color name="tombol_nonaktif_latar">#FFC3CEE2</color>
+    <color name="tombol_nonaktif_teks">#FF6B7A94</color>
+    <color name="pegangan_lembar">#FFD0D7E4</color>
+    <!-- rgba(8,18,38,0.62): alpha 0x9E -->
+    <color name="lapisan_lembar">#9E081226</color>
+    <!-- Putih 22%: lingkaran ikon dan garis pemisah di banner tingkat -->
+    <color name="banner_ikon_latar">#38FFFFFF</color>
 
-    <!-- Kartu status (dari prototipe) -->
-    <color name="kartu_garis">#FFE2E8F0</color>
-    <color name="kartu_thumbnail_latar">#FFE2E8F0</color>
-    <!-- #0F172A dengan opacity 40% -->
-    <color name="kartu_thumbnail_redup">#660F172A</color>
-    <color name="kartu_tombol_latar">#FFF8FAFC</color>
-    <color name="kartu_tombol_teks">#FF334155</color>
-    <color name="kartu_efek_tekan">#1F0F172A</color>
-
-    <!-- Judul kartu hasil sementara per tingkat indikasi -->
-    <color name="tingkat_kuat">#FFB91C1C</color>
-    <color name="tingkat_hati_hati">#FFC2410C</color>
+    <!-- Tingkat: bg/fg untuk banner, soft/ink untuk lencana dan kotak temuan. Tingkat tak dikenal memakai palet tidak_ditemukan. -->
+    <color name="tingkat_kuat_bg">#FFC7372F</color>
+    <color name="tingkat_kuat_fg">#FFFFFFFF</color>
+    <color name="tingkat_kuat_soft">#FFFDECEA</color>
+    <color name="tingkat_kuat_ink">#FFB42318</color>
+    <color name="tingkat_hati_hati_bg">#FFF2B01E</color>
+    <color name="tingkat_hati_hati_fg">#FF3D2A00</color>
+    <color name="tingkat_hati_hati_soft">#FFFFF4D6</color>
+    <color name="tingkat_hati_hati_ink">#FF7A4F00</color>
+    <color name="tingkat_tidak_ditemukan_bg">#FF5B6F94</color>
+    <color name="tingkat_tidak_ditemukan_fg">#FFFFFFFF</color>
+    <color name="tingkat_tidak_ditemukan_soft">#FFE8EDF5</color>
+    <color name="tingkat_tidak_ditemukan_ink">#FF3D4F6E</color>
 </resources>

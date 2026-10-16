@@ -1,0 +1,32 @@
+{
+  "id_permintaan": "fx-batasai-0001",
+  "tingkat": "hati_hati",
+  "klaim_utama": "Harga cabai naik tiga kali lipat besok pagi.",
+  "ciri": [
+    {
+      "id": "sumber_tidak_jelas",
+      "nama": "Sumber tidak jelas",
+      "bukti": [
+        "Katanya pedagang pasar"
+      ],
+      "penjelasan": "Pesan mengutip pihak yang tidak disebutkan identitasnya sehingga tidak bisa dicek.",
+      "keyakinan": "sedang"
+    }
+  ],
+  "cek_fakta": [
+    {
+      "judul": "Contoh: Pantauan harga cabai di pasar tradisional",
+      "sumber": "Contoh Berita",
+      "url": "https://example.com/berita/harga-cabai",
+      "skor_kemiripan": 0.5,
+      "label": "lainnya",
+      "tanggal": "2025-10-02",
+      "url_format_lama": false
+    }
+  ],
+  "teks_terbaca": "Harga cabai disebut naik tiga kali lipat besok pagi. Katanya pedagang pasar sudah sepakat.",
+  "durasi_ms": 4200,
+  "pemeriksaan_terbatas": [
+    "ai"
+  ]
+}

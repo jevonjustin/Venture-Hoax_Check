@@ -1,0 +1,68 @@
+{
+  "id_permintaan": "fx-kuat-0001",
+  "tingkat": "kuat",
+  "klaim_utama": "Penerima terpilih mendapat hadiah Rp 50 juta setelah membayar biaya administrasi.",
+  "ciri": [
+    {
+      "id": "permintaan_data_rahasia",
+      "nama": "Permintaan data rahasia",
+      "bukti": [
+        "Kirim kode OTP",
+        "kode OTP yang masuk"
+      ],
+      "penjelasan": "Pesan meminta kode OTP atau data pribadi yang tidak seharusnya dibagikan kepada pihak mana pun.",
+      "keyakinan": "tinggi"
+    },
+    {
+      "id": "desakan_waktu",
+      "nama": "Desakan waktu",
+      "bukti": [
+        "sebelum pukul 23.59 malam ini",
+        "Transfer sekarang juga"
+      ],
+      "penjelasan": "Batas waktu yang sangat singkat dipakai agar penerima bertindak tanpa berpikir.",
+      "keyakinan": "tinggi"
+    },
+    {
+      "id": "link_mencurigakan",
+      "nama": "Tautan mencurigakan",
+      "bukti": [
+        "https://hadiah-contoh.example.com/klaim"
+      ],
+      "penjelasan": "Alamat tautan tidak sesuai dengan lembaga yang diklaim dan memakai domain asing.",
+      "keyakinan": "tinggi"
+    },
+    {
+      "id": "kapital_tanda_seru",
+      "nama": "Huruf kapital dan tanda seru berlebihan",
+      "bukti": [
+        "SELAMAT!!!"
+      ],
+      "penjelasan": "Penulisan dengan huruf kapital dan tanda seru berlebihan sering dipakai untuk menekan emosi pembaca.",
+      "keyakinan": "sedang"
+    },
+    {
+      "id": "ajakan_menyebarkan",
+      "nama": "Ajakan menyebarkan",
+      "bukti": [
+        "Sebarkan ke 10 grup WhatsApp"
+      ],
+      "penjelasan": "Pesan mendesak penerimanya untuk meneruskan ke banyak orang tanpa memeriksa kebenarannya.",
+      "keyakinan": "sedang"
+    }
+  ],
+  "cek_fakta": [
+    {
+      "judul": "Contoh: Pesan hadiah undian dengan biaya administrasi adalah penipuan",
+      "sumber": "Contoh Cek Fakta",
+      "url": "https://example.com/cek-fakta/hadiah-undian",
+      "skor_kemiripan": 0.91,
+      "label": "salah",
+      "tanggal": "2025-11-04",
+      "url_format_lama": false
+    }
+  ],
+  "teks_terbaca": "SELAMAT!!! Nomor Anda terpilih\nmendapat hadiah Rp 50 juta dari program Contoh Undian Nasional. Transfer\nsekarang  juga biaya administrasi Rp 250.000 ke rekening 1234567890 sebelum pukul 23.59 malam ini. Kirim kode OTP yang masuk ke HP Anda agar hadiah segera cair. Klik https://hadiah-contoh.example.com/klaim untuk mengambil hadiah.  Sebarkan ke 10\ngrup WhatsApp supaya tidak hangus!",
+  "durasi_ms": 4200,
+  "pemeriksaan_terbatas": []
+}

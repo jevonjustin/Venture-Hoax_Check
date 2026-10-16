@@ -122,13 +122,76 @@ Keyakinan ciri tinggi jika terdeteksi aturan berpola kuat atau dua sumber (atura
 
 ## 11. Spesifikasi visual (dari prototipe)
 
-- **Warna:** utama `#0F766E`, aksen `#F97316`, teks utama `#0F172A`, teks sekunder `#64748B`.
-- **Tombol mengambang:** lingkaran 56dp berwarna utama dengan opacity sekitar 93%, ikon perisai centang putih 26dp, bayangan halus, menempel di tepi kanan dengan jarak 14dp, posisi awal sekitar 40% tinggi layar.
-- **Layar pilih area:** kilatan putih 150 ms saat layar diambil, lalu gambar layar beku dengan lapisan gelap `#080F1A` opacity sekitar 68% di luar seleksi. Kotak seleksi bergaris putih 3dp dengan sudut membulat 8dp dan cincin hijau muda tipis di luarnya. Kotak awal berada di tengah (80% lebar, 40% tinggi layar), dan ukuran minimumnya 96dp. Pegangan sudut berupa titik putih 16dp bergaris warna utama. Pegangan sisi berupa garis pendek putih yang lebih samar. Area sentuh semua pegangan 48dp. Panel bawah berisi kotak instruksi gelap, tombol teks "Pilih seluruh layar", lalu tombol "Batal" (sekunder) dan "Cek Sekarang" (warna aksen) setinggi 52dp. Panel memudar selama jari mengatur kotak dan muncul lagi setelah jari diangkat.
+Rujukan desain satu-satunya untuk pengembangan adalah `docs/prototype/prototype.html`. Figma hanya untuk presentasi. Tautan prototipe interaktif lama (artifact) tidak dipakai lagi.
+
+- **Warna merek:** navy `#1B3A6B` (`navy` di `colors.xml`) sebagai satu-satunya sumber warna merek untuk layar pilih area, lembar, dan onboarding; turunannya `navy_lembut` `#EAF0FA` dan `latar_lembar` `#F4F7FC`. Teks: judul `#142033`, isi `#2A3850`, redup `#4A5A72`.
+- **Warna tingkat** (bg/fg untuk banner, soft/ink untuk lencana dan kotak temuan):
+  - `kuat`: bg `#C7372F`, fg putih, soft `#FDECEA`, ink `#B42318`.
+  - `hati_hati`: bg `#F2B01E`, fg `#3D2A00`, soft `#FFF4D6`, ink `#7A4F00`.
+  - `tidak_ditemukan`: bg `#5B6F94`, fg putih, soft `#E8EDF5`, ink `#3D4F6E`. Tingkat tak dikenal memakai palet yang sama.
+- **Tombol mengambang:** tetap teal `#0F766E` dengan opacity sekitar 93% (`tombol_cek_latar` = `#ED0F766E`); di luar cakupan Tahap 6. Lingkaran 56dp, ikon perisai centang putih 26dp, bayangan halus, menempel di tepi kanan dengan jarak 14dp, posisi awal sekitar 40% tinggi layar.
+- **Layar pilih area:** kilatan putih 150 ms saat layar diambil, lalu gambar layar beku dengan lapisan gelap `#080F1A` opacity sekitar 68% di luar seleksi. Kotak seleksi bergaris putih 3dp dengan sudut membulat 8dp dan cincin hijau muda tipis di luarnya. Kotak awal berada di tengah (80% lebar, 40% tinggi layar), dan ukuran minimumnya 96dp. Pegangan sudut berupa titik putih 16dp bergaris navy. Pegangan sisi berupa garis pendek putih yang lebih samar. Area sentuh semua pegangan 48dp. Panel bawah berisi kotak instruksi gelap (ikon teal), tombol teks "Pilih seluruh layar", lalu tombol "Batal" (sekunder) dan "Cek Sekarang" (latar putih, teks navy) setinggi 52dp. Panel memudar selama jari mengatur kotak dan muncul lagi setelah jari diangkat.
 - **Perilaku layar pilih area:** seret di luar kotak untuk menggambar kotak baru, seret di dalam kotak untuk memindahkannya, dan seret sudut atau sisi untuk mengubah ukurannya. Kotak tidak bisa keluar dari batas layar. Tombol Back sama dengan Batal. Kalau layar diputar, pemilihan dibatalkan.
-- **Kartu status:** latar putih, sudut membulat 20dp, thumbnail potongan 72dp, indikator loading, teks "Sedang menganalisis...", tombol "Batal" yang benar-benar membatalkan permintaan ke server. Prototipe memakai label "Tutup", tetapi diganti "Batal" agar sesuai dengan tindakannya. Setelah hasil atau galat tampil, tombol yang sama berlabel "Tutup". Galat yang berkaitan dengan alamat server (belum diatur atau tidak terjangkau) punya tombol tambahan "Buka pengaturan".
-- **Font:** Plus Jakarta Sans; untuk sementara boleh memakai sans-serif bawaan sistem.
-- **Prototipe interaktif:** https://claude.ai/artifact/WQgUGxKrXNEvJrbqK3w7kj (hanya bisa dibuka oleh pemilik akun; jika tidak bisa diakses, gunakan spesifikasi di atas).
+- **Alur setelah "Cek Sekarang":** pilih area, lembar penilaian awal (analisis berjalan di latar), kartu memuat, lalu lembar hasil atau lembar galat. Semuanya View via WindowManager (lihat Keputusan Tahap 6).
+- **Font:** sans-serif bawaan sistem (Plus Jakarta Sans butuh unduh dan belum diizinkan).
+
+### Urutan lembar hasil
+
+1. Banner tingkat: ikon, "HASIL ANALISIS", label tingkat, keterangan umum tingkat (`tidak_ditemukan` selalu memuat kalimat "bukan jaminan").
+2. Keterangan pemeriksaan terbatas, bila `pemeriksaan_terbatas` tidak kosong.
+3. Chip ringkasan: jumlah ciri dan jumlah artikel cek fakta.
+4. "Inti pesan" (disembunyikan bila kosong).
+5. "Artikel cek fakta": pil label, judul, sumber dan tanggal, tombol "Buka artikel" (atau "Cari judul di web" untuk `url_format_lama`).
+6. "Ciri yang ditemukan": nama, teks keyakinan, bukti berkutip, penjelasan.
+7. "Dibanding penilaian awal".
+8. "Teks yang terbaca" (terlipat, bukti disorot).
+9. "Tips" per tingkat.
+10. Kaki tetap: tombol "Tutup".
+
+### Keputusan Tahap 6
+
+- **Varian keterangan tingkat tidak ada di respons (D3).** Server menghitung varian (ciri_saja, mirip, satir, konflik, rujukan), tetapi kontrak tidak mengirimkannya. Android memakai keterangan umum per tingkat yang ditulis agar akurat untuk semua varian. Menebak varian di HP akan menduplikasi logika area kritis server.
+- **Arsitektur overlay (D4).** Tiga lembar bawah dan satu kartu memuat, semuanya View via WindowManager (aturan stack), jendela MATCH_PARENT dengan lapisan gelap dan tanpa `FLAG_NOT_FOCUSABLE` agar Back bisa ditangani. Back atau ketuk lapisan: penilaian dan memuat membatalkan analisis, hasil dan galat menutup. Activity terpisah ditolak karena prototipe menampilkan hasil di atas aplikasi lain.
+- **Alur edukasi sesuai prototipe (D5).** Tiga opsi (Percaya, Ragu-ragu, Tidak percaya) dan "Lewati"; perbandingan hanya antara `tidak_ditemukan` dan bukan. Pengguna tidak memilih ciri, padahal `docs/API.md` menyebut perbandingan himpunan ciri; ini keputusan terbuka untuk pemilik. Penilaian hanya di memori service untuk satu pengecekan, tidak dikirim dan tidak disimpan. Riwayat, dashboard, statistik, dan belajar hoaks tidak dibuat.
+- **Kartu memuat tanpa tiga langkah (D6).** Prototipe menampilkan langkah dengan waktu palsu; server tidak melaporkan kemajuan, jadi diganti spinner, judul, satu kalimat, dan tombol Batal agar jujur.
+- **"Inti pesan" (D7).** Menggantikan "Klaim yang dicek" karena untuk obrolan penipuan dan konten edukasi istilah "klaim" kurang cocok.
+- **Teks keyakinan (D8).** "Keyakinan tinggi" atau "Keyakinan sedang", tanpa persentase (prinsip produk). Nilai tak dikenal tidak ditampilkan.
+- **Label artikel cek fakta (D9).** salah "SALAH", penipuan "PENIPUAN" (merah lembut), klarifikasi "KLARIFIKASI", satir "SATIR", belum_terbukti "BELUM TERBUKTI", dan benar serta nilai lain atau tak dikenal "RUJUKAN" (netral, latar `navy_lembut`). `benar` menjadi "RUJUKAN" karena UI tidak boleh menyatakan informasi "benar"; judul artikel tetap tampil sehingga kesimpulannya terbaca dari sumber. Cukup ganti satu string untuk membatalkan.
+- **Nama ciri (D10).** Nama dari aplikasi untuk sembilan id terkunci (sesuai tabel `docs/API.md`), cadangan `nama` dari server, dan bila kosong "Ciri lain".
+- **Tingkat TIDAK_DIKENAL (D11).** Nilai tingkat tak dikenal tidak lagi menjadi galat: banner netral "Hasil Analisis" dengan keterangan bahwa jenis hasil belum dikenali versi aplikasi ini dan bukan jaminan; rincian tetap tampil. Dikerjakan agar aplikasi tidak gagal total bila server menambah tingkat. Menyentuh kontrak Android (area kritis), jadi diverifikasi.
+- **Teks perbandingan dan tips (D12).** Diambil dari prototipe tanpa kata ganti orang kedua. Tingkat tak dikenal: "Jenis hasil ini belum bisa dibandingkan dengan penilaian awal."
+- **Lembar galat (D13, D22).** JPEG ditahan hanya di memori service sampai lembar ditutup (tidak ke disk). Prototipe hanya punya tiga varian; sisanya mengikuti pola yang sama.
+
+  | Kondisi | Judul | Tindakan utama |
+  |---|---|---|
+  | teks_tidak_terbaca | Teks tidak terbaca | Pilih Ulang |
+  | terlalu_besar | Area terlalu besar | Pilih Ulang |
+  | gambar_kosong, bukan_gambar, galat penyandian | Gambar belum terkirim utuh | Pilih Ulang |
+  | Tidak terjangkau | Server tidak bisa dihubungi | Coba Lagi, plus "Buka pengaturan" |
+  | URL belum diatur | Alamat server belum diatur | Buka pengaturan |
+  | Waktu habis | Server terlalu lama menjawab | Coba Lagi |
+  | galat_server, galat_http, kode tak dikenal, null | Server sedang bermasalah | Coba Lagi |
+  | Respons tidak dikenali | Jawaban server tidak dikenali | Buka pengaturan |
+  | Cleartext (D22) | Alamat server tidak bisa dipakai | Buka pengaturan |
+
+  "Pilih Ulang" mengambil layar baru lalu membuka pilih area; "Coba Lagi" mengirim ulang JPEG yang sama.
+- **Onboarding (D14, D21).** Empat halaman Compose: tiga dari prototipe (halaman 1 diubah menjadi "...tetapi tidak semuanya bisa langsung dipercaya" karena prototipe memakai kata "benar"; halaman 3 menambah sifat hasil sebagai pemandu, bukan penentu benar atau salah) dan halaman 4 baru tentang apa yang dikirim (privasi). Ilustrasi prototipe diganti ikon sederhana (tidak tersedia sebagai vector). Layar izin, berhasil, dan dashboard prototipe tidak dibuat. Tampil sekali (SharedPreferences), bisa dibuka lagi dari tombol teks di layar utama. Selalu tema terang dan `dynamicColor` dimatikan agar warna merek konsisten di Samsung; "Lewati" berarti selesai.
+- **Notifikasi sesi rekam layar berhenti, B3 (D15, D21).** Android tidak membedakan alasan berhenti, dan `MediaProjection.Callback.onStop` satu-satunya sinyal relevan; persetujuan harus diminta ulang tiap sesi (Android 14+), sehingga tombol tidak bisa menyala otomatis. Maka saat `onStop` dari sistem, service memasang notifikasi (channel `pemeriksaan_berhenti`, ketuk membuka MainActivity) dan menyimpan tanda; layar utama menampilkan kotak keterangan sampai tombol cek diaktifkan lagi (hilang saat service terdeteksi berjalan, bukan saat tombol diketuk, agar tidak hilang bila izin ditolak). Toast tidak dipakai karena tidak terlihat saat HP terkunci. Tanpa AccessibilityService.
+- **Font sistem (D16).** Sans-serif bawaan karena Plus Jakarta Sans butuh unduh.
+- **Pilih area (D16, D20).** "Cek Sekarang" putih dengan teks navy dan pegangan sudut bergaris navy sesuai prototipe; label dan tata letak Tahap 3 lainnya tetap. Cincin seleksi hijau muda dan ikon petunjuk teal tidak diubah (bukan token merek; prototipe tidak punya cincin). Tombol mengambang tetap teal.
+- **Lembar hasil menutup setelah tautan dibuka (D17).** Overlay layar penuh akan menutupi browser. Hanya skema http/https yang dibuka; selain itu dialihkan ke pencarian judul.
+- **Thumbnail (D18).** Selebar lembar, tinggi maksimal 120dp, fitCenter. Prototipe memakai 96x64 dengan cuplikan teks, tetapi cuplikan belum ada sebelum hasil sehingga thumbnail tampak kosong.
+- **Target ketuk (D19).** Tombol teks 48dp (prototipe 44dp) demi target minimal 48dp; lembar berhenti di atas navigation bar (padding insets).
+- **Perbaikan hasil verifikasi (D22).** Kalimat AI dibatasi, pemindai string diperketat, teks privasi menyebut penyamaran berbasis pola bisa terlewat dan tautan tidak disamarkan, pesan perbandingan "Percaya" tidak bergantung pada adanya ciri, judul galat cleartext tersendiri, dan opacity label banner minimal 0,95 demi kontras.
+- **Fixture debug (D23).** `app/src/debug/assets/fixture` dan `AktivitasFixture` menampilkan lembar tanpa server; teks UI-nya di `app/src/debug/res/values/strings_debug.xml`. Hanya alat developer, tidak ikut rilis.
+- **Tinggi lembar (D24).** Mengikuti isi (`wrap_content`) dengan batas 92% layar, bukan tinggi tetap prototipe.
+- **Chip dan tambahan hasil (D25).** Chip "%d artikel cek fakta terkait" menggantikan "Cocok dengan 1 artikel cek fakta"; kartu "Pemeriksaan belum lengkap" dan bagian "Teks yang terbaca" adalah tambahan di luar prototipe.
+- **Pesan perbandingan (D26).** Kedua pesan `tidak_ditemukan` memuat kalimat bukan jaminan dan tanpa kata "juga" yang terbaca mengesahkan kepercayaan pengguna.
+- **Ukuran teks (D27).** Teks informatif minimal 14sp; hanya label kapital kecil dekoratif (mis. "HASIL ANALISIS", "BAGIAN YANG DIPILIH") boleh 12sp.
+- **REFERENSI.md (D28).** Satu baris rujukan `ic_geser` ikut diubah ke `docs/prototype/prototype.html`.
+- **Refactor internal (D29).** Akar jendela overlay dan Back diekstrak ke `AkarOverlay.kt` (dipakai juga `OverlayPilihArea`); `KartuAnalisis`, layout, drawable, dan warna kartu lama dihapus; `PesanGalat.perluPengaturan` dihapus.
+- **Perbaikan review T6b (D30).** Catatan berhenti di layar utama ikut diperbarui saat service berhenti ketika aplikasi di depan; "Buka pengaturan" memanggil `startActivity` sebelum jendela overlay dilepas; JPEG dibuang dari memori segera setelah hasil sukses.
+- **Warna teks layar utama di tema gelap (D32).** Ditemukan saat uji HP: teks navy langsung di atas latar layar (judul, status izin, "Cara kerja dan privasi", serta spinner dan teks "Tersambung" di pengaturan server) hampir tidak terbaca di tema gelap. Teks itu kini memakai `MaterialTheme.colorScheme.primary` (navy di tema terang, `navy_lembut` di tema gelap). Tombol navy bertulisan putih dan kotak catatan berlatar `navy_lembut` tetap memakai warna tetap karena kontrasnya aman di kedua tema. Onboarding dan semua lembar overlay selalu terang.
 
 ## 12. Proyek referensi open source
 
@@ -421,15 +484,12 @@ Daftar ini dikumpulkan dari sesi 5.1-5.5 supaya tidak hilang antar sesi. Hapus b
 
 #### Tahap 6 (UI)
 
-- Tampilkan keterangan bila `pemeriksaan_terbatas` tidak kosong.
-- Artikel `url_format_lama`: tombol membuka pencarian web dengan judul artikel.
-- Sorot bukti di `teks_terbaca` (pencocokan tanpa memperhatikan spasi).
-- Teks label per nilai dengan teks cadangan untuk nilai tak dikenal, termasuk nama ciri `permintaan_data_rahasia`.
-- Kartu hasil saat ini baru menampilkan judul tingkat dan jumlah ciri.
-- Label tampilan `klaim_utama` sebaiknya netral, misalnya "Inti pesan", karena untuk obrolan penipuan dan konten edukasi istilah "klaim" kurang cocok.
-- Seragamkan warna navy `#1b3a6b`.
-- Onboarding: teks yang terbaca dikirim ke penyedia AI pihak ketiga setelah nomor, email, dan @akun disamarkan; gambar tidak dikirim; jangan menyiratkan semua data pribadi tertutup.
-- Catat keputusan desain di §11 dan perbarui rujukan ke berkas prototipe lama.
+- **Keputusan pemilik: pilihan ciri oleh pengguna.** `docs/API.md` menyebut perbandingan himpunan ciri, tetapi prototipe hanya membandingkan penilaian awal dengan `tidak_ditemukan` atau bukan. Tentukan apakah pemilihan ciri ditambahkan.
+- **Varian keterangan tingkat dari server tidak ada di kontrak.** Pertimbangkan field baru di kontrak mendatang (0.6); setelah itu tambahkan pemetaan label dan cadangan di Android.
+- **Uji HP (16 Oktober 2026, Galaxy A55, tema gelap dan terang) lulus.** Onboarding, semua fixture, font 1,3, alur nyata dengan `PAKSA_TINGKAT` kuat, hati_hati, dan tidak_ditemukan (semua kombinasi penilaian), server tidak terjangkau dan "Buka pengaturan", B3 (kunci HP, notifikasi, kotak catatan), serta tiga permintaan dengan LLM Groq sungguhan. Status Tahap 6 di `CLAUDE.md` diperbarui setelah developer menyatakan tahap selesai.
+- **Server: false negative pada lowongan kerja palsu.** Narasi lowongan Nestle palsu (TurnBackHoax 15/10/2026, belum ada di database) menghasilkan `tidak_ditemukan` tanpa ciri. Bahan evaluasi Sesi 5.6.
+- **Istilah pesan perbandingan `tidak_ditemukan`.** Penilaian Percaya memakai "indikasi hoaks", Ragu dan Tidak percaya memakai "ciri hoaks". Seragamkan bersama usulan teks perbandingan yang lebih mendidik.
+- **Belum dibangun dari prototipe:** statistik, riwayat, dashboard, dan belajar hoaks.
 
 #### Tahap 8 (showcase)
 

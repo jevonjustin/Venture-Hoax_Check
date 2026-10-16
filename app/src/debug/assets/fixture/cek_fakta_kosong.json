@@ -1,0 +1,29 @@
+{
+  "id_permintaan": "fx-cfkosong-0001",
+  "tingkat": "hati_hati",
+  "klaim_utama": "Air kelapa mencegah semua jenis infeksi.",
+  "ciri": [
+    {
+      "id": "pernah_dibantah",
+      "nama": "Pernah dibantah",
+      "bukti": [
+        "mencegah semua jenis infeksi"
+      ],
+      "penjelasan": "Klaim serupa pernah dibantah oleh artikel cek fakta yang tercantum di bawah.",
+      "keyakinan": "tinggi"
+    },
+    {
+      "id": "bahasa_provokatif",
+      "nama": "Bahasa provokatif",
+      "bukti": [
+        "pihak farmasi sengaja menutupi kebenaran"
+      ],
+      "penjelasan": "Bahasa yang memancing amarah terhadap kelompok tertentu tanpa dasar yang jelas.",
+      "keyakinan": "tinggi"
+    }
+  ],
+  "cek_fakta": [],
+  "teks_terbaca": "Air kelapa mencegah semua jenis infeksi, tapi pihak farmasi sengaja menutupi kebenaran ini.",
+  "durasi_ms": 4200,
+  "pemeriksaan_terbatas": []
+}

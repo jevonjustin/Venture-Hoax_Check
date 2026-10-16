@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Kerangka lembar bawah: pegangan, area gulir untuk isi, dan kaki tetap untuk tombol. Latar diatur
+    dari kode. LembarTerbatas membatasi tinggi sampai 92% layar; hanya area gulir yang mengecil.
+    Lembar clickable agar ketukan di dalamnya tidak dianggap ketukan di lapisan gelap.
+-->
+<com.example.cekhoaks.LembarTerbatas xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/lembar"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom"
+    android:clickable="true"
+    android:focusable="false"
+    android:orientation="vertical">
+
+    <View
+        android:layout_width="40dp"
+        android:layout_height="5dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="6dp"
+        android:background="@drawable/bg_pegangan"
+        android:importantForAccessibility="no" />
+
+    <ScrollView
+        android:id="@+id/lembar_gulir"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:overScrollMode="ifContentScrolls">
+
+        <FrameLayout
+            android:id="@+id/lembar_isi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </ScrollView>
+
+    <FrameLayout
+        android:id="@+id/lembar_kaki"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+</com.example.cekhoaks.LembarTerbatas>

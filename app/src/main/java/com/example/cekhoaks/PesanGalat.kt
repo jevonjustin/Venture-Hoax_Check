@@ -17,7 +17,3 @@ fun JenisGagal.pesan(): Int = when (this) {
         else -> R.string.galat_server
     }
 }
-
-/** Galat yang kemungkinan besar diperbaiki dengan memeriksa alamat server di aplikasi. */
-val JenisGagal.perluPengaturan: Boolean
-    get() = this == JenisGagal.UrlBelumDiatur || this is JenisGagal.TidakTerjangkau

@@ -1,0 +1,7 @@
+{
+  "_status_http": 500,
+  "galat": {
+    "kode": "galat_server",
+    "pesan": "Galat tak terduga di server"
+  }
+}

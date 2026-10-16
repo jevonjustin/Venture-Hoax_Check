@@ -1,0 +1,52 @@
+{
+  "id_permintaan": "fx-tak-0001",
+  "tingkat": "sangat_kuat",
+  "klaim_utama": "Klaim contoh untuk uji nilai tak dikenal.",
+  "ciri": [
+    {
+      "id": "ciri_baru_dari_server",
+      "nama": "Ciri baru dari server",
+      "bukti": [
+        "bukti tak dikenal"
+      ],
+      "penjelasan": "Ciri ini belum dikenal versi aplikasi.",
+      "keyakinan": "sangat_tinggi",
+      "bobot": 0.7,
+      "tambahan": {
+        "a": 1
+      }
+    },
+    {
+      "id": "judul_clickbait",
+      "nama": "Judul clickbait",
+      "bukti": [],
+      "penjelasan": "Tanpa bukti.",
+      "keyakinan": "tinggi"
+    }
+  ],
+  "cek_fakta": [
+    {
+      "judul": "Contoh: Artikel dengan label baru",
+      "sumber": "Contoh Cek Fakta",
+      "url": "https://example.com/cek-fakta/label-baru",
+      "skor_kemiripan": 0.7,
+      "label": "label_masa_depan",
+      "tanggal": null,
+      "url_format_lama": false,
+      "bahasa": "id"
+    }
+  ],
+  "teks_terbaca": "Teks contoh dengan bukti tak dikenal di dalamnya.",
+  "durasi_ms": 1234,
+  "pemeriksaan_terbatas": [
+    "modul_baru"
+  ],
+  "versi_server": "9.9.9",
+  "metadata": {
+    "x": [
+      1,
+      2,
+      3
+    ]
+  }
+}

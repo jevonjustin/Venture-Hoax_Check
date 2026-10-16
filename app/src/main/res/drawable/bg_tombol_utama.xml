@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tombol utama navy; saat nonaktif abu-biru. ripple: efek gelombang saat ditekan. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/pilih_efek_tekan">
+    <item>
+        <selector>
+            <item android:state_enabled="false">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/tombol_nonaktif_latar" />
+                    <corners android:radius="28dp" />
+                </shape>
+            </item>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/navy" />
+                    <corners android:radius="28dp" />
+                </shape>
+            </item>
+        </selector>
+    </item>
+</ripple>

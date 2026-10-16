@@ -16,6 +16,17 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -58,6 +69,8 @@ class MainActivity : ComponentActivity() {
 
     // mutableStateOf membuat tampilan Compose otomatis diperbarui saat nilainya berubah.
     private var izinOverlay by mutableStateOf(false)
+    // Diisi ulang di onResume karena penandanya ditulis oleh service.
+    private var adaCatatanBerhenti by mutableStateOf(false)
     private var tampilkanPenjelasanRekam by mutableStateOf(false)
     private var sedangMemintaIzinRekam = false
     private val snackbarHostState = SnackbarHostState()
@@ -101,6 +114,33 @@ class MainActivity : ComponentActivity() {
         setContent {
             CekHoaksTheme {
                 val tombolAktif by FloatingButtonService.berjalan.collectAsState()
+                // rememberSaveable menjaga keadaan ini saat layar diputar.
+                var tampilOnboarding by rememberSaveable { mutableStateOf(!StatusOnboarding.selesai(this@MainActivity)) }
+                var onboardingDibukaUlang by rememberSaveable { mutableStateOf(false) }
+                LaunchedEffect(tombolAktif) {
+                    if (tombolAktif) {
+                        CatatanBerhenti.hapus(this@MainActivity)
+                        adaCatatanBerhenti = false
+                    } else {
+                        // Service bisa berhenti saat aplikasi di depan; catatan sudah ditandai sebelum berhenti.
+                        adaCatatanBerhenti = CatatanBerhenti.ada(this@MainActivity)
+                    }
+                }
+                if (tampilOnboarding) {
+                    LayarOnboarding(
+                        dibukaUlang = onboardingDibukaUlang,
+                        onSelesai = {
+                            StatusOnboarding.tandaiSelesai(this@MainActivity)
+                            tampilOnboarding = false
+                            onboardingDibukaUlang = false
+                        },
+                        onTutup = {
+                            tampilOnboarding = false
+                            onboardingDibukaUlang = false
+                        },
+                    )
+                    return@CekHoaksTheme
+                }
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -111,6 +151,11 @@ class MainActivity : ComponentActivity() {
                         tampilkanPetunjukIzin = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R,
                         onBerikanIzin = ::bukaPengaturanIzin,
                         onAlihkanTombol = { if (tombolAktif) matikanTombolCek() else aktifkanTombolCek() },
+                        tampilkanCatatanBerhenti = adaCatatanBerhenti && !tombolAktif,
+                        onBukaOnboarding = {
+                            onboardingDibukaUlang = true
+                            tampilOnboarding = true
+                        },
                         modifier = Modifier.padding(innerPadding),
                     ) {
                         BagianPengaturanServer(
@@ -141,6 +186,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         izinOverlay = Settings.canDrawOverlays(this)
+        adaCatatanBerhenti = CatatanBerhenti.ada(this)
     }
 
     // Dipanggil (sebagai ganti onCreate) jika aplikasi sudah terbuka saat kartu status
@@ -267,6 +313,8 @@ fun LayarUtama(
     onBerikanIzin: () -> Unit,
     onAlihkanTombol: () -> Unit,
     modifier: Modifier = Modifier,
+    tampilkanCatatanBerhenti: Boolean = false,
+    onBukaOnboarding: () -> Unit = {},
     bagianBawah: @Composable () -> Unit = {},
 ) {
     Column(
@@ -280,12 +328,16 @@ fun LayarUtama(
             text = stringResource(R.string.app_name),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
-            color = colorResource(R.color.utama),
+            color = MaterialTheme.colorScheme.primary,
         )
         Text(
             text = stringResource(R.string.main_penjelasan),
             style = MaterialTheme.typography.bodyLarge,
         )
+
+        if (tampilkanCatatanBerhenti) {
+            CatatanBerhentiKotak()
+        }
 
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(
@@ -302,7 +354,7 @@ fun LayarUtama(
                     ),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = if (izinOverlay) colorResource(R.color.utama) else MaterialTheme.colorScheme.error,
+                    color = if (izinOverlay) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                 )
             }
         }
@@ -317,7 +369,7 @@ fun LayarUtama(
             Button(
                 onClick = onBerikanIzin,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.utama)),
+                colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.navy), contentColor = Color.White),
             ) {
                 Text(stringResource(R.string.main_tombol_berikan_izin))
             }
@@ -344,14 +396,60 @@ fun LayarUtama(
                 Button(
                     onClick = onAlihkanTombol,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.utama)),
+                    colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.navy), contentColor = Color.White),
                 ) {
                     Text(stringResource(R.string.main_tombol_aktifkan))
                 }
             }
         }
 
+        TextButton(
+            onClick = onBukaOnboarding,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.onboarding_buka_lagi),
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+
         bagianBawah()
+    }
+}
+
+@Composable
+private fun CatatanBerhentiKotak() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(colorResource(R.color.navy_lembut))
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Image(
+            painter = painterResource(R.drawable.ic_onboarding_info),
+            contentDescription = null,
+            modifier = Modifier.size(24.dp),
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = stringResource(R.string.berhenti_catatan_judul),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = colorResource(R.color.navy),
+            )
+            Text(
+                text = stringResource(R.string.berhenti_catatan_isi),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colorResource(R.color.navy),
+            )
+            Text(
+                text = stringResource(R.string.berhenti_catatan_petunjuk),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colorResource(R.color.navy),
+            )
+        }
     }
 }
 
@@ -369,7 +467,7 @@ fun DialogPenjelasanRekam(onLanjutkan: () -> Unit, onBatal: () -> Unit) {
         confirmButton = {
             Button(
                 onClick = onLanjutkan,
-                colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.utama)),
+                colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.navy), contentColor = Color.White),
             ) {
                 Text(stringResource(R.string.rekam_lanjutkan))
             }

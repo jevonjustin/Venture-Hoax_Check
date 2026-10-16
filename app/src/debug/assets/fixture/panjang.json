@@ -1,0 +1,138 @@
+{
+  "id_permintaan": "fx-panjang-0001",
+  "tingkat": "kuat",
+  "klaim_utama": "Klaim utama yang sangat panjang tentang bantuan dana dari lembaga yang tidak jelas, disertai syarat membagikan pesan ini kepada seluruh kontak dalam waktu singkat dan mengisi data pribadi lengkap. Klaim utama yang sangat panjang tentang bantuan dana dari lembaga yang tidak jelas, disertai syarat membagikan pesan ini kepada seluruh kontak dalam waktu singkat dan mengisi data pribadi lengkap. ",
+  "ciri": [
+    {
+      "id": "permintaan_data_rahasia",
+      "nama": "Permintaan data rahasia",
+      "bukti": [
+        "Kalimat bukti nomor 1 dalam pesan",
+        "Kalimat bukti nomor 2 dalam pesan",
+        "Kalimat bukti nomor 1 dalam pesan"
+      ],
+      "penjelasan": "Pesan meminta kode OTP atau data pribadi yang tidak seharusnya dibagikan kepada pihak mana pun. Penjelasan tambahan yang panjang untuk menguji pembungkusan baris pada layar sempit dan font besar. Penjelasan tambahan yang panjang untuk menguji pembungkusan baris pada layar sempit dan font besar. ",
+      "keyakinan": "tinggi"
+    },
+    {
+      "id": "ajakan_menyebarkan",
+      "nama": "Ajakan menyebarkan",
+      "bukti": [
+        "Kalimat bukti nomor 3 dalam pesan",
+        "Kalimat bukti nomor 4 dalam pesan",
+        "Kalimat bukti nomor 4 dalam pesan"
+      ],
+      "penjelasan": "Pesan mendesak penerimanya untuk meneruskan ke banyak orang tanpa memeriksa kebenarannya. Penjelasan tambahan yang panjang untuk menguji pembungkusan baris pada layar sempit dan font besar. Penjelasan tambahan yang panjang untuk menguji pembungkusan baris pada layar sempit dan font besar. ",
+      "keyakinan": "sedang"
+    },
+    {
+      "id": "desakan_waktu",
+      "nama": "Desakan waktu",
+      "bukti": [
+        "Kalimat bukti nomor 5 dalam pesan",
+        "Kalimat bukti nomor 6 dalam pesan",
+        "Kalimat bukti nomor 7 dalam pesan"
+      ],
+      "penjelasan": "Batas waktu yang sangat singkat dipakai agar penerima bertindak tanpa berpikir. Penjelasan tambahan yang panjang untuk menguji pembungkusan baris pada layar sempit dan font besar. Penjelasan tambahan yang panjang untuk menguji pembungkusan baris pada layar sempit dan font besar. ",
+      "keyakinan": "tinggi"
+    },
+    {
+      "id": "kapital_tanda_seru",
+      "nama": "Huruf kapital dan tanda seru berlebihan",
+      "bukti": [
+        "Kalimat bukti nomor 7 dalam pesan",
+        "Kalimat bukti nomor 8 dalam pesan",
+        "Kalimat bukti nomor 10 dalam pesan"
+      ],
+      "penjelasan": "Penulisan dengan huruf kapital dan tanda seru berlebihan sering dipakai untuk menekan emosi pembaca. Penjelasan tambahan yang panjang untuk menguji pembungkusan baris pada layar sempit dan font besar. Penjelasan tambahan yang panjang untuk menguji pembungkusan baris pada layar sempit dan font besar. ",
+      "keyakinan": "sedang"
+    },
+    {
+      "id": "link_mencurigakan",
+      "nama": "Tautan mencurigakan",
+      "bukti": [
+        "Kalimat bukti nomor 9 dalam pesan",
+        "Kalimat bukti nomor 10 dalam pesan",
+        "Kalimat bukti nomor 13 dalam pesan"
+      ],
+      "penjelasan": "Alamat tautan tidak sesuai dengan lembaga yang diklaim dan memakai domain asing. Penjelasan tambahan yang panjang untuk menguji pembungkusan baris pada layar sempit dan font besar. Penjelasan tambahan yang panjang untuk menguji pembungkusan baris pada layar sempit dan font besar. ",
+      "keyakinan": "tinggi"
+    },
+    {
+      "id": "sumber_tidak_jelas",
+      "nama": "Sumber tidak jelas",
+      "bukti": [
+        "Kalimat bukti nomor 11 dalam pesan",
+        "Kalimat bukti nomor 12 dalam pesan",
+        "Kalimat bukti nomor 16 dalam pesan"
+      ],
+      "penjelasan": "Pesan mengutip pihak yang tidak disebutkan identitasnya sehingga tidak bisa dicek. Penjelasan tambahan yang panjang untuk menguji pembungkusan baris pada layar sempit dan font besar. Penjelasan tambahan yang panjang untuk menguji pembungkusan baris pada layar sempit dan font besar. ",
+      "keyakinan": "sedang"
+    },
+    {
+      "id": "judul_clickbait",
+      "nama": "Judul clickbait",
+      "bukti": [
+        "Kalimat bukti nomor 13 dalam pesan",
+        "Kalimat bukti nomor 14 dalam pesan",
+        "Kalimat bukti nomor 1 dalam pesan"
+      ],
+      "penjelasan": "Judul dibuat menggoda tetapi tidak menjelaskan isi sebenarnya. Penjelasan tambahan yang panjang untuk menguji pembungkusan baris pada layar sempit dan font besar. Penjelasan tambahan yang panjang untuk menguji pembungkusan baris pada layar sempit dan font besar. ",
+      "keyakinan": "tinggi"
+    },
+    {
+      "id": "bahasa_provokatif",
+      "nama": "Bahasa provokatif",
+      "bukti": [
+        "Kalimat bukti nomor 15 dalam pesan",
+        "Kalimat bukti nomor 16 dalam pesan",
+        "Kalimat bukti nomor 4 dalam pesan"
+      ],
+      "penjelasan": "Bahasa yang memancing amarah terhadap kelompok tertentu tanpa dasar yang jelas. Penjelasan tambahan yang panjang untuk menguji pembungkusan baris pada layar sempit dan font besar. Penjelasan tambahan yang panjang untuk menguji pembungkusan baris pada layar sempit dan font besar. ",
+      "keyakinan": "sedang"
+    },
+    {
+      "id": "pernah_dibantah",
+      "nama": "Pernah dibantah",
+      "bukti": [
+        "Kalimat bukti nomor 17 dalam pesan",
+        "Kalimat bukti nomor 18 dalam pesan",
+        "Kalimat bukti nomor 7 dalam pesan"
+      ],
+      "penjelasan": "Klaim serupa pernah dibantah oleh artikel cek fakta yang tercantum di bawah. Penjelasan tambahan yang panjang untuk menguji pembungkusan baris pada layar sempit dan font besar. Penjelasan tambahan yang panjang untuk menguji pembungkusan baris pada layar sempit dan font besar. ",
+      "keyakinan": "tinggi"
+    }
+  ],
+  "cek_fakta": [
+    {
+      "judul": "Contoh: Klaim panjang yang telah diperiksa berulang kali oleh banyak pihak dan dinyatakan menyesatkan dalam berbagai konteks nomor 1",
+      "sumber": "Contoh Cek Fakta Nasional untuk Verifikasi Informasi",
+      "url": "https://example.com/cek-fakta/panjang-1",
+      "skor_kemiripan": 0.8,
+      "label": "salah",
+      "tanggal": "2025-03-15",
+      "url_format_lama": false
+    },
+    {
+      "judul": "Contoh: Klaim panjang yang telah diperiksa berulang kali oleh banyak pihak dan dinyatakan menyesatkan dalam berbagai konteks nomor 2",
+      "sumber": "Contoh Cek Fakta Nasional untuk Verifikasi Informasi",
+      "url": "https://example.com/cek-fakta/panjang-2",
+      "skor_kemiripan": 0.7,
+      "label": "penipuan",
+      "tanggal": "2025-04-15",
+      "url_format_lama": false
+    },
+    {
+      "judul": "Contoh: Klaim panjang yang telah diperiksa berulang kali oleh banyak pihak dan dinyatakan menyesatkan dalam berbagai konteks nomor 3",
+      "sumber": "Contoh Cek Fakta Nasional untuk Verifikasi Informasi",
+      "url": "https://example.com/cek-fakta/panjang-3",
+      "skor_kemiripan": 0.6,
+      "label": "klarifikasi",
+      "tanggal": "2025-05-15",
+      "url_format_lama": false
+    }
+  ],
+  "teks_terbaca": "Ini adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Pesan ini terus berulang dalam berbagai versi. Kalimat bukti nomor 1 dalam pesan\nIni adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Pesan ini terus berulang dalam berbagai versi. Kalimat bukti nomor 2 dalam pesan . Ini adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Pesan ini terus berulang dalam berbagai versi. Kalimat bukti nomor 3 dalam pesan\nIni adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Pesan ini terus berulang dalam berbagai versi. Kalimat bukti nomor 4 dalam pesan . Ini adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Pesan ini terus berulang dalam berbagai versi. Kalimat bukti nomor 5 dalam pesan\nIni adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Pesan ini terus berulang dalam berbagai versi. Kalimat bukti nomor 6 dalam pesan . Ini adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Pesan ini terus berulang dalam berbagai versi. Kalimat bukti nomor 7 dalam pesan\nIni adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Pesan ini terus berulang dalam berbagai versi. Kalimat bukti nomor 8 dalam pesan . Ini adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Pesan ini terus berulang dalam berbagai versi. Kalimat bukti nomor 9 dalam pesan\nIni adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Pesan ini terus berulang dalam berbagai versi. Kalimat bukti nomor 10 dalam pesan . Ini adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Pesan ini terus berulang dalam berbagai versi. Kalimat bukti nomor 11 dalam pesan\nIni adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Pesan ini terus berulang dalam berbagai versi. Kalimat bukti nomor 12 dalam pesan . Ini adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Pesan ini terus berulang dalam berbagai versi. Kalimat bukti nomor 13 dalam pesan\nIni adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Pesan ini terus berulang dalam berbagai versi. Kalimat bukti nomor 14 dalam pesan . Ini adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Pesan ini terus berulang dalam berbagai versi. Kalimat bukti nomor 15 dalam pesan\nIni adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Pesan ini terus berulang dalam berbagai versi. Kalimat bukti nomor 16 dalam pesan . Ini adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Pesan ini terus berulang dalam berbagai versi. Kalimat bukti nomor 17 dalam pesan\nIni adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Pesan ini terus berulang dalam berbagai versi. Kalimat bukti nomor 18 dalam pesan . Ini adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. Ini adalah kalimat isi pesan berantai yang sengaja dibuat panjang untuk menguji gulir dan pemotongan teks pada lembar hasil. ",
+  "durasi_ms": 9800,
+  "pemeriksaan_terbatas": []
+}

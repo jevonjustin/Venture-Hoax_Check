@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kaki tetap lembar hasil: satu tombol Tutup. Overdraw: latar putih perlu agar isi yang digulir tidak tembus. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/white"
+    android:elevation="6dp"
+    android:paddingStart="16dp"
+    android:paddingTop="12dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="16dp"
+    tools:ignore="Overdraw">
+
+    <Button
+        android:id="@+id/hasil_tutup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_tombol_utama"
+        android:minHeight="@dimen/lembar_tombol_tutup"
+        android:stateListAnimator="@null"
+        android:text="@string/hasil_tutup"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+</FrameLayout>

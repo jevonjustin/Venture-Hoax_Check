@@ -1,0 +1,57 @@
+{
+  "id_permintaan": "fx-mirip-0001",
+  "tingkat": "hati_hati",
+  "klaim_utama": "Subsidi listrik akan dipotong seluruhnya bulan depan.",
+  "ciri": [
+    {
+      "id": "sumber_tidak_jelas",
+      "nama": "Sumber tidak jelas",
+      "bukti": [
+        "bocoran dari pegawai kantor pusat"
+      ],
+      "penjelasan": "Pesan mengutip pihak yang tidak disebutkan identitasnya sehingga tidak bisa dicek.",
+      "keyakinan": "sedang"
+    },
+    {
+      "id": "desakan_waktu",
+      "nama": "Desakan waktu",
+      "bukti": [
+        "Segera isi token sebanyak mungkin"
+      ],
+      "penjelasan": "Batas waktu yang sangat singkat dipakai agar penerima bertindak tanpa berpikir.",
+      "keyakinan": "tinggi"
+    }
+  ],
+  "cek_fakta": [
+    {
+      "judul": "Contoh: Isu pemotongan seluruh subsidi listrik tidak benar",
+      "sumber": "Contoh Cek Fakta",
+      "url": "https://example.com/cek-fakta/subsidi-listrik",
+      "skor_kemiripan": 0.78,
+      "label": "salah",
+      "tanggal": "2025-09-12",
+      "url_format_lama": false
+    },
+    {
+      "judul": "Contoh: Penjelasan resmi penyesuaian tarif listrik",
+      "sumber": "Contoh Klarifikasi",
+      "url": "https://example.com/klarifikasi/tarif-listrik",
+      "skor_kemiripan": 0.66,
+      "label": "klarifikasi",
+      "tanggal": "2025-09-14",
+      "url_format_lama": false
+    },
+    {
+      "judul": "Contoh: Tarif listrik rumah tangga tetap pada triwulan ini",
+      "sumber": "Contoh Berita",
+      "url": "https://example.com/berita/tarif-tetap",
+      "skor_kemiripan": 0.61,
+      "label": "benar",
+      "tanggal": "2025-09-15",
+      "url_format_lama": false
+    }
+  ],
+  "teks_terbaca": "Pemerintah akan memotong semua subsidi listrik mulai bulan depan. Segera isi token sebanyak mungkin! Ini bocoran dari pegawai kantor pusat.",
+  "durasi_ms": 4200,
+  "pemeriksaan_terbatas": []
+}

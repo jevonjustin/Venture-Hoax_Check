@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Cek Hoaks</string>
 
     <!-- Layar utama -->
@@ -37,25 +37,16 @@
     <string name="pilih_gagal_dibuka">Layar pilih area belum bisa dibuka. Coba ketuk tombol cek lagi.</string>
     <string name="potong_gagal">Bagian layar belum berhasil dipotong. Coba ketuk tombol cek lagi.</string>
 
-    <!-- Kartu status analisis -->
-    <string name="kartu_thumbnail_deskripsi">Potongan layar yang sedang dicek</string>
-    <string name="kartu_menunggu_judul">Sedang menganalisis…</string>
-    <string name="kartu_menunggu_isi">Mohon tunggu sebentar ya, hasilnya segera muncul</string>
-    <string name="kartu_batal">Batal</string>
-    <string name="kartu_batal_deskripsi">Batalkan pengecekan</string>
-    <string name="kartu_tutup">Tutup</string>
-    <string name="kartu_buka_pengaturan">Buka pengaturan</string>
+    <!-- Lembar pengecekan gagal dibuka -->
     <string name="kartu_gagal_dibuka">Kartu status belum bisa ditampilkan. Coba ketuk tombol cek lagi.</string>
 
-    <!-- Kartu hasil sementara (tahap 4; kartu hasil lengkap di tahap 6) -->
-    <string name="hasil_tingkat_kuat">Indikasi kuat hoaks</string>
-    <string name="hasil_tingkat_hati_hati">Perlu hati-hati</string>
-    <string name="hasil_tingkat_tidak_ditemukan">Tidak ditemukan indikasi hoaks</string>
-    <string name="hasil_jumlah_ciri">Ciri hoaks yang ditemukan: %1$d</string>
-    <string name="hasil_tanpa_ciri">Tidak ada ciri hoaks yang ditemukan. Ini bukan jaminan kebenaran, jadi tetap cek sumbernya.</string>
+    <!-- Label tingkat (dipakai banner lembar hasil) -->
+    <string name="hasil_tingkat_kuat">Indikasi Kuat Hoaks</string>
+    <string name="hasil_tingkat_hati_hati">Perlu Hati-hati</string>
+    <string name="hasil_tingkat_tidak_ditemukan">Tidak Ditemukan Indikasi Hoaks</string>
+    <string name="hasil_tingkat_tidak_dikenal">Hasil Analisis</string>
 
-    <!-- Galat pengecekan -->
-    <string name="galat_judul">Pengecekan belum berhasil</string>
+    <!-- Galat pengecekan (dipakai uji koneksi di layar utama) -->
     <string name="galat_url_belum_diatur">Alamat server belum diatur. Atur dulu di aplikasi Cek Hoaks, bagian Pengaturan server.</string>
     <string name="galat_tidak_terjangkau">Server belum bisa dihubungi. Periksa alamat server di aplikasi, pastikan server di laptop sudah berjalan, dan HP terhubung ke jaringan yang sama.</string>
     <string name="galat_waktu_habis">Server terlalu lama menjawab. Coba lagi sebentar lagi.</string>
@@ -65,7 +56,6 @@
     <string name="galat_terlalu_besar">Gambar terlalu besar untuk dikirim. Coba pilih area yang lebih kecil.</string>
     <string name="galat_gambar_rusak">Gambar tidak terkirim dengan utuh. Coba ulangi pengecekan.</string>
     <string name="galat_server">Server sedang mengalami masalah. Coba lagi nanti.</string>
-    <string name="galat_penyandian">Gambar belum berhasil disiapkan untuk dikirim. Coba ketuk tombol cek lagi.</string>
 
     <!-- Pengaturan server (layar utama) -->
     <string name="server_judul">Pengaturan server</string>
@@ -88,4 +78,171 @@
     <string name="notif_judul">Tombol cek aktif</string>
     <string name="notif_isi">Ketuk untuk membuka aplikasi.</string>
     <string name="notif_aksi_matikan">Matikan</string>
+
+    <!-- ============ Tahap 6 ============ -->
+    <!-- Bahasa Indonesia tidak punya bentuk jamak tata bahasa, jadi PluralsCandidate diabaikan pada string berangka. -->
+
+    <!-- Lembar penilaian awal -->
+    <string name="penilaian_bagian_dipilih">BAGIAN YANG DIPILIH</string>
+    <string name="penilaian_status_berjalan">Menganalisis di latar belakang…</string>
+    <string name="penilaian_status_selesai">Analisis selesai</string>
+    <string name="penilaian_status_terkendala">Analisis terkendala</string>
+    <string name="penilaian_pertanyaan">Menurut penilaian awal, konten ini…</string>
+    <string name="penilaian_percaya">Percaya</string>
+    <string name="penilaian_ragu">Ragu-ragu</string>
+    <string name="penilaian_tidak_percaya">Tidak percaya</string>
+    <string name="penilaian_dilewati">Dilewati</string>
+    <string name="penilaian_lihat_hasil">Lihat Hasil</string>
+    <string name="penilaian_lewati">Lewati</string>
+    <string name="penilaian_thumbnail_deskripsi">Potongan layar yang dipilih untuk dicek</string>
+    <string name="penilaian_tutup_deskripsi">Tutup dan batalkan pengecekan</string>
+
+    <!-- Kartu memuat -->
+    <string name="memuat_judul">Sedang dianalisis</string>
+    <string name="memuat_isi">Mohon tunggu sebentar, hasilnya segera muncul</string>
+    <string name="memuat_batal">Batal</string>
+    <string name="memuat_deskripsi">Analisis sedang berjalan</string>
+    <string name="memuat_batal_deskripsi">Batalkan pengecekan</string>
+
+    <!-- Lembar hasil: banner dan tingkat -->
+    <string name="hasil_banner_label">HASIL ANALISIS</string>
+    <string name="hasil_keterangan_kuat">Klaim serupa dinyatakan salah oleh artikel cek fakta. Ini indikasi, bukan putusan akhir. Baca artikelnya untuk memastikan.</string>
+    <string name="hasil_keterangan_hati_hati">Ditemukan ciri dan/atau artikel cek fakta yang perlu diperhatikan, tetapi belum cukup untuk disimpulkan. Periksa sumber resminya sebelum percaya atau membagikan.</string>
+    <string name="hasil_keterangan_tidak_ditemukan">Pengecekan ini tidak menemukan artikel cek fakta yang menyatakan klaim serupa salah, dan tidak ada ciri yang menonjol. Bukan jaminan informasi ini benar. Tetap periksa sumbernya.</string>
+    <string name="hasil_keterangan_tidak_dikenal">Jenis hasil ini belum dikenali oleh versi aplikasi ini. Rincian di bawah tetap bisa dibaca. Bukan jaminan informasi ini benar. Tetap periksa sumbernya.</string>
+    <string name="hasil_tutup">Tutup</string>
+
+    <!-- Lembar hasil: chip ringkasan -->
+    <string name="hasil_chip_ciri" tools:ignore="PluralsCandidate">%1$d ciri ditemukan</string>
+    <string name="hasil_chip_tanpa_ciri">Tidak ada ciri ditemukan</string>
+    <string name="hasil_chip_artikel" tools:ignore="PluralsCandidate">%1$d artikel cek fakta terkait</string>
+    <string name="hasil_chip_tanpa_artikel">Tidak ada artikel cek fakta yang cocok</string>
+    <string name="hasil_chip_cek_fakta_terbatas">Pencarian artikel cek fakta tidak berjalan</string>
+
+    <!-- Lembar hasil: pemeriksaan terbatas -->
+    <string name="hasil_terbatas_judul">Pemeriksaan belum lengkap</string>
+    <string name="hasil_terbatas_cek_fakta">Database pencarian artikel cek fakta tidak berjalan pada pengecekan ini.</string>
+    <string name="hasil_terbatas_ai">Analisis teks oleh AI tidak berjalan, jadi deteksi ciri hanya memakai pola dasar.</string>
+    <string name="hasil_terbatas_lain">Sebagian pemeriksaan tidak berjalan pada pengecekan ini.</string>
+    <string name="hasil_terbatas_arti">Hasil ini belum mencerminkan pemeriksaan yang utuh.</string>
+    <string name="hasil_terbatas_arti_tidak_ditemukan">Ini bukan hasil pemeriksaan lengkap, jadi tidak ditemukannya indikasi di sini punya arti yang lebih kecil lagi. Periksa sumbernya sendiri.</string>
+
+    <!-- Lembar hasil: judul bagian -->
+    <string name="hasil_bagian_inti">Inti pesan</string>
+    <string name="hasil_bagian_artikel">Artikel cek fakta</string>
+    <string name="hasil_bagian_ciri">Ciri yang ditemukan</string>
+    <string name="hasil_bagian_perbandingan">Dibanding penilaian awal</string>
+    <string name="hasil_bagian_teks">Teks yang terbaca</string>
+    <string name="hasil_bagian_tips">Tips</string>
+
+    <!-- Lembar hasil: artikel cek fakta -->
+    <string name="hasil_artikel_sumber_terbit">%1$s · Terbit %2$s</string>
+    <string name="hasil_artikel_buka">Buka artikel</string>
+    <string name="hasil_artikel_tautan_mati">Tautan asli sudah tidak aktif.</string>
+    <string name="hasil_artikel_cari">Cari judul di web</string>
+    <string name="hasil_label_salah">SALAH</string>
+    <string name="hasil_label_penipuan">PENIPUAN</string>
+    <string name="hasil_label_klarifikasi">KLARIFIKASI</string>
+    <string name="hasil_label_satir">SATIR</string>
+    <string name="hasil_label_belum_terbukti">BELUM TERBUKTI</string>
+    <string name="hasil_label_rujukan">RUJUKAN</string>
+
+    <!-- Lembar hasil: ciri -->
+    <string name="ciri_nama_permintaan_data_rahasia">Permintaan kode, data rahasia, atau uang</string>
+    <string name="ciri_nama_ajakan_menyebarkan">Ajakan menyebarkan</string>
+    <string name="ciri_nama_desakan_waktu">Desakan waktu</string>
+    <string name="ciri_nama_kapital_tanda_seru">Huruf kapital dan tanda seru berlebihan</string>
+    <string name="ciri_nama_link_mencurigakan">Tautan pemendek atau tidak resmi</string>
+    <string name="ciri_nama_sumber_tidak_jelas">Merujuk sumber samar tanpa nama</string>
+    <string name="ciri_nama_judul_clickbait">Judul memancing klik</string>
+    <string name="ciri_nama_bahasa_provokatif">Bahasa provokatif</string>
+    <string name="ciri_nama_pernah_dibantah">Klaim serupa sudah dibantah media cek fakta</string>
+    <string name="ciri_nama_lain">Ciri lain</string>
+    <!-- Pembungkus kutipan: inti pesan dan chip bukti -->
+    <string name="hasil_kutipan">“%1$s”</string>
+    <string name="hasil_keyakinan_tinggi">Keyakinan tinggi</string>
+    <string name="hasil_keyakinan_sedang">Keyakinan sedang</string>
+
+    <!-- Lembar hasil: perbandingan dengan penilaian awal -->
+    <string name="banding_penilaian_awal">Penilaian awal</string>
+    <string name="banding_temuan_sistem">Temuan sistem</string>
+    <string name="banding_pesan_dilewati">Penilaian awal dilewati, jadi belum ada yang dibandingkan.</string>
+    <string name="banding_pesan_tidak_ditemukan_percaya">Sistem tidak menemukan indikasi hoaks, tetapi itu bukan jaminan informasi ini benar. Tetap periksa sumbernya sebelum membagikan.</string>
+    <string name="banding_pesan_tidak_ditemukan_waspada">Sistem tidak menemukan ciri hoaks, tetapi itu bukan jaminan informasi ini benar. Sikap hati-hati tetap baik; periksa sumbernya.</string>
+    <string name="banding_pesan_ada_ciri_percaya">Sistem menemukan hal yang perlu diperhatikan. Lihat rincian di atas.</string>
+    <string name="banding_pesan_ada_ciri_waspada">Penilaian awal sejalan dengan temuan sistem.</string>
+    <string name="banding_pesan_tidak_dikenal">Jenis hasil ini belum bisa dibandingkan dengan penilaian awal.</string>
+
+    <!-- Lembar hasil: teks terbaca dan tips -->
+    <string name="hasil_teks_catatan">Bagian yang disorot adalah bukti dari ciri di atas.</string>
+    <string name="hasil_teks_tampilkan_deskripsi">Tampilkan teks yang terbaca</string>
+    <string name="hasil_teks_sembunyikan_deskripsi">Sembunyikan teks yang terbaca</string>
+    <string name="hasil_tips_kuat">Sebaiknya jangan dibagikan sebelum artikel cek fakta dan sumber resminya diperiksa. Jika sudah telanjur dibagikan, sampaikan koreksinya.</string>
+    <string name="hasil_tips_hati_hati">Cari informasi yang sama di sumber resmi atau media tepercaya sebelum membagikannya.</string>
+    <string name="hasil_tips_tidak_ditemukan">Tidak adanya indikasi bukan jaminan kebenaran. Buka sumber aslinya sendiri sebelum membagikan.</string>
+    <string name="hasil_tips_tidak_dikenal">Informasi ini belum bisa dinilai dan itu bukan jaminan kebenaran. Buka sumber aslinya sendiri dan bandingkan dengan sumber resmi sebelum membagikan.</string>
+
+    <!-- Nama bulan untuk format tanggal artikel -->
+    <string-array name="bulan_nama">
+        <item>Januari</item>
+        <item>Februari</item>
+        <item>Maret</item>
+        <item>April</item>
+        <item>Mei</item>
+        <item>Juni</item>
+        <item>Juli</item>
+        <item>Agustus</item>
+        <item>September</item>
+        <item>Oktober</item>
+        <item>November</item>
+        <item>Desember</item>
+    </string-array>
+
+    <!-- Lembar galat -->
+    <string name="galat_judul_teks">Teks tidak terbaca</string>
+    <string name="galat_isi_teks">Tidak ada teks yang bisa dibaca. Coba pilih bagian dengan tulisan yang lebih jelas.</string>
+    <string name="galat_judul_besar">Area terlalu besar</string>
+    <string name="galat_isi_besar">Gambar dari area ini terlalu besar untuk dikirim. Coba pilih area yang lebih kecil.</string>
+    <string name="galat_judul_gambar">Gambar belum terkirim utuh</string>
+    <string name="galat_isi_gambar">Gambar belum sampai ke server dengan utuh. Coba pilih area sekali lagi.</string>
+    <string name="galat_judul_tidak_terjangkau">Server tidak bisa dihubungi</string>
+    <string name="galat_isi_tidak_terjangkau">Pastikan server menyala dan HP berada di jaringan yang sama, atau gunakan sambungan USB.</string>
+    <string name="galat_judul_url">Alamat server belum diatur</string>
+    <string name="galat_isi_url">Alamat server diperlukan agar analisis bisa berjalan. Atur dulu di aplikasi, bagian Pengaturan server.</string>
+    <string name="galat_judul_waktu_habis">Server terlalu lama menjawab</string>
+    <string name="galat_isi_waktu_habis">Server belum memberi jawaban dalam batas waktu. Coba lagi sebentar lagi.</string>
+    <string name="galat_judul_server">Server sedang bermasalah</string>
+    <string name="galat_isi_server">Server mengalami masalah saat memeriksa. Coba lagi nanti.</string>
+    <string name="galat_judul_respons">Jawaban server tidak dikenali</string>
+    <string name="galat_isi_respons">Pastikan alamat di pengaturan mengarah ke server Cek Hoaks.</string>
+    <string name="galat_judul_cleartext">Alamat server tidak bisa dipakai</string>
+    <string name="galat_isi_cleartext">Versi aplikasi ini tidak mengizinkan alamat http:// biasa. Gunakan build debug atau alamat https://.</string>
+    <string name="galat_aksi_pilih_ulang">Pilih Ulang</string>
+    <string name="galat_aksi_coba_lagi">Coba Lagi</string>
+    <string name="galat_aksi_pengaturan">Buka pengaturan</string>
+    <string name="galat_aksi_tutup">Tutup</string>
+
+    <!-- Tombol cek berhenti (perekaman layar diakhiri sistem) -->
+    <string name="berhenti_channel_nama">Tombol cek berhenti</string>
+    <string name="berhenti_channel_deskripsi">Pemberitahuan saat tombol cek berhenti karena perekaman layar diakhiri</string>
+    <string name="berhenti_notif_judul">Tombol cek berhenti</string>
+    <string name="berhenti_notif_isi">Perekaman layar dihentikan oleh sistem, misalnya saat HP dikunci. Ketuk untuk membuka aplikasi dan menyalakan tombol cek lagi.</string>
+    <string name="berhenti_catatan_judul">Tombol cek berhenti</string>
+    <string name="berhenti_catatan_isi">Perekaman layar dihentikan oleh sistem, misalnya saat HP dikunci.</string>
+    <string name="berhenti_catatan_petunjuk">Ketuk \"Aktifkan tombol cek\" lalu setujui izin rekam layar untuk menyalakannya lagi.</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_1_judul">Ragu dengan informasi yang sedang dibaca?</string>
+    <string name="onboarding_1_isi">Berita dan postingan menarik ada di mana-mana, tetapi tidak semuanya bisa langsung dipercaya.</string>
+    <string name="onboarding_2_judul">Tekan tombol melayang, pilih bagian yang ingin dicek</string>
+    <string name="onboarding_2_isi">Tombol ini muncul di atas aplikasi apa pun yang sedang dibuka. Hanya bagian layar yang dipilih yang dikirim untuk diperiksa.</string>
+    <string name="onboarding_3_judul">Dapatkan hasil analisis dan pelajari ciri-ciri hoaks</string>
+    <string name="onboarding_3_isi">Ciri yang mencurigakan ditampilkan lengkap dengan bukti dan penjelasannya. CekHoaks berperan sebagai pemandu, bukan hakim yang memberi putusan akhir.</string>
+    <string name="onboarding_4_judul">Apa saja yang dikirim</string>
+    <string name="onboarding_4_isi">• Hanya bagian layar yang dipilih yang dikirim ke server CekHoaks, yang berjalan di laptop pengembang.\n• Gambar tidak disimpan di HP maupun di server, dan tidak pernah dikirim ke pihak ketiga.\n• Teks hasil bacaan gambar dikirim ke penyedia AI pihak ketiga untuk dianalisis, setelah nomor telepon, alamat email, dan nama akun berawalan @ disamarkan.\n• Penyamaran dilakukan otomatis berdasarkan pola, jadi bisa ada yang terlewat. Nama orang, tautan, dan isi pesan itu sendiri tidak disamarkan. Sebaiknya jangan cek bagian yang memuat data pribadi.</string>
+    <string name="onboarding_lanjut">Lanjut</string>
+    <string name="onboarding_mulai">Mulai</string>
+    <string name="onboarding_lewati">Lewati</string>
+    <string name="onboarding_buka_lagi">Cara kerja dan privasi</string>
+    <string name="onboarding_halaman_deskripsi" tools:ignore="PluralsCandidate">Halaman %1$d dari %2$d</string>
 </resources>
