@@ -12,7 +12,13 @@ Aturan:
 
 Artikel yang tidak berkaitan disaring lebih dulu: artikel hanya dihitung dan ditampilkan bila relevansinya
 (bobot kata isi judul yang ada di teks) mencapai `relevansi_minimum`, kecuali artikel peringkat 1 dengan skor
->= ambang_cocok yang selalu lolos. Artikel yang tersaring dikembalikan di `Putusan.tersaring` hanya untuk debug.
+>= ambang_cocok (atau `relevansi_lolos_skor` bila diisi) yang selalu lolos. Artikel yang tersaring dikembalikan
+di `Putusan.tersaring` hanya untuk debug.
+
+Kombinasi skor dan relevansi (Sesi 5.6, `kuat_kombinasi_aktif`, bawaan mati): artikel salah/penipuan yang relevan
+dengan skor sedikitnya `kuat_kombinasi_skor` (di bawah ambang_cocok), relevansi sedikitnya `kuat_kombinasi_relevansi`,
+dan sedikitnya `kuat_kombinasi_min_kata` kata isi judul yang ada di teks diperlakukan sama dengan skor >= ambang_cocok
+(kuat bila tanpa konflik). Syarat jumlah kata mencegah judul pendek (relevansi tinggi dari satu-dua kata) menjadi kuat.
 
 Ciri tanpa kecocokan database tidak pernah menaikkan tingkat ke kuat. Label klarifikasi, benar, satir, lainnya,
 dan belum_terbukti tidak pernah menaikkan tingkat ke kuat; artikelnya tetap ditampilkan sebagai rujukan.
@@ -60,6 +66,19 @@ def _cukup_untuk_hati_hati(ciri: list[CiriTerdeteksi]) -> bool:
     return any(c.keyakinan == "tinggi" for c in ciri) or len(ciri) >= 2
 
 
+def _cocok_kuat(k: Kandidat, kata_teks: set[str], cfg: Pengaturan) -> bool:
+    """Kecocokan yang boleh menaikkan tingkat ke kuat (bila tanpa konflik): skor >= ambang_cocok, atau kombinasi
+    skor dan relevansi bila `kuat_kombinasi_aktif`."""
+    if k.skor >= cfg.ambang_cocok:
+        return True
+    return (
+        cfg.kuat_kombinasi_aktif
+        and k.skor >= cfg.kuat_kombinasi_skor
+        and k.relevansi >= cfg.kuat_kombinasi_relevansi
+        and cocok.kata_judul_di_teks(kata_teks, k.judul, cfg) >= cfg.kuat_kombinasi_min_kata
+    )
+
+
 def tentukan(
     ciri: list[CiriTerdeteksi], kandidat: list[Kandidat], teks_bersih: str, cfg: Pengaturan | None = None
 ) -> Putusan:
@@ -68,11 +87,19 @@ def tentukan(
     cfg = cfg or pengaturan_global
     urut = sorted(kandidat, key=lambda k: k.skor, reverse=True)
     di_atas_mirip = [k for k in urut if k.skor >= cfg.ambang_mirip]
-    peringkat_satu = urut[0] if urut and urut[0].skor >= cfg.ambang_cocok else None
+    lolos = cfg.ambang_cocok if cfg.relevansi_lolos_skor is None else cfg.relevansi_lolos_skor
+    peringkat_satu = urut[0] if urut and urut[0].skor >= lolos else None
     mirip = [k for k in di_atas_mirip if k is peringkat_satu or k.relevansi >= cfg.relevansi_minimum]
     tersaring = [k for k in di_atas_mirip if k not in mirip]
 
-    dibantah = next((k for k in mirip if _label(k) in LABEL_DIBANTAH), None)
+    kata_teks = cocok.kata_isi(teks_bersih) if cfg.kuat_kombinasi_aktif else set()
+    dibantah_semua = [k for k in mirip if _label(k) in LABEL_DIBANTAH]
+    # Penentu: artikel salah/penipuan relevan pertama yang cocok untuk kuat; tanpa itu, yang skornya tertinggi.
+    # Bila kombinasi mati, hanya skor >= ambang_cocok yang cocok, jadi penentunya selalu yang pertama (perilaku lama).
+    dibantah = next((k for k in dibantah_semua if _cocok_kuat(k, kata_teks, cfg)), None) or next(
+        iter(dibantah_semua), None
+    )
+    dibantah_cocok = dibantah is not None and _cocok_kuat(dibantah, kata_teks, cfg)
     konflik = (
         [k for k in mirip if _label(k) in LABEL_KONFLIK and dibantah.skor - k.skor <= cfg.selisih_konflik + _EPSILON]
         if dibantah
@@ -82,14 +109,14 @@ def tentukan(
 
     ciri_dibantah = None
     if dibantah:
-        yakin = dibantah.skor >= cfg.ambang_cocok and not konflik
+        yakin = dibantah_cocok and not konflik
         ciri_dibantah = CiriTerdeteksi(
             ID_PERNAH_DIBANTAH, [cocok.kalimat_serupa(teks_bersih, dibantah, cfg)], "tinggi" if yakin else "sedang"
         )
 
-    if dibantah and dibantah.skor >= cfg.ambang_cocok and not konflik:
+    if dibantah_cocok and not konflik:
         tingkat, varian = Tingkat.KUAT, ""
-    elif dibantah and dibantah.skor >= cfg.ambang_cocok:
+    elif dibantah_cocok:
         tingkat, varian = Tingkat.HATI_HATI, VARIAN_KONFLIK
     elif satir_cocok and cfg.satir_hati_hati:
         tingkat, varian = Tingkat.HATI_HATI, VARIAN_SATIR

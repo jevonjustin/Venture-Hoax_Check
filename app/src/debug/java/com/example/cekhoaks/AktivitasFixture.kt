@@ -18,6 +18,8 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.core.graphics.createBitmap
 import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.int
@@ -90,7 +92,14 @@ class AktivitasFixture : Activity() {
                     .apply { topMargin = px(8) },
             )
         }
-        setContentView(ScrollView(this).apply { addView(daftar) })
+        val gulir = ScrollView(this).apply { addView(daftar) }
+        // Target SDK 35+ menggambar konten di bawah status bar; beri jarak setinggi system bars.
+        ViewCompat.setOnApplyWindowInsetsListener(gulir) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+        }
+        setContentView(gulir)
     }
 
     private fun namaFixture(): List<String> =

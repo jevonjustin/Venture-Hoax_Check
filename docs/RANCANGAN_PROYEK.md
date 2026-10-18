@@ -193,6 +193,15 @@ Rujukan desain satu-satunya untuk pengembangan adalah `docs/prototype/prototype.
 - **Perbaikan review T6b (D30).** Catatan berhenti di layar utama ikut diperbarui saat service berhenti ketika aplikasi di depan; "Buka pengaturan" memanggil `startActivity` sebelum jendela overlay dilepas; JPEG dibuang dari memori segera setelah hasil sukses.
 - **Warna teks layar utama di tema gelap (D32).** Ditemukan saat uji HP: teks navy langsung di atas latar layar (judul, status izin, "Cara kerja dan privasi", serta spinner dan teks "Tersambung" di pengaturan server) hampir tidak terbaca di tema gelap. Teks itu kini memakai `MaterialTheme.colorScheme.primary` (navy di tema terang, `navy_lembut` di tema gelap). Tombol navy bertulisan putih dan kotak catatan berlatar `navy_lembut` tetap memakai warna tetap karena kontrasnya aman di kedua tema. Onboarding dan semua lembar overlay selalu terang.
 
+### Keputusan Sesi 6.1
+
+- **Penilaian awal tetap tiga opsi (A7).** Percaya, Ragu-ragu, Tidak percaya, plus Lewati; pengguna tidak memilih ciri. Keputusan pemilik. `docs/API.md` menyebut perbandingan himpunan ciri, tetapi aplikasi cukup membandingkan penilaian dengan tingkat.
+- **Label `benar` tetap "RUJUKAN" (D9).** Keputusan pemilik.
+- **Statistik, riwayat, dan dashboard.** Tidak dibangun sebelum showcase; cukup di Figma.
+- **Teks perbandingan per penyebab.** `hati_hati` + Percaya dibedakan menurut penyebab yang disimpulkan aplikasi dari respons, tanpa mengubah kontrak: (1) ada ciri; (2) tanpa ciri dengan artikel berlabel satir; (3) tanpa ciri dengan artikel lain; (4) umum. `tidak_ditemukan` dibedakan per penilaian (Percaya, Ragu-ragu, Tidak percaya) dan semuanya memuat kalimat bukan jaminan. `kuat` + Percaya memakai teks baru yang mengingatkan bahwa pesan meyakinkan pun bisa memakai pola hoaks. Penilaian Ragu-ragu atau Tidak percaya pada `kuat` dan `hati_hati` tidak berubah. Teks lengkap ada di `strings.xml` (`banding_pesan_*`).
+- **Penyeragaman istilah.** Teks perbandingan dan keterangan tingkat memakai "indikasi hoaks"; "ciri" hanya untuk daftar ciri. Kata "benar" di teks UI hanya muncul dalam frasa "bukan jaminan informasi ini benar" (dijaga `StringResourcesTest`), sehingga `server_url_tidak_valid` menjadi "belum sesuai" dan tips `tidak_ditemukan` serta `tidak_dikenal` ikut diubah.
+- **Fixture debug.** `AktivitasFixture` (debug) diberi padding system bars. Fixture baru `hati_hati_satir`, `hati_hati_artikel`, dan `hati_hati_umum` (penyebab ciri sudah dicakup `hati_hati_mirip`).
+
 ## 12. Proyek referensi open source
 
 | Repositori | Lisensi | Dipakai untuk | Tahap | Catatan |
@@ -484,12 +493,10 @@ Daftar ini dikumpulkan dari sesi 5.1-5.5 supaya tidak hilang antar sesi. Hapus b
 
 #### Tahap 6 (UI)
 
-- **Keputusan pemilik: pilihan ciri oleh pengguna.** `docs/API.md` menyebut perbandingan himpunan ciri, tetapi prototipe hanya membandingkan penilaian awal dengan `tidak_ditemukan` atau bukan. Tentukan apakah pemilihan ciri ditambahkan.
 - **Varian keterangan tingkat dari server tidak ada di kontrak.** Pertimbangkan field baru di kontrak mendatang (0.6); setelah itu tambahkan pemetaan label dan cadangan di Android.
 - **Uji HP (16 Oktober 2026, Galaxy A55, tema gelap dan terang) lulus.** Onboarding, semua fixture, font 1,3, alur nyata dengan `PAKSA_TINGKAT` kuat, hati_hati, dan tidak_ditemukan (semua kombinasi penilaian), server tidak terjangkau dan "Buka pengaturan", B3 (kunci HP, notifikasi, kotak catatan), serta tiga permintaan dengan LLM Groq sungguhan. Status Tahap 6 di `CLAUDE.md` diperbarui setelah developer menyatakan tahap selesai.
 - **Server: false negative pada lowongan kerja palsu.** Narasi lowongan Nestle palsu (TurnBackHoax 15/10/2026, belum ada di database) menghasilkan `tidak_ditemukan` tanpa ciri. Bahan evaluasi Sesi 5.6.
-- **Istilah pesan perbandingan `tidak_ditemukan`.** Penilaian Percaya memakai "indikasi hoaks", Ragu dan Tidak percaya memakai "ciri hoaks". Seragamkan bersama usulan teks perbandingan yang lebih mendidik.
-- **Belum dibangun dari prototipe:** statistik, riwayat, dashboard, dan belajar hoaks.
+- **Belum dibangun dari prototipe:** statistik, riwayat, dashboard, dan belajar hoaks (keputusan di "Keputusan Sesi 6.1").
 
 #### Tahap 8 (showcase)
 

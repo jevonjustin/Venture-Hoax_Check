@@ -1,0 +1,20 @@
+{
+  "id_permintaan": "fx-artikel-0001",
+  "tingkat": "hati_hati",
+  "klaim_utama": "Harga beras naik dua kali lipat mulai pekan depan.",
+  "ciri": [],
+  "cek_fakta": [
+    {
+      "judul": "Contoh: Penjelasan soal kabar kenaikan harga beras",
+      "sumber": "Contoh Klarifikasi",
+      "url": "https://example.com/klarifikasi/harga-beras",
+      "skor_kemiripan": 0.69,
+      "label": "klarifikasi",
+      "tanggal": "2025-07-03",
+      "url_format_lama": false
+    }
+  ],
+  "teks_terbaca": "Harga beras naik dua kali lipat mulai pekan depan, menurut kabar yang beredar di pasar.",
+  "durasi_ms": 4000,
+  "pemeriksaan_terbatas": []
+}

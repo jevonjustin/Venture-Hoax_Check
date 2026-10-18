@@ -144,7 +144,7 @@ class EmbedderE5:
 
 
 def _embedder_e5(cfg: Pengaturan, maks_token: int) -> EmbedderE5:
-    model = cfg.model_folder / f"e5-{cfg.cek_fakta_ukuran}" / BERKAS_MODEL[cfg.cek_fakta_varian]
+    model = cfg.e5_model_berkas or cfg.model_folder / f"e5-{cfg.cek_fakta_ukuran}" / BERKAS_MODEL[cfg.cek_fakta_varian]
     tokenizer = cfg.model_folder / f"e5-{cfg.cek_fakta_ukuran}" / "tokenizer.json"
     for berkas in (model, tokenizer):
         if not berkas.exists():
@@ -205,7 +205,8 @@ class Pencarian:
         folder = cfg.cek_fakta_folder
         jalur_artikel = folder / "artikel.jsonl"
         nama = f"vektor_{cfg.cek_fakta_ukuran}_{cfg.cek_fakta_varian}"
-        jalur_vektor, jalur_meta = folder / f"{nama}.npy", folder / f"{nama}.json"
+        jalur_vektor = cfg.e5_vektor_berkas or folder / f"{nama}.npy"
+        jalur_meta = jalur_vektor.with_suffix(".json")
         for berkas in (jalur_artikel, jalur_vektor, jalur_meta):
             if not berkas.exists():
                 raise PencarianTidakTersedia(f"berkas database tidak ditemukan: {berkas}")
@@ -218,7 +219,8 @@ class Pencarian:
                 "vektor tidak cocok dengan artikel.jsonl (artikel atau urutannya berubah); "
                 "bangun ulang vektor dengan alat/cek_fakta/evaluasi.py"
             )
-        embedder = self._buat_embedder(cfg, int(meta.get("maks_token", MAKS_TOKEN_BAWAAN)))
+        # Panjang token kueri dari Pengaturan (terpisah dari panjang passage di meta; vektor tidak dibangun ulang).
+        embedder = self._buat_embedder(cfg, int(cfg.e5_maks_token_kueri))
         self._artikel, self._vektor, self._embedder = artikel, vektor, embedder
         self._idf = hitung_idf(artikel)
         self.jumlah = len(artikel)
@@ -240,8 +242,11 @@ class Pencarian:
         akhiran = "dinonaktifkan" if self.status == STATUS_NONAKTIF else "TIDAK TERSEDIA"
         return f"{akhiran}: {self.alasan}"
 
-    def cari(self, teks: str, k: int) -> list[Kandidat]:
-        """Masukan: teks. Keluaran: sampai k kandidat, skor tertinggi lebih dulu. Kosong bila tidak siap."""
+    def cari(self, teks: str, k: int, kecualikan_id: frozenset[str] | None = None) -> list[Kandidat]:
+        """Masukan: teks. Keluaran: sampai k kandidat, skor tertinggi lebih dulu. Kosong bila tidak siap.
+
+        `kecualikan_id` (id artikel di artikel.jsonl) hanya untuk alat evaluasi leave-one-out; server tidak pernah
+        mengisinya (cari_kecocokan tidak meneruskannya) dan tidak bisa diisi lewat HTTP atau lingkungan."""
         import numpy as np
 
         kueri = rapikan_kueri(teks)
@@ -252,8 +257,12 @@ class Pencarian:
         k = min(k, len(skor))
         if k <= 0:
             return []
+        if kecualikan_id:
+            skor = np.where([a.get("id") in kecualikan_id for a in self._artikel], -np.inf, skor)
         teratas = np.argpartition(-skor, k - 1)[:k]
         teratas = teratas[np.argsort(-skor[teratas])]
+        if kecualikan_id:
+            teratas = teratas[np.isfinite(skor[teratas])]
         kata_teks = kata_isi(kueri)
         hasil = []
         for i in teratas:
@@ -337,14 +346,39 @@ def hitung_idf(artikel: list[dict]) -> dict[str, float]:
     return {k: math.log((n + 1) / (v + 1)) for k, v in df.items()}
 
 
-def relevansi_judul(kata_teks: set[str], judul: str, idf: dict[str, float], n_artikel: int) -> float:
+def _ada_toleran(kata: str, himpunan: set[str], cfg: Pengaturan) -> bool:
+    """`_ada`, atau (bila `relevansi_toleransi_ocr`) kata judul sedikitnya 5 huruf tanpa angka yang berbeda paling
+    banyak `relevansi_edit_pendek` (5-6 huruf) atau `relevansi_edit_panjang` (>= 7 huruf) huruf dari kata teks
+    sedikitnya 5 huruf. Untuk salah eja OCR pada nama; kata pendek dan angka tetap harus persis."""
+    if _ada(kata, himpunan):
+        return True
+    if not cfg.relevansi_toleransi_ocr or len(kata) < 5 or any(c.isdigit() for c in kata):
+        return False
+    from .setia import _jarak  # impor di sini: setia mengimpor modul ini
+
+    batas = cfg.relevansi_edit_pendek if len(kata) <= 6 else cfg.relevansi_edit_panjang
+    return any(
+        len(t) >= 5 and abs(len(t) - len(kata)) <= batas and _jarak(kata, t) <= batas for t in himpunan
+    )
+
+
+def kata_judul_di_teks(kata_teks: set[str], judul: str, cfg: Pengaturan | None = None) -> int:
+    """Jumlah kata isi judul artikel yang ada di teks (dengan toleransi OCR bila menyala)."""
+    cfg = cfg or pengaturan_global
+    return sum(1 for k in kata_isi(judul_bersih(judul)) if _ada_toleran(k, kata_teks, cfg))
+
+
+def relevansi_judul(
+    kata_teks: set[str], judul: str, idf: dict[str, float], n_artikel: int, cfg: Pengaturan | None = None
+) -> float:
     """Bagian bobot kata isi judul artikel yang ada di teks (0-1). Judul tanpa kata isi tidak disaring (1,0)."""
+    cfg = cfg or pengaturan_global
     kata_judul = kata_isi(judul_bersih(judul))
     bobot_unseen = math.log(n_artikel + 1) if n_artikel else 1.0
     total = sum(idf.get(k, bobot_unseen) for k in kata_judul)
     if not kata_judul or total <= 0:
         return 1.0
-    cocok_ = sum(idf.get(k, bobot_unseen) for k in kata_judul if _ada(k, kata_teks))
+    cocok_ = sum(idf.get(k, bobot_unseen) for k in kata_judul if _ada_toleran(k, kata_teks, cfg))
     return cocok_ / total
 
 

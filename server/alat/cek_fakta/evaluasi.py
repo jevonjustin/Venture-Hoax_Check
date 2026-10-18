@@ -236,6 +236,8 @@ def main():
     v = s.add_parser("vektor", help="hanya membangun vektor")
     v.add_argument("--ukuran", choices=["small", "base"], required=True)
     v.add_argument("--varian", choices=["fp32", "int8"], default="fp32")
+    v.add_argument("--model", default=None, help="path model ONNX khusus (bawaan: model standar varian itu)")
+    v.add_argument("--keluar", default=None, help="folder keluaran vektor (bawaan: folder database)")
     a = p.parse_args()
     if a.cmd == "siapkan-ocr":
         siapkan_ocr()
@@ -247,7 +249,8 @@ def main():
         ukur(a.ukuran, a.varian, a.ulang)
     elif a.cmd == "vektor":
         from embed import bangun_vektor
-        print(bangun_vektor(FOLDER_DB, a.ukuran, a.varian))
+        print(bangun_vektor(FOLDER_DB, a.ukuran, a.varian, Path(a.model) if a.model else None,
+                            Path(a.keluar) if a.keluar else None))
     elif a.cmd == "ringkas":
         ringkas()
 

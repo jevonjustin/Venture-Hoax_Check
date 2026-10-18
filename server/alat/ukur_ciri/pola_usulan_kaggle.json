@@ -1,0 +1,15 @@
+{
+  "ajakan_menyebarkan": [
+    "\\b(?:saya|aku|gue|gw|gua|kami)\\s+(?:\\w+\\s+){0,2}?(?:share|sebarkan|bagikan)\\b",
+    "\\bsebarkan\\s+(?:hoa[xk]s?|berita\\s+bohong|fitnah)\\b",
+    "\\bbagikan\\s+(?:amplop|uang|sembako|paket|bingkisan|bantuan|zakat|hadiah|beras|dana)\\b",
+    "\\b(?:to|can|will|would|they|we|users?|who|not|don'?t)\\s+share\\b|\\bshare\\s+(?:a|an|the|their|his|her|its|our|your|with|of)\\b"
+  ],
+  "sumber_tidak_jelas": [
+    "\\bkatanya\\s+(?:saat|kepada|dalam|usai|seusai|ketika|melalui|di)\\b|[\"'”’�]\\s*,?\\s*katanya\\b",
+    "(?:hoa[xk]s?|klarifikasi|tidak\\s+benar|dibantah|bantah\\w*)[^.]{0,80}\\bberedar\\s+di\\b|\\bberedar\\s+di\\b[^.]{0,80}(?:hoa[xk]s?|klarifikasi|tidak\\s+benar|dibantah|bantah\\w*)"
+  ],
+  "judul_clickbait": [
+    "\\b(?:video|foto|gambar|kasus|berita|isu|informasi|info|konten|unggahan|postingan|surat)\\s+viral\\b|\\bviral\\s+di\\s+(?:media|medsos|internet)"
+  ]
+}

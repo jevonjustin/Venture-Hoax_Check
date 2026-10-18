@@ -36,7 +36,7 @@ class FixtureTest {
     fun fixtureWajibAda() {
         val nama = semuaBerkas().map { it.nameWithoutExtension }.toSet()
         val wajib = setOf(
-            "kuat", "hati_hati", "hati_hati_mirip", "tidak_ditemukan", "tidak_ditemukan_rujukan",
+            "kuat", "hati_hati", "hati_hati_mirip", "hati_hati_satir", "hati_hati_artikel", "hati_hati_umum", "tidak_ditemukan", "tidak_ditemukan_rujukan",
             "klaim_kosong", "cek_fakta_kosong", "url_format_lama", "pemeriksaan_terbatas",
             "pemeriksaan_terbatas_ai", "panjang", "tak_dikenal", "galat_teks_tidak_terbaca",
             "galat_terlalu_besar", "galat_server", "galat_kode_tak_dikenal", "galat_tidak_terjangkau",
@@ -107,6 +107,18 @@ class FixtureTest {
         assertTrue(hasil.teksTerbaca.length >= 3500)
         assertEquals(9, hasil.ciri.size)
         assertEquals(3, hasil.cekFakta.size)
+    }
+
+    @Test
+    fun fixtureHatiHatiMencakupSemuaPenyebab() {
+        fun penyebab(nama: String) = penyebabHatiHati(
+            jsonApi.decodeFromString(HasilAnalisis.serializer(), isi(File(folderFixture(), "$nama.json"))),
+        )
+        assertEquals(PenyebabHatiHati.CIRI, penyebab("hati_hati"))
+        assertEquals(PenyebabHatiHati.CIRI, penyebab("hati_hati_mirip"))
+        assertEquals(PenyebabHatiHati.ARTIKEL_SATIR, penyebab("hati_hati_satir"))
+        assertEquals(PenyebabHatiHati.ARTIKEL_LAIN, penyebab("hati_hati_artikel"))
+        assertEquals(PenyebabHatiHati.UMUM, penyebab("hati_hati_umum"))
     }
 
     @Test

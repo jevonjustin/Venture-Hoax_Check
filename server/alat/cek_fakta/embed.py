@@ -18,7 +18,7 @@ MAKS_TOKEN = 256
 
 
 class Embedder:
-    def __init__(self, ukuran: str = "small", varian: str = "fp32", maks_token: int = MAKS_TOKEN):
+    def __init__(self, ukuran: str = "small", varian: str = "fp32", maks_token: int = MAKS_TOKEN, model: Path | None = None):
         import onnxruntime as ort
         from tokenizers import Tokenizer
 
@@ -28,7 +28,7 @@ class Embedder:
         self.tok.enable_padding(pad_id=self.tok.token_to_id("<pad>") or 1, pad_token="<pad>")
         opsi = ort.SessionOptions()
         opsi.log_severity_level = 3
-        self.sesi = ort.InferenceSession(str(jalur_model(ukuran, varian)), opsi, providers=["CPUExecutionProvider"])
+        self.sesi = ort.InferenceSession(str(model or jalur_model(ukuran, varian)), opsi, providers=["CPUExecutionProvider"])
         self.nama_masukan = {i.name for i in self.sesi.get_inputs()}
 
     def encode(self, teks: list[str], ukuran_batch: int = 32, kemajuan: bool = False) -> np.ndarray:
@@ -86,15 +86,19 @@ def jalur_vektor(folder: Path, ukuran: str, varian: str) -> Path:
     return folder / f"vektor_{ukuran}_{varian}.npy"
 
 
-def bangun_vektor(folder: Path = FOLDER_DB, ukuran: str = "small", varian: str = "fp32") -> dict:
-    """Meng-embed seluruh artikel.jsonl dan menyimpannya. Mengembalikan statistik (detik, ukuran berkas)."""
+def bangun_vektor(folder: Path = FOLDER_DB, ukuran: str = "small", varian: str = "fp32",
+                  model: Path | None = None, folder_keluar: Path | None = None) -> dict:
+    """Meng-embed seluruh artikel.jsonl dan menyimpannya. Mengembalikan statistik (detik, ukuran berkas).
+    `model` (path ONNX khusus, mis. int8 hasil kuantisasi lokal) dan `folder_keluar` bersifat opsional; bawaannya
+    model standar dan folder database."""
     artikel = baca_jsonl(folder / "artikel.jsonl")
-    emb = Embedder(ukuran, varian)
+    emb = Embedder(ukuran, varian, model=model)
     teks = [teks_passage(a) for a in artikel]
     mulai = time.perf_counter()
     vek = emb.encode(teks, kemajuan=True)
     detik = time.perf_counter() - mulai
-    jalur = jalur_vektor(folder, ukuran, varian)
+    jalur = jalur_vektor(folder_keluar or folder, ukuran, varian)
+    jalur.parent.mkdir(parents=True, exist_ok=True)
     np.save(jalur, vek)
     meta = {"jumlah": len(artikel), "dimensi": int(vek.shape[1]), "detik_bangun": round(detik, 1), "ukuran": ukuran,
             "varian": varian, "maks_token": emb.maks_token, "teks_sha1": sidik_teks(artikel)}

@@ -28,7 +28,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
 from ..konfigurasi import DATA_LOKAL, VERSI_SERVER, Pengaturan, pengaturan as pengaturan_global
-from . import cocok, klaim as modul_klaim, samarkan
+from . import cocok, klaim as modul_klaim, samarkan, setia
 from .ciri import ID_BISA_DITANDAI
 from .tipe import KandidatLLM
 
@@ -496,14 +496,27 @@ def kata_penilaian_baru(klaim: str, teks: str) -> list[str]:
     return [w for w in KATA_PENILAIAN if re.search(rf"\b{w}\b", k) and w not in t]
 
 
+def alasan_klaim_ditolak(klaim: str, teks_samar: str, cfg: Pengaturan | None = None) -> tuple[str, int] | None:
+    """None bila klaim dapat dipakai; selain itu (kode alasan, jumlah token). Hanya kode dan angka, tanpa teks."""
+    cfg = cfg or pengaturan_global
+    if not klaim.strip():
+        return "kosong", 0
+    if any(t in klaim for t in (samarkan.TOKEN_NOMOR, samarkan.TOKEN_EMAIL, samarkan.TOKEN_AKUN)):
+        return "token_penyamaran", 1
+    if modul_klaim.memuat_kata_ganti_kedua(klaim):
+        return "kata_ganti_kedua", 1
+    baru = kata_penilaian_baru(klaim, teks_samar)
+    if baru:
+        return "kata_penilaian_baru", len(baru)
+    if kesetiaan_klaim(klaim, teks_samar) < cfg.klaim_kesetiaan_minimum:
+        return "kesetiaan_rendah", 1
+    if cfg.periksa_kesetiaan_klaim:
+        return setia.periksa_kesetiaan(klaim, teks_samar, cfg)
+    return None
+
+
 def klaim_dapat_dipakai(klaim: str, teks_samar: str, cfg: Pengaturan | None = None) -> bool:
     """Klaim LLM dipakai bila tidak kosong, setia pada teks (rasio kata isi >= klaim_kesetiaan_minimum), tidak
-    memuat kata penilaian di luar teks, tidak memuat token penyamaran, dan tidak memuat kata ganti orang kedua."""
-    cfg = cfg or pengaturan_global
-    if not klaim.strip() or any(t in klaim for t in (samarkan.TOKEN_NOMOR, samarkan.TOKEN_EMAIL, samarkan.TOKEN_AKUN)):
-        return False
-    if modul_klaim.memuat_kata_ganti_kedua(klaim):
-        return False
-    if kata_penilaian_baru(klaim, teks_samar):
-        return False
-    return kesetiaan_klaim(klaim, teks_samar) >= cfg.klaim_kesetiaan_minimum
+    memuat kata penilaian di luar teks, tidak memuat token penyamaran, dan tidak memuat kata ganti orang kedua.
+    Bila `periksa_kesetiaan_klaim` menyala, angka, nama, dan kata isi juga harus setia (pipeline/setia.py)."""
+    return alasan_klaim_ditolak(klaim, teks_samar, cfg) is None

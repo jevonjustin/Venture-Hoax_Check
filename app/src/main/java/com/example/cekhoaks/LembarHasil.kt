@@ -258,7 +258,7 @@ class LembarHasil(
             setText(tampil.judul)
             setTextColor(warna(palet.ink))
         }
-        view.findViewById<TextView>(R.id.hasil_banding_pesan).setText(pesanPerbandingan(penilaian, hasil.tingkat))
+        view.findViewById<TextView>(R.id.hasil_banding_pesan).setText(pesanPerbandingan(penilaian, hasil))
     }
 
     private fun isiTeksTerbaca(view: View) {

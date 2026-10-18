@@ -1,0 +1,20 @@
+{
+  "id_permintaan": "fx-satir-0001",
+  "tingkat": "hati_hati",
+  "klaim_utama": "Presiden mengumumkan libur nasional tambahan selama sebulan penuh.",
+  "ciri": [],
+  "cek_fakta": [
+    {
+      "judul": "Contoh: Unggahan libur nasional sebulan penuh berasal dari situs satire",
+      "sumber": "Contoh Cek Fakta",
+      "url": "https://example.com/cek-fakta/libur-satire",
+      "skor_kemiripan": 0.74,
+      "label": "satir",
+      "tanggal": "2025-08-20",
+      "url_format_lama": false
+    }
+  ],
+  "teks_terbaca": "Presiden mengumumkan libur nasional tambahan selama sebulan penuh untuk seluruh rakyat.",
+  "durasi_ms": 3900,
+  "pemeriksaan_terbatas": []
+}

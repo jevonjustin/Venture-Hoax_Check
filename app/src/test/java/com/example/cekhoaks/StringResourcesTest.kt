@@ -21,10 +21,8 @@ class StringResourcesTest {
         "ramu", "meramu", "diramu", "semu",
     )
 
-    // Pengecualian eksplisit untuk "benar": string lama (bukan klaim tentang informasi).
-    private val pengecualianBenar = mapOf(
-        "server_url_tidak_valid" to "'benar' berarti format alamat sudah sesuai, bukan klaim informasi",
-    )
+    // Pengecualian eksplisit untuk "benar" (saat ini tidak ada).
+    private val pengecualianBenar = emptyMap<String, String>()
 
     private val polaMuMandiri = Regex("""(?i)(?<![\p{L}])mu(?![\p{L}])""")
     private val polaStripMu = Regex("""(?i)-mu\b""")
@@ -134,7 +132,8 @@ class StringResourcesTest {
         val teks = semuaTeks()
         for (nama in listOf(
             "hasil_keterangan_tidak_ditemukan", "hasil_keterangan_tidak_dikenal",
-            "banding_pesan_tidak_ditemukan_percaya", "banding_pesan_tidak_ditemukan_waspada",
+            "banding_pesan_tidak_ditemukan_percaya", "banding_pesan_tidak_ditemukan_ragu",
+            "banding_pesan_tidak_ditemukan_tidak_percaya",
             "hasil_tips_tidak_dikenal",
         )) {
             assertTrue(nama, teks.getValue(nama).contains("bukan jaminan", ignoreCase = true))
@@ -148,6 +147,23 @@ class StringResourcesTest {
         assertEquals("Perlu Hati-hati", teks["hasil_tingkat_hati_hati"])
         assertEquals("Tidak Ditemukan Indikasi Hoaks", teks["hasil_tingkat_tidak_ditemukan"])
         assertEquals("Hasil Analisis", teks["hasil_tingkat_tidak_dikenal"])
+    }
+
+    @Test
+    fun kataBenarHanyaDalamFrasaPersis() {
+        for ((nama, isi) in semuaTeks()) {
+            val tanpaFrasa = isi.replace("bukan jaminan informasi ini benar", "", ignoreCase = true)
+            assertFalse("$nama memakai 'benar' di luar frasa persis", tanpaFrasa.contains("benar", ignoreCase = true))
+        }
+    }
+
+    @Test
+    fun teksPerbandinganDanKeteranganTingkatMemakaiIndikasiHoaks() {
+        for ((nama, isi) in semuaTeks()) {
+            if (nama.startsWith("banding_pesan_") || nama.startsWith("hasil_keterangan_")) {
+                assertFalse("$nama memakai kata 'ciri'", Regex("""(?i)ciri""").containsMatchIn(isi))
+            }
+        }
     }
 
     @Test

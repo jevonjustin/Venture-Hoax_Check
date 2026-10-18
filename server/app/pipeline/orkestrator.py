@@ -142,7 +142,8 @@ async def jalankan(data: bytes, ctx: Konteks) -> HasilAnalisis:
             # Klaim utama, berurutan: klaim LLM (setia, tanpa kata ganti kedua) -> bukti pernah_dibantah ->
             # heuristik ekstraktif -> kosong. Heuristik lebih ketat bila LLM mengajukan klaim yang ditolak.
             awal = time.perf_counter()
-            klaim_llm_sah = hasil_llm is not None and llm.klaim_dapat_dipakai(hasil_llm.klaim_utama, samar)
+            alasan_klaim = llm.alasan_klaim_ditolak(hasil_llm.klaim_utama, samar) if hasil_llm else None
+            klaim_llm_sah = hasil_llm is not None and alasan_klaim is None
             klaim_llm_ditolak = hasil_llm is not None and bool(hasil_llm.klaim_utama.strip()) and not klaim_llm_sah
             catatan_klaim: dict = {}
             klaim_sumber = "kosong"
@@ -177,6 +178,10 @@ async def jalankan(data: bytes, ctx: Konteks) -> HasilAnalisis:
                     "klaim": hasil_llm.klaim_utama if hasil_llm else None,
                     "klaim_dipakai": klaim_sumber == "llm",
                     "kesetiaan": llm.kesetiaan_klaim(hasil_llm.klaim_utama, samar) if hasil_llm else None,
+                    # Hanya kode alasan dan jumlah token; tidak ada teks (aturan privasi log).
+                    "alasan_klaim_ditolak": (
+                        {"kode": alasan_klaim[0], "jumlah": alasan_klaim[1]} if alasan_klaim else None
+                    ),
                     "kutipan_ditolak": ditolak,
                     "kandidat": hasil_llm.kandidat if hasil_llm else None,
                     "jejak": jejak_llm,

@@ -65,7 +65,7 @@
     <string name="server_tombol_uji">Uji koneksi</string>
     <string name="server_tombol_usb">USB (adb reverse)</string>
     <string name="server_petunjuk_usb">Untuk koneksi USB, jalankan dulu di laptop: adb reverse tcp:8000 tcp:8000</string>
-    <string name="server_url_tidak_valid">Format alamat belum benar. Contoh: http://192.168.1.5:8000 (tanpa /analisis atau jalur lain di belakangnya).</string>
+    <string name="server_url_tidak_valid">Format alamat belum sesuai. Contoh: http://192.168.1.5:8000 (tanpa /analisis atau jalur lain di belakangnya).</string>
     <string name="server_url_kosong">Alamat server masih kosong.</string>
     <string name="server_menguji">Menghubungi server…</string>
     <string name="server_tersambung">Tersambung. Versi server: %1$s</string>
@@ -107,8 +107,8 @@
     <!-- Lembar hasil: banner dan tingkat -->
     <string name="hasil_banner_label">HASIL ANALISIS</string>
     <string name="hasil_keterangan_kuat">Klaim serupa dinyatakan salah oleh artikel cek fakta. Ini indikasi, bukan putusan akhir. Baca artikelnya untuk memastikan.</string>
-    <string name="hasil_keterangan_hati_hati">Ditemukan ciri dan/atau artikel cek fakta yang perlu diperhatikan, tetapi belum cukup untuk disimpulkan. Periksa sumber resminya sebelum percaya atau membagikan.</string>
-    <string name="hasil_keterangan_tidak_ditemukan">Pengecekan ini tidak menemukan artikel cek fakta yang menyatakan klaim serupa salah, dan tidak ada ciri yang menonjol. Bukan jaminan informasi ini benar. Tetap periksa sumbernya.</string>
+    <string name="hasil_keterangan_hati_hati">Ditemukan indikasi hoaks dan/atau artikel cek fakta yang perlu diperhatikan, tetapi belum cukup untuk disimpulkan. Periksa sumber resminya sebelum percaya atau membagikan.</string>
+    <string name="hasil_keterangan_tidak_ditemukan">Pengecekan ini tidak menemukan artikel cek fakta yang menyatakan klaim serupa salah, dan tidak ada indikasi hoaks yang menonjol. Bukan jaminan informasi ini benar. Tetap periksa sumbernya.</string>
     <string name="hasil_keterangan_tidak_dikenal">Jenis hasil ini belum dikenali oleh versi aplikasi ini. Rincian di bawah tetap bisa dibaca. Bukan jaminan informasi ini benar. Tetap periksa sumbernya.</string>
     <string name="hasil_tutup">Tutup</string>
 
@@ -168,8 +168,13 @@
     <string name="banding_temuan_sistem">Temuan sistem</string>
     <string name="banding_pesan_dilewati">Penilaian awal dilewati, jadi belum ada yang dibandingkan.</string>
     <string name="banding_pesan_tidak_ditemukan_percaya">Sistem tidak menemukan indikasi hoaks, tetapi itu bukan jaminan informasi ini benar. Tetap periksa sumbernya sebelum membagikan.</string>
-    <string name="banding_pesan_tidak_ditemukan_waspada">Sistem tidak menemukan ciri hoaks, tetapi itu bukan jaminan informasi ini benar. Sikap hati-hati tetap baik; periksa sumbernya.</string>
-    <string name="banding_pesan_ada_ciri_percaya">Sistem menemukan hal yang perlu diperhatikan. Lihat rincian di atas.</string>
+    <string name="banding_pesan_tidak_ditemukan_ragu">Sistem tidak menemukan indikasi hoaks, tetapi itu bukan jaminan informasi ini benar. Untuk memastikan, periksa siapa pembuatnya, kapan diterbitkan, dan apakah media tepercaya memuatnya.</string>
+    <string name="banding_pesan_tidak_ditemukan_tidak_percaya">Sistem tidak menemukan indikasi hoaks, tetapi itu bukan jaminan informasi ini benar. Rasa ragu tetap berguna: cari sumber resmi atau media tepercaya yang memuat informasi yang sama.</string>
+    <string name="banding_pesan_kuat_percaya">Pesan yang terasa meyakinkan pun bisa memakai pola hoaks. Klaim serupa sudah pernah dinyatakan salah oleh media cek fakta, jadi baca artikelnya sebelum mempercayai atau membagikan.</string>
+    <string name="banding_pesan_hati_hati_percaya_ciri">Sistem menemukan beberapa indikasi yang sering muncul pada hoaks, meski belum cukup untuk disimpulkan. Informasi yang terasa wajar tetap layak dicek ke sumber resminya.</string>
+    <string name="banding_pesan_hati_hati_percaya_satir">Sistem menemukan artikel cek fakta yang membahas klaim serupa sebagai satire atau parodi. Konten seperti itu mudah disalahpahami sebagai berita sungguhan, jadi artikelnya layak dibaca dulu.</string>
+    <string name="banding_pesan_hati_hati_percaya_artikel">Sistem menemukan artikel cek fakta tentang klaim yang mirip. Perlu dicek apakah klaimnya sama persis dengan isi pesan ini.</string>
+    <string name="banding_pesan_hati_hati_percaya_umum">Sistem menemukan hal yang perlu diperhatikan, meski belum cukup untuk disimpulkan. Informasi yang terasa wajar tetap layak dicek ke sumber resminya.</string>
     <string name="banding_pesan_ada_ciri_waspada">Penilaian awal sejalan dengan temuan sistem.</string>
     <string name="banding_pesan_tidak_dikenal">Jenis hasil ini belum bisa dibandingkan dengan penilaian awal.</string>
 
@@ -179,8 +184,8 @@
     <string name="hasil_teks_sembunyikan_deskripsi">Sembunyikan teks yang terbaca</string>
     <string name="hasil_tips_kuat">Sebaiknya jangan dibagikan sebelum artikel cek fakta dan sumber resminya diperiksa. Jika sudah telanjur dibagikan, sampaikan koreksinya.</string>
     <string name="hasil_tips_hati_hati">Cari informasi yang sama di sumber resmi atau media tepercaya sebelum membagikannya.</string>
-    <string name="hasil_tips_tidak_ditemukan">Tidak adanya indikasi bukan jaminan kebenaran. Buka sumber aslinya sendiri sebelum membagikan.</string>
-    <string name="hasil_tips_tidak_dikenal">Informasi ini belum bisa dinilai dan itu bukan jaminan kebenaran. Buka sumber aslinya sendiri dan bandingkan dengan sumber resmi sebelum membagikan.</string>
+    <string name="hasil_tips_tidak_ditemukan">Tidak adanya indikasi hoaks bukan jaminan informasi ini benar. Buka sumber aslinya sendiri sebelum membagikan.</string>
+    <string name="hasil_tips_tidak_dikenal">Informasi ini belum bisa dinilai, dan itu bukan jaminan informasi ini benar. Buka sumber aslinya sendiri dan bandingkan dengan sumber resmi sebelum membagikan.</string>
 
     <!-- Nama bulan untuk format tanggal artikel -->
     <string-array name="bulan_nama">
