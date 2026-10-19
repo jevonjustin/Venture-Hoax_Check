@@ -81,13 +81,15 @@ $alat = "C:\Users\User\AndroidStudioProjects\CekHoaks\server\alat\uji_analisis\e
 & $py $alat nilai --set dev --nama sapuan_1 --sapu "skor_kuat=0.86:0.92:0.02,relevansi=0.30/0.40/0.50"
 
 # 5. Segel: simpan hasil kode AWAL untuk set uji (tanpa ringkasan) SEBELUM menyetel ambang
-& $py $alat segel-awal
+& $py $alat --profil lama segel-awal
 
 # 6. Penilaian uji final (sekali; membutuhkan uji_beku.sha256 yang cocok; kali kedua ditolak kecuali --paksa)
-& $py $alat nilai --set uji --final --nama uji_final --ambang skor_kuat=0.88,relevansi=0.40
+& $py $alat --profil akhir nilai --set uji --final --nama uji_final_akhir
 ```
 
-Ambang yang bisa ditimpa (`--ambang`, `--sapu`), nilai bawaan server tidak berubah bila tidak diisi:
+Profil ambang (`--profil`, opsi global sebelum subperintah) diambil dari `konfigurasi.PROFIL_AMBANG`, tabel yang sama dengan server: `lama` (bawaan alat, perilaku commit 7742a73) atau `akhir` (bawaan server). `CEKHOAKS_PROFIL_AMBANG` diabaikan alat. `--ambang` dan `--maks-token-kueri` menimpa nilai profil.
+
+Ambang yang bisa ditimpa (`--ambang`, `--sapu`); kolom Bawaan = nilai profil `lama`:
 
 | Nama | Bidang `Pengaturan` | Bawaan |
 |---|---|---|

@@ -178,6 +178,7 @@ class Pencarian:
         self._vektor = None
         self._embedder = None
         self._idf: dict[str, float] = {}
+        self._cfg: Pengaturan | None = None
 
     def muat(self, cfg: Pengaturan | None = None) -> None:
         """Memuat artikel, vektor, dan model. Tidak pernah melempar: kegagalan menjadi status + alasan."""
@@ -223,6 +224,7 @@ class Pencarian:
         embedder = self._buat_embedder(cfg, int(cfg.e5_maks_token_kueri))
         self._artikel, self._vektor, self._embedder = artikel, vektor, embedder
         self._idf = hitung_idf(artikel)
+        self._cfg = cfg  # relevansi memakai pengaturan yang sama dengan saat dimuat (profil ambang)
         self.jumlah = len(artikel)
         self.nama_model = f"e5-{cfg.cek_fakta_ukuran} {cfg.cek_fakta_varian}"
 
@@ -267,7 +269,7 @@ class Pencarian:
         hasil = []
         for i in teratas:
             kand = self._kandidat(int(i), float(skor[i]))
-            rel = relevansi_judul(kata_teks, kand.judul, self._idf, len(self._artikel))
+            rel = relevansi_judul(kata_teks, kand.judul, self._idf, len(self._artikel), self._cfg)
             hasil.append(dataclasses.replace(kand, relevansi=rel))
         return hasil
 

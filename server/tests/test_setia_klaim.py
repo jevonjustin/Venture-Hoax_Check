@@ -35,6 +35,19 @@ def test_kata_penipu_ditambahkan_gagal():
     assert kode("Pesan penipuan meminta transfer dana", "Waspada penipuan: pesan meminta transfer dana") is None
 
 
+def test_toleransi_ocr_relevansi_tidak_berlaku_untuk_kesetiaan_profil_akhir():
+    from app.konfigurasi import muat
+
+    akhir = muat({})  # profil server bawaan: relevansi_toleransi_ocr dan kesetiaan menyala
+    assert akhir.relevansi_toleransi_ocr and akhir.periksa_kesetiaan_klaim
+    assert kode("Mantan bendahara yayasan digelapkan petugas ke kantor polisi", TEKS_GELANDANG, akhir) == (
+        setia.KODE_PENGGANTI
+    )
+    assert kode("Pesan berantai penipu meminta transfer dana ke rekening baru", TEKS_PENIPU, akhir) == setia.KODE_BERAT
+    klaim = "Mantan bendahara yayasan digelapkan petugas ke kantor polisi"
+    assert llm.klaim_dapat_dipakai(klaim, TEKS_GELANDANG, akhir) is False
+
+
 def test_jabatan_wakil_menteri_ditambahkan_gagal():
     klaim = "Wakil Menteri Keuangan Suahasil menyatakan anggaran sekolah negeri naik"
     assert kode(klaim, TEKS_MENTERI) == setia.KODE_ENTITAS
@@ -110,6 +123,7 @@ def test_klaim_gagal_jatuh_ke_heuristik_dan_diagnostik_tanpa_teks(monkeypatch, l
     teks_layar(monkeypatch, TEKS_KLAIM)
     llm_palsu.hasil = hasil_llm("Air keran di Jakarta mengandung zat berbahaya penyebab penyakit 99 warga")
 
+    monkeypatch.setattr(pengaturan, "periksa_kesetiaan_klaim", False)
     hasil, diag = analisis_dengan_diagnostik(monkeypatch)  # bendera mati
     assert diag["klaim_sumber"] == "llm" and diag["llm"]["alasan_klaim_ditolak"] is None
 

@@ -217,6 +217,22 @@ async def test_anggaran_total_membatasi_penyedia_kedua():
     assert t.jumlah("gemini") == 0
 
 
+async def test_cadangan_mati_groq_mendapat_batas_lebih_panjang_tetap_dalam_anggaran():
+    from app.konfigurasi import LLM_TIMEOUT_GROQ_SENDIRI, muat
+
+    cfg = muat({"CEKHOAKS_LLM_CADANGAN": "mati"})
+    t = TransportPalsu(groq=[balasan("Klaim")])
+    assert (await jalankan(t, cfg=cfg)).penyedia == "groq"
+    assert t.panggilan[0][3] == LLM_TIMEOUT_GROQ_SENDIRI + llm.CADANGAN_SOKET_DETIK
+    assert LLM_TIMEOUT_GROQ_SENDIRI < cfg.llm_anggaran_total
+    # Batas Groq yang panjang tetap dipotong anggaran total.
+    t = TransportPalsu(groq=[lambat(3.0)])
+    cfg = Pengaturan(llm_timeout_groq=LLM_TIMEOUT_GROQ_SENDIRI, llm_anggaran_total=0.8, llm_cadangan_aktif=False)
+    mulai = time.monotonic()
+    assert await jalankan(t, cfg=cfg) is None
+    assert time.monotonic() - mulai < 1.5
+
+
 async def test_thread_tertinggal_tidak_menahan_permintaan_berikutnya():
     lambat_dulu = TransportPalsu(groq=[lambat(1.5)], gemini=[llm.GagalJaringan()])
     cfg = Pengaturan(llm_timeout_groq=0.3, llm_timeout_gemini=0.3, llm_anggaran_total=2.0)

@@ -15,8 +15,30 @@ def test_nilai_bawaan():
     p = muat({})
     assert (p.host, p.port, p.batas_gambar_byte) == ("0.0.0.0", 8000, 8 * 1024 * 1024)
     assert (p.jeda_min_detik, p.jeda_maks_detik) == (0.0, 0.0)
-    assert p.ambang_teks_karakter == 20
+    assert p.ambang_teks_karakter == 20  # profil akhir (bawaan server), sama dengan profil lama
     assert p.paksa_tingkat is None
+    assert p.profil_ambang == "akhir"
+
+
+def test_profil_ambang_lama_sebagai_cadangan():
+    p = muat({"CEKHOAKS_PROFIL_AMBANG": "lama"})
+    assert p.profil_ambang == "lama"
+    assert p == konfigurasi.Pengaturan()  # sama persis dengan bawaan kode 7742a73
+    assert muat({"CEKHOAKS_PROFIL_AMBANG": " Akhir "}).profil_ambang == "akhir"
+    assert muat({"CEKHOAKS_PROFIL_AMBANG": "lama", "CEKHOAKS_AMBANG_TEKS": "30"}).ambang_teks_karakter == 30
+    with pytest.raises(KonfigurasiTidakValid, match="CEKHOAKS_PROFIL_AMBANG"):
+        muat({"CEKHOAKS_PROFIL_AMBANG": "baru"})
+
+
+def test_batas_groq_lebih_panjang_hanya_bila_cadangan_mati():
+    assert muat({}).llm_timeout_groq == konfigurasi.Pengaturan().llm_timeout_groq == 4.0
+    assert muat({"CEKHOAKS_LLM_CADANGAN": "aktif"}).llm_timeout_groq == 4.0
+    mati = muat({"CEKHOAKS_LLM_CADANGAN": "mati"})
+    assert mati.llm_timeout_groq == konfigurasi.LLM_TIMEOUT_GROQ_SENDIRI == 7.0
+    assert mati.llm_anggaran_total == 9.0  # anggaran total tidak berubah
+    # Profil lama tetap sama dengan bawaan kode, kecuali batas Groq yang mengikuti sakelar cadangan.
+    lama = muat({"CEKHOAKS_PROFIL_AMBANG": "lama", "CEKHOAKS_LLM_CADANGAN": "mati"})
+    assert lama.llm_timeout_groq == 7.0
 
 
 def test_ambang_teks_bisa_ditimpa():

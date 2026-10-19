@@ -11,6 +11,7 @@ import pytest
 from PIL import Image
 from test_cocok import pencarian_siap
 
+from app import konfigurasi
 from app.pipeline import cocok, llm, orkestrator
 from app.pipeline.tipe import Kandidat, Konteks
 
@@ -27,6 +28,13 @@ KOLOM = "id,berkas,set,label_harapan,label_boleh,kategori,sintetis,id_artikel_su
 @pytest.fixture
 def anyio_backend():
     return "asyncio"
+
+
+@pytest.fixture(autouse=True)
+def profil_alat(monkeypatch):
+    """Alat menerapkan --profil (bawaan lama) ke Pengaturan global di main(); tes memanggil fungsinya langsung."""
+    for k, v in konfigurasi.nilai_profil("lama").items():
+        monkeypatch.setattr(konfigurasi.pengaturan, k, v)
 
 
 def kand(skor=0.9, label="salah", judul="Judul artikel uji") -> Kandidat:
@@ -536,13 +544,13 @@ def test_urai_ambang_pengaturan_baru_sesi56():
     }
 
 
-def test_relevansi_cache_dihitung_ulang_hanya_bila_pengaturan_relevansi_berubah(monkeypatch):
+def test_relevansi_cache_selalu_dihitung_ulang_dengan_pengaturan_sekarang(monkeypatch):
+    # Cache bisa dikumpulkan dengan profil lain, jadi nilai relevansi di cache tidak pernah dipakai apa adanya.
     p = alat.PencarianBerCache(object(), boleh=False)
     hasil = [{"judul": "[SALAH] Menkeu Suahasil korupsi", "relevansi": 0.123}]
-    # bawaan: nilai cache dipakai apa adanya, IDF tidak dimuat
-    monkeypatch.setattr(p, "idf", lambda: pytest.fail("IDF tidak boleh dimuat pada pengaturan bawaan"))
-    assert p.hitung_ulang_relevansi("Menkeu Suhasasil korupsi", hasil) is hasil
     monkeypatch.setattr(p, "idf", lambda: ({"menkeu": 3.0, "suahasil": 5.0, "korupsi": 1.0}, 10))
+    lama = p.hitung_ulang_relevansi("Menkeu Suhasasil korupsi", hasil)
+    assert lama[0]["relevansi"] == pytest.approx(4.0 / 9.0)  # tanpa toleransi: "Suahasil" tidak ada
     with alat.terapkan_profil({"relevansi_toleransi_ocr": True}):
         baru = p.hitung_ulang_relevansi("Menkeu Suhasasil korupsi", hasil)
     assert baru[0]["relevansi"] == pytest.approx(1.0) and hasil[0]["relevansi"] == 0.123

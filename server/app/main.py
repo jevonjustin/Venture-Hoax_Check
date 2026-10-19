@@ -115,6 +115,7 @@ def _cetak_alamat() -> None:
         baris.append(f"PAKSA_TINGKAT = {pengaturan.paksa_tingkat}")
     else:
         baris.append("Tingkat hasil: dari analisis sungguhan (PAKSA_TINGKAT tidak diisi)")
+    baris.append(f"Profil ambang: {pengaturan.profil_ambang} (CEKHOAKS_PROFIL_AMBANG)")
     baris.append(f"Ambang teks: minimal {pengaturan.ambang_teks_karakter} karakter huruf-angka")
     baris.append("=" * 60)
     print("\n".join(baris), flush=True)

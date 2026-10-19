@@ -202,6 +202,23 @@ Rujukan desain satu-satunya untuk pengembangan adalah `docs/prototype/prototype.
 - **Penyeragaman istilah.** Teks perbandingan dan keterangan tingkat memakai "indikasi hoaks"; "ciri" hanya untuk daftar ciri. Kata "benar" di teks UI hanya muncul dalam frasa "bukan jaminan informasi ini benar" (dijaga `StringResourcesTest`), sehingga `server_url_tidak_valid` menjadi "belum sesuai" dan tips `tidak_ditemukan` serta `tidak_dikenal` ikut diubah.
 - **Fixture debug.** `AktivitasFixture` (debug) diberi padding system bars. Fixture baru `hati_hati_satir`, `hati_hati_artikel`, dan `hati_hati_umum` (penyebab ciri sudah dicakup `hati_hati_mirip`).
 
+### Keputusan Sesi 5.6
+
+- **Data berlabel.** 138 gambar di `server/data_lokal/evaluasi/` (tidak masuk repo): dev 83 untuk penyetelan, uji 55 dibekukan (hash) dan dinilai sekali di akhir. Alat `server/alat/uji_analisis/evaluasi_berlabel.py` menjalankan `orkestrator.jalankan` yang sama dengan server, dengan cache OCR, pencarian, dan LLM (hanya Groq).
+- **Profil ambang.** Semua ambang ada di `konfigurasi.PROFIL_AMBANG`. Server memakai profil `akhir`; `CEKHOAKS_PROFIL_AMBANG=lama` mengembalikan perilaku commit 7742a73 (cadangan demo). Alat evaluasi memakai tabel yang sama (`--profil`), dan tes memastikan konfigurasi server sama dengan konfigurasi alat.
+- **Perubahan ambang (lama → akhir):**
+  - kueri e5: 256 → 512 token (hasil dev identik, menghapus risiko kueri terpotong);
+  - toleransi salah eja OCR pada relevansi: mati → menyala (selisih 1 huruf untuk kata 5-6 huruf, 2 huruf untuk kata ≥ 7 huruf; hanya relevansi, tidak berlaku untuk kesetiaan klaim);
+  - `kuat` lewat kombinasi: mati → menyala (artikel salah/penipuan dengan skor ≥ 0,855, relevansi ≥ 0,70, dan ≥ 4 kata isi judul ada di teks);
+  - batas skor peringkat 1 yang lolos tanpa syarat relevansi: 0,88 → 0,90;
+  - ambang teks: tetap 20 karakter huruf-angka (penyetelan dev sempat menaikkan ke 25; lihat butir ambang teks di bawah);
+  - pemeriksaan kesetiaan klaim (angka, nama, negasi, kata pengganti, kata berat baru): mati → menyala (tidak mengubah tingkat).
+- **Tetap:** `ambang_cocok` 0,88, `ambang_mirip` 0,85, `relevansi_minimum` 0,40 (0,53 menghapus satu hati_hati negatif dev tetapi juga positif asli; celahnya terlalu sempit), `selisih_konflik` 0,02. e5 tetap fp32: int8 lebih cepat dan hemat RAM, tetapi peringkat artikel sumber dev memburuk (MRR 0,914 → 0,844). Regex usulan dari dataset Kaggle tidak diadopsi (tidak mengurangi salah tandai negatif).
+- **Hasil set uji (55 gambar, lama → akhir):** negatif (23) kuat 0 → 0, hati_hati 1 → 1; recall positif (31) mode biasa 30 → 29 (kuat 21 → 22), mode tanpa artikel sumber (leave-one-out) 17 → 18; peringkat artikel sumber rank@1 22/22 → 21/22 (MRR 1,000 → 0,955). Angka ini dinilai sekali dengan profil akhir saat ambang teks masih 25. Satu-satunya positif yang hilang adalah teks penipuan 24 karakter yang menjadi `teks_tidak_terbaca`.
+- **Ambang teks kembali ke 20 (keputusan produk, bukan untuk menaikkan skor).** Kasusnya ditemukan dari set uji: teks penipuan asli 24 karakter ditolak ambang 25. Pemeriksaan ulang di set dev menunjukkan bahwa 25 tidak mencegah satu pun `kuat` atau `hati_hati` keliru pada konten negatif; yang tersaring hanya obrolan pendek yang di ambang 20 tetap `tidak_ditemukan` tanpa ciri (dev ev134, uji ev135). Pesan penipuan pendek (misalnya permintaan OTP) penting bagi produk, sedangkan teks pendek tanpa makna di bawah 25 karakter tidak berbahaya, jadi profil akhir memakai 20. Profil akhir dengan teks 25 → 20, dari cache tanpa LLM (penilaian ulang ini tidak menggantikan penilaian sekali di atas): set uji negatif kuat 0 → 0, hati_hati 1 → 1; recall biasa 29 → 30 dari 31 (kuat 22 → 22; teks penipuan 24 karakter menjadi `hati_hati` mirip), loo 18 → 18; rank@1 21/22 → 22/22 (MRR 0,955 → 1,000); cocok label harapan biasa 51 → 50 dari 55 (obrolan pendek menjadi `tidak_ditemukan`, padahal labelnya `teks_tidak_terbaca`). Set dev: negatif dan recall sama; hanya ev134 berubah.
+- **Batas waktu Groq tanpa cadangan.** Dengan `CEKHOAKS_LLM_CADANGAN=mati`, batas Groq naik dari 4 menjadi 7 detik (`LLM_TIMEOUT_GROQ_SENDIRI`), karena waktu yang biasanya disisakan untuk Gemini tidak terpakai. Anggaran total tetap 9 detik. Alasannya: pada uji HP 2026-10-19, satu panggilan butuh 3,5 detik. Kalau cadangan menyala, batasnya tetap 4 detik. Perubahan ini diuji dengan transport palsu, tanpa panggilan Groq.
+- **Lowongan Nestle.** Setelah database diperbarui, hasilnya `kuat` dengan artikel sumber di peringkat 1. Tanpa artikelnya di database, hasilnya `tidak_ditemukan` tanpa ciri.
+
 ## 12. Proyek referensi open source
 
 | Repositori | Lisensi | Dipakai untuk | Tahap | Catatan |
@@ -467,35 +484,23 @@ Pengumpulan data dan fine-tuning classifier dikerjakan paralel mulai minggu 2 di
 
 ### Catatan terbuka
 
-Daftar ini dikumpulkan dari sesi 5.1-5.5 supaya tidak hilang antar sesi. Hapus butir yang sudah dikerjakan dan catat keputusannya di bagian tahap masing-masing.
+Daftar ini dikumpulkan dari sesi 5.1-5.6 supaya tidak hilang antar sesi. Hapus butir yang sudah dikerjakan dan catat keputusannya di bagian tahap masing-masing.
 
-#### Sesi 5.6 (evaluasi dan penetapan ambang)
+#### Setelah presentasi (dari Sesi 5.6)
 
-- **Data uji berlabel** (target awal 120-150), termasuk konten biasa dan edukasi sebagai contoh negatif.
-- **Ambang skor dan relevansi:**
-  - Gambar 12 kuat dengan skor 0,881 (rapuh).
-  - Gambar 18 hanya `hati_hati` padahal klaimnya sama persis dengan artikel (skor 0,860, relevansi 0,74). Pertimbangkan kombinasi skor dan relevansi untuk `kuat`.
-  - Ambang relevansi tipis: sah terendah 0,48, tersaring tertinggi 0,34, dan "Vaksin Mengandung Racun Berbahaya" 0,45 masih lolos.
-  - Relevansi terlalu tinggi untuk judul pendek (gambar 05: 1,00).
-  - Artikel Komdigi yang sama persis dengan gambar 14 (skor 0,842, relevansi 0,44) tidak tampil.
-  - Salah eja OCR pada nama ("Suhasasil" lawan "Suahasil") menurunkan relevansi.
-- **Pencarian e5:** uji 512 token untuk kueri (gambar 11 terpotong di 256); ketidakcocokan teks layar dengan passage judul + narasi; tinjau ulang e5-base int8.
-- **Kesetiaan klaim LLM:**
-  - Ambang 0,5 longgar. Pertimbangkan syarat bahwa angka dan nama di klaim harus ada di teks (toleran salah eja OCR); klaim gambar 14 dari salah satu model menambahkan "Wakil Menteri".
-  - Klaim bisa mengganti kata dengan arti berbeda dan tetap lolos: "digelandang" menjadi "digelapkan" (18), dan kata "penipu" ditambahkan di 07. Pertimbangkan pemeriksaan kata kerja dan kata penting selain angka dan nama.
-  - Klaim terlalu samar (13: "Laut kering dianggap pertanda sesuatu") atau menyesatkan untuk obrolan (08: "COVID-19 butuh verifikasi 2 langkah").
-- **Stabilitas ciri LLM:** `bahasa_provokatif` turun ke 0 gambar di `tahap_b_groq3`, termasuk gambar 16 ("PASTI TUMBANG DAN PASTI DIBENCI SAMA RAKYAT", menyasar partai) dan 11; `judul_clickbait` "SKANDAL VAKSIN…" di 11 juga hilang. Nilai dengan data berlabel apakah definisi baru di prompt terlalu ketat atau ini variasi antar-jalan. Tambahkan opsi di alat tabel untuk menjalankan gambar yang sama beberapa kali dan mengukur stabilitas ciri.
-- **Ciri yang dibuang aturan baru:** periksa dengan data berlabel apakah `sumber_tidak_jelas` yang hanya lewat regex (atribusi samar) terlalu sempit, dan apakah membuang ciri sedang tunggal saat `tidak_ditemukan` menghilangkan sinyal yang berguna. `judul_clickbait` hilang di 13 dan 17 setelah LLM tidak menandainya.
-- **Klaim heuristik:** kata sapaan "mas", "mbak", "pak", "bu" sengaja tidak termasuk filter obrolan (juga gelar di berita); nilai dengan data. Catat berapa kandidat gugur karena filter (alat tabel melaporkannya).
-- **Prompt:** pengukuran Sesi 5.4a memakai prompt lama; ukur ulang kejujuran kutipan dan stabilitas dengan prompt Sesi 5.5 pada `ukur_llm`.
-- **Ambang teks final:** ada temuan area tanpa tulisan terbaca 25 karakter.
-- **Uji salah tandai regex** dengan dataset teks biasa (Indonesia False News Dataset dari Kaggle, belum diunduh).
+- **Ambang teks.** Sudah diputuskan 20 (§11, Keputusan Sesi 5.6). Yang masih terbuka: membedakan teks pendek tanpa makna dari pesan pendek yang bermakna, misalnya dengan skor keyakinan OCR per baris, bukan hanya dengan jumlah karakter.
+- **Satu hati_hati pada negatif** di dev (pengumuman) dan di uji (promosi sah): artikel mirip dengan relevansi sekitar 0,5. Butuh data lebih banyak sebelum `relevansi_minimum` dinaikkan.
+- **Toleransi OCR selisih 2 huruf** juga mencocokkan varian imbuhan, bukan hanya salah eja. Aman di dev karena skornya di bawah 0,85, tetapi pengaman untuk negatif belum teruji kuat.
+- **Recall tanpa artikel sumber rendah** (positif_db uji 8/16, satir 0/3): tingkat hanya bisa naik dari database; satir tanpa artikel butuh ciri baru, bukan ambang.
+- **Kesetiaan klaim:** klaim yang membalik polaritas bisa lolos bila kata yang sama muncul tanpa negasi di bagian lain teks; dua salah tolak ringan (singkatan diperluas, parafrasa angka).
+- **Stabilitas ciri LLM:** temperature 0 tidak menjamin hasil sama (2 dari 25 gambar dev berbeda ciri akhirnya).
+- **Privasi repo publik:** tes memakai nama pejabat sungguhan dalam judul fiktif bertema korupsi, dan generator data memakai nama `@akun` fiktif yang mungkin ada di media sosial. Ganti dengan nama rekaan yang jelas.
+- **Butir lama yang belum dinilai ulang:** kata sapaan pada filter klaim heuristik, ukur ulang prompt Sesi 5.5 di `ukur_llm`, `sumber_tidak_jelas` hanya lewat regex, dan pembuangan ciri sedang tunggal.
 
 #### Tahap 6 (UI)
 
 - **Varian keterangan tingkat dari server tidak ada di kontrak.** Pertimbangkan field baru di kontrak mendatang (0.6); setelah itu tambahkan pemetaan label dan cadangan di Android.
 - **Uji HP (16 Oktober 2026, Galaxy A55, tema gelap dan terang) lulus.** Onboarding, semua fixture, font 1,3, alur nyata dengan `PAKSA_TINGKAT` kuat, hati_hati, dan tidak_ditemukan (semua kombinasi penilaian), server tidak terjangkau dan "Buka pengaturan", B3 (kunci HP, notifikasi, kotak catatan), serta tiga permintaan dengan LLM Groq sungguhan. Status Tahap 6 di `CLAUDE.md` diperbarui setelah developer menyatakan tahap selesai.
-- **Server: false negative pada lowongan kerja palsu.** Narasi lowongan Nestle palsu (TurnBackHoax 15/10/2026, belum ada di database) menghasilkan `tidak_ditemukan` tanpa ciri. Bahan evaluasi Sesi 5.6.
 - **Belum dibangun dari prototipe:** statistik, riwayat, dashboard, dan belajar hoaks (keputusan di "Keputusan Sesi 6.1").
 
 #### Tahap 8 (showcase)

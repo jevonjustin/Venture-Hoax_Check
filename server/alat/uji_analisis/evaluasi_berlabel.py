@@ -132,8 +132,6 @@ AMBANG_BOLEH = frozenset({
     "kuat_kombinasi_skor", "kuat_kombinasi_relevansi", "kuat_kombinasi_min_kata", "periksa_kesetiaan_klaim",
     "relevansi_lolos_skor",
 })
-# Pengaturan yang mengubah cara relevansi dihitung: relevansi di cache pencarian dihitung ulang dari judul dan kueri.
-AMBANG_RELEVANSI = ("relevansi_toleransi_ocr", "relevansi_edit_pendek", "relevansi_edit_panjang")
 
 
 class GalatAlat(Exception):
@@ -613,11 +611,9 @@ class PencarianBerCache:
         return self._idf
 
     def hitung_ulang_relevansi(self, kueri: str, hasil: list[dict]) -> list[dict]:
-        """Relevansi di cache dihitung dengan Pengaturan saat kumpul. Bila Pengaturan relevansi berbeda dari
-        bawaan, relevansi dihitung ulang dari judul kandidat dan kueri (fungsi cocok.relevansi_judul yang sama)."""
-        cfg, dasar = konfigurasi.pengaturan, konfigurasi.Pengaturan()
-        if all(getattr(cfg, n) == getattr(dasar, n) for n in AMBANG_RELEVANSI):
-            return hasil
+        """Relevansi di cache dihitung dengan Pengaturan saat kumpul (bisa profil lain), jadi selalu dihitung ulang
+        dari judul kandidat dan kueri dengan Pengaturan sekarang (fungsi cocok.relevansi_judul yang sama)."""
+        cfg = konfigurasi.pengaturan
         idf, n = self.idf()
         kata_teks = cocok.kata_isi(kueri)
         return [{**d, "relevansi": cocok.relevansi_judul(kata_teks, d["judul"], idf, n, cfg)} for d in hasil]
@@ -1181,7 +1177,8 @@ def laporan(
     teks = [
         f"# Evaluasi berlabel: {nama}", "",
         f"- Set: {nama_set}; gambar: {len(baris)}; waktu: {sekarang()}; jalan LLM yang dipakai: {jalan}",
-        f"- Profil ambang (selain bawaan server): {json.dumps(profil, sort_keys=True) if profil else 'bawaan'}",
+        f"- Profil ambang: {konfigurasi.pengaturan.profil_ambang}; kueri e5 {konfigurasi.pengaturan.e5_maks_token_kueri} "
+        f"token; ditimpa --ambang: {json.dumps(profil, sort_keys=True) if profil else 'tidak ada'}",
         f"- Panggilan LLM kumulatif (semua sesi): {jumlah_panggilan_total()}",
     ]
     cfg = konfigurasi.pengaturan
@@ -1387,11 +1384,15 @@ async def perintah_nilai(a, pencatat: Pencatat) -> int:
     elif a.final:
         raise GalatAlat("--final hanya untuk --set uji")
     komp = buat_komponen(tanpa_llm=a.tanpa_llm, jalan=a.jalan)
-    pencatat.tulis(f"nilai mulai pid={os.getpid()} set={a.set} gambar={len(baris)} profil={json.dumps(profil, sort_keys=True)}")
+    pencatat.tulis(
+        f"nilai mulai pid={os.getpid()} set={a.set} gambar={len(baris)} profil_ambang={a.profil} "
+        f"ambang={json.dumps(profil, sort_keys=True)}"
+    )
     hasil = await nilai_baris(komp, baris, profil, a.mode, pencatat)
     if a.set == "uji":
         _pastikan_lengkap(hasil)
-        tulis_json(J.penanda_uji, {"waktu": sekarang(), "profil": profil, "nama": a.nama, "mode": a.mode})
+        tulis_json(J.penanda_uji, {"waktu": sekarang(), "profil_ambang": a.profil, "profil": profil, "nama": a.nama,
+                                   "mode": a.mode})
     sapuan = None
     if a.sapu:
         grid = kombinasi(urai_sapu(a.sapu))
@@ -1428,7 +1429,8 @@ async def perintah_segel_awal(a, pencatat: Pencatat) -> int:
     komp = buat_komponen(tanpa_llm=a.tanpa_llm, jalan=a.jalan)
     hasil = await nilai_baris(komp, baris, profil, "keduanya")
     _pastikan_lengkap(hasil)
-    tulis_json(J.hasil_awal, {"waktu": sekarang(), "profil": profil, "jalan": a.jalan, "hasil": _simpan_awal_dari(hasil)})
+    tulis_json(J.hasil_awal, {"waktu": sekarang(), "profil_ambang": a.profil, "profil": profil, "jalan": a.jalan,
+                              "hasil": _simpan_awal_dari(hasil)})
     pencatat.tulis(f"segel-awal: {len(baris)} gambar uji disimpan ke {J.hasil_awal.name}")
     return 0
 
@@ -1437,8 +1439,11 @@ def buat_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--log", default=str(LOG_BAWAAN), help="berkas log progres (PID, n/total)")
     p.add_argument("--akar", default=None, help="folder evaluasi (bawaan: folder data_lokal/evaluasi di server); untuk uji asap")
+    p.add_argument("--profil", choices=tuple(konfigurasi.PROFIL_AMBANG), default="lama",
+                   help="profil ambang dari konfigurasi.PROFIL_AMBANG (sama dengan server; bawaan alat: lama = kode "
+                        "awal, server memakai akhir); CEKHOAKS_PROFIL_AMBANG diabaikan alat")
     p.add_argument("--maks-token-kueri", type=int, default=None, dest="maks_token_kueri",
-                   help="panjang token kueri e5 (bawaan: nilai Pengaturan; maks 512)")
+                   help="panjang token kueri e5 (bawaan: nilai profil; maks 512)")
     p.add_argument("--varian-e5", choices=("fp32", "int8"), default=None, dest="varian_e5",
                    help="varian e5 (bawaan: Pengaturan); fp32/int8 punya cache pencarian terpisah")
     p.add_argument("--model-e5", default=None, dest="model_e5", help="path model ONNX khusus (mis. hasil kuantisasi lokal)")
@@ -1503,6 +1508,7 @@ def main(argv: list[str] | None = None) -> int:
     if a.akar:
         global J
         J = jalur_dari(Path(a.akar))
+    konfigurasi.terapkan_profil_ambang(konfigurasi.pengaturan, a.profil)
     try:
         terapkan_opsi_e5(a)
     except GalatAlat as e:

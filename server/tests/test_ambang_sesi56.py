@@ -163,3 +163,44 @@ def test_pencarian_memakai_toleransi_dari_pengaturan_global(monkeypatch):
     kata = cocok.kata_isi("Menkeu Suhasasil korupsi")
     monkeypatch.setattr(konfigurasi.pengaturan, "relevansi_toleransi_ocr", True)
     assert cocok.relevansi_judul(kata, "Menkeu Suahasil korupsi", IDF, 10) == pytest.approx(1.0)
+
+
+# --- profil akhir: jalur server sama dengan alat evaluasi ---
+
+
+def test_server_dan_alat_evaluasi_memakai_konfigurasi_profil_akhir_yang_sama(monkeypatch, tmp_path):
+    import importlib.util
+    from pathlib import Path
+
+    from app import konfigurasi
+
+    jalur = Path(__file__).resolve().parents[1] / "alat" / "uji_analisis" / "evaluasi_berlabel.py"
+    spec = importlib.util.spec_from_file_location("evaluasi_berlabel_profil", jalur)
+    alat = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(alat)
+    # main() alat menimpa Pengaturan global; dikembalikan monkeypatch setelah tes.
+    for k, v in dataclasses.asdict(Pengaturan()).items():
+        monkeypatch.setattr(konfigurasi.pengaturan, k, v)
+    assert alat.main(["--akar", str(tmp_path), "--log", "", "--profil", "akhir", "ringkas-token"]) == 0
+    assert dataclasses.asdict(konfigurasi.pengaturan) == dataclasses.asdict(konfigurasi.muat({}))
+    # String profil akhir laporan T7 (penyetelan dev) termasuk di profil akhir server; teks kembali ke 20
+    # (keputusan produk setelah set uji, RANCANGAN §11).
+    t7 = alat.urai_ambang(
+        "toleransi_ocr=ya,kombinasi=ya,kombinasi_skor=0.855,kombinasi_relevansi=0.70,kombinasi_kata=4,lolos=0.90,teks=20"
+    )
+    assert t7.items() <= konfigurasi.PROFIL_AMBANG["akhir"].items()
+
+
+def test_pencarian_server_menghitung_relevansi_dengan_pengaturan_saat_dimuat(tmp_path):
+    from test_cocok import pencarian_siap
+
+    teks = "Beredar pesan air keran Jakrta mengandng zat berbahaya penyebab penyakit"
+    judul = "[SALAH] Air keran Jakarta mengandung zat berbahaya"
+
+    def relevansi(p):
+        return next(k.relevansi for k in p.cari(teks, 4) if k.judul == judul)
+
+    toleran, _ = pencarian_siap(tmp_path / "toleran", relevansi_toleransi_ocr=True)
+    persis, _ = pencarian_siap(tmp_path / "persis")
+    assert relevansi(toleran) == pytest.approx(1.0)
+    assert relevansi(persis) < 1.0

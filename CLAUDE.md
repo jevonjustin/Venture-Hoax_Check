@@ -8,8 +8,8 @@ Rancangan lengkap ada di `docs/RANCANGAN_PROYEK.md`. Baca dokumen itu sebelum me
 
 ## Status tahap
 
-- Tahap aktif: **Sesi 6.1 (penyempurnaan teks perbandingan dan istilah), lalu Sesi 5.6**
-- Tahap selesai: Tahap 1 (tombol mengambang overlay), Tahap 2 (tombol bisa digeser, ketukan mengambil screenshot layar penuh sebagai Bitmap), Tahap 3 (layar pilih area, menghasilkan Bitmap potongan di memori; mode navigasi gestur belum diuji), Tahap 4 (server FastAPI dummy, kartu status, uji koneksi USB/hotspot/Wi-Fi rumah; Wi-Fi kampus dan mode navigasi gestur belum diuji), Tahap 5, Sesi 5.1–5.5: kerangka pipeline server, RapidOCR, database cek fakta, pengukuran API LLM, pembersih teks UI, detektor ciri, template, klaim; /analisis memakai pipeline sungguhan (pencarian e5, LLM Groq dengan cadangan Gemini, tingkat buatan sendiri); ambang final dan evaluasi data berlabel di Sesi 5.6, Tahap 6 (kartu hasil lengkap, keadaan khusus, onboarding privasi, fixture debug; teruji HP tema gelap dan terang)
+- Tahap aktif: **Tahap 7**
+- Tahap selesai: Tahap 1 (tombol mengambang overlay), Tahap 2 (tombol bisa digeser, ketukan mengambil screenshot layar penuh sebagai Bitmap), Tahap 3 (layar pilih area, menghasilkan Bitmap potongan di memori; mode navigasi gestur belum diuji), Tahap 4 (server FastAPI dummy, kartu status, uji koneksi USB/hotspot/Wi-Fi rumah; Wi-Fi kampus dan mode navigasi gestur belum diuji), Tahap 5, Sesi 5.1–5.5: kerangka pipeline server, RapidOCR, database cek fakta, pengukuran API LLM, pembersih teks UI, detektor ciri, template, klaim; /analisis memakai pipeline sungguhan (pencarian e5, LLM Groq dengan cadangan Gemini, tingkat buatan sendiri); Sesi 5.6 (evaluasi 138 gambar berlabel dengan set uji beku; profil ambang `akhir` sebagai bawaan server dan `lama` lewat `CEKHOAKS_PROFIL_AMBANG=lama`; teruji HP 2026-10-19), Tahap 6 (kartu hasil lengkap, keadaan khusus, onboarding privasi, fixture debug; teruji HP tema gelap dan terang), Sesi 6.1 (teks perbandingan per penyebab dan penyeragaman istilah; teruji HP 2026-10-19)
 
 Perbarui bagian ini setiap kali developer menyatakan sebuah tahap selesai.
 

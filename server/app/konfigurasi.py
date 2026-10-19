@@ -91,7 +91,7 @@ class Pengaturan:
     relevansi_minimum: float = 0.40
     # Batas skor peringkat 1 yang lolos tanpa syarat relevansi; None = ambang_cocok (perilaku lama).
     relevansi_lolos_skor: float | None = None
-    # Sesi 5.6, semua MATI secara bawaan (perilaku lama); profil evaluasi dev menyalakannya lewat alat.
+    # Sesi 5.6, semua MATI di bawaan dataclass (profil "lama"); profil "akhir" (PROFIL_AMBANG) menyalakannya.
     # Toleransi salah eja OCR pada relevansi: kata isi judul (>= 5 huruf, tanpa angka) dianggap ada di teks bila
     # berbeda paling banyak sekian huruf dari kata teks ("Suhasasil" untuk "Suahasil").
     relevansi_toleransi_ocr: bool = False
@@ -110,7 +110,7 @@ class Pengaturan:
     llm_aktif: bool = True
     # False (CEKHOAKS_LLM_CADANGAN=mati): rantai hanya Groq lalu None, supaya teks pasti tidak dikirim ke Google.
     llm_cadangan_aktif: bool = True
-    llm_timeout_groq: float = 4.0  # detik; p95 terukur gpt-oss-120b 1,4 detik (Sesi 5.4a)
+    llm_timeout_groq: float = 4.0  # detik; p95 terukur gpt-oss-120b 1,4 detik (Sesi 5.4a); lihat LLM_TIMEOUT_GROQ_SENDIRI
     llm_timeout_gemini: float = 6.0  # detik; p95 terukur gemini-3.5-flash-lite 4,7 detik
     llm_anggaran_total: float = 9.0  # detik untuk semua penyedia dan percobaan ulang; aplikasi menunggu 60 detik
     # Completion terukur paling banyak 438 token (Sesi 5.4a, 5.5); 1.000 memberi ruang dan menjaga kuota per menit.
@@ -123,7 +123,7 @@ class Pengaturan:
     # "usul") dan salah baca OCR menurunkan nilai. Klaim yang mengarang ("Wakil Menteri", gambar 14) bernilai 0,40.
     klaim_kesetiaan_minimum: float = 0.5
     # Pemeriksaan kesetiaan ketat (pipeline/setia.py): angka, nama, dan kata isi klaim LLM harus ada di teks.
-    # Mati selama baseline evaluasi Sesi 5.6 direkam; klaim yang gagal diganti klaim heuristik.
+    # Mati di profil "lama", menyala di profil "akhir"; klaim yang gagal diganti klaim heuristik.
     periksa_kesetiaan_klaim: bool = False
     klaim_setia_edit_pendek: int = 1  # jarak edit OCR yang ditoleransi untuk kata dasar 5-6 huruf (<=4 huruf: persis)
     klaim_setia_edit_panjang: int = 2  # idem untuk kata dasar >= 7 huruf
@@ -140,6 +140,47 @@ class Pengaturan:
     ciri_llm_min_kata: int = 3  # bukti ciri yang hanya ditemukan LLM; tidak berlaku untuk link_mencurigakan
     ciri_llm_kapital_rasio: float = 0.5  # bagian huruf kapital pada bukti kapital_tanda_seru
     ciri_llm_seru_min: int = 2  # atau sekian tanda seru
+    # Nama profil ambang yang diterapkan (lihat PROFIL_AMBANG); hanya untuk banner dan log alat.
+    profil_ambang: str = "lama"
+
+
+# Profil ambang Sesi 5.6. "lama" = nilai bawaan dataclass di atas (perilaku commit 7742a73); "akhir" = hasil
+# penyetelan set dev (D45) ditambah pemeriksaan kesetiaan klaim (T8c, tidak mengubah tingkat). Server memakai
+# "akhir" kecuali CEKHOAKS_PROFIL_AMBANG=lama (cadangan demo). Alat evaluasi memakai tabel yang sama (--profil),
+# jadi hasil evaluasi dan jalur server berasal dari konfigurasi yang sama.
+PROFIL_AMBANG: dict[str, dict] = {
+    "lama": {},
+    "akhir": {
+        "e5_maks_token_kueri": 512,
+        "relevansi_toleransi_ocr": True,
+        "kuat_kombinasi_aktif": True,
+        "kuat_kombinasi_skor": 0.855,
+        "kuat_kombinasi_relevansi": 0.70,
+        "kuat_kombinasi_min_kata": 4,
+        "relevansi_lolos_skor": 0.90,
+        # 25 di penyetelan dev hanya menyaring obrolan pendek tanpa ciri; dikembalikan ke 20 supaya pesan penipuan
+        # pendek (24 karakter, ditemukan di set uji) tetap dianalisis. Keputusan produk, lihat RANCANGAN §11.
+        "ambang_teks_karakter": 20,
+        "periksa_kesetiaan_klaim": True,
+    },
+}
+PROFIL_AMBANG_BAWAAN = "akhir"
+
+# Batas waktu Groq bila cadangan Gemini dimatikan: sisa anggaran yang biasanya untuk Gemini dipakai Groq (uji HP
+# 2026-10-19: satu panggilan 3,5 detik, dekat batas 4). Tetap dibatasi llm_anggaran_total.
+LLM_TIMEOUT_GROQ_SENDIRI = 7.0
+
+
+def nilai_profil(nama: str) -> dict:
+    """Semua bidang yang diatur profil mana pun, dengan nilai profil `nama` (bidang yang tidak disebut = bawaan)."""
+    dasar = Pengaturan()
+    bidang = {k for p in PROFIL_AMBANG.values() for k in p}
+    return {k: PROFIL_AMBANG[nama].get(k, getattr(dasar, k)) for k in sorted(bidang)} | {"profil_ambang": nama}
+
+
+def terapkan_profil_ambang(cfg: Pengaturan, nama: str) -> None:
+    for k, v in nilai_profil(nama).items():
+        setattr(cfg, k, v)
 
 
 def _angka(env: Mapping[str, str], nama: str, tipe: type, bawaan):
@@ -172,12 +213,20 @@ def muat(env: Mapping[str, str] = os.environ) -> Pengaturan:
     sakelar_cadangan = env.get("CEKHOAKS_LLM_CADANGAN", "").strip().lower()
     if sakelar_cadangan not in ("", "aktif", "mati"):
         raise KonfigurasiTidakValid(f"CEKHOAKS_LLM_CADANGAN harus 'aktif' atau 'mati', diterima: {sakelar_cadangan!r}")
+    nama_profil = env.get("CEKHOAKS_PROFIL_AMBANG", "").strip().lower() or PROFIL_AMBANG_BAWAAN
+    if nama_profil not in PROFIL_AMBANG:
+        raise KonfigurasiTidakValid(
+            f"CEKHOAKS_PROFIL_AMBANG harus {' atau '.join(repr(p) for p in PROFIL_AMBANG)}, diterima: {nama_profil!r}"
+        )
+    profil = nilai_profil(nama_profil)
     folder_cek = env.get("CEKHOAKS_CEKFAKTA_FOLDER", "").strip()
     folder_model = env.get("CEKHOAKS_MODEL_FOLDER", "").strip()
     pengaturan = Pengaturan(
+        **{k: v for k, v in profil.items() if k != "ambang_teks_karakter"},
         cek_fakta_aktif=sakelar != "mati",
         llm_aktif=sakelar_llm != "mati",
         llm_cadangan_aktif=sakelar_cadangan != "mati",
+        llm_timeout_groq=LLM_TIMEOUT_GROQ_SENDIRI if sakelar_cadangan == "mati" else bawaan.llm_timeout_groq,
         cek_fakta_folder=Path(folder_cek) if folder_cek else bawaan.cek_fakta_folder,
         model_folder=Path(folder_model) if folder_model else bawaan.model_folder,
         host=env.get("CEKHOAKS_HOST", "").strip() or bawaan.host,
@@ -185,7 +234,7 @@ def muat(env: Mapping[str, str] = os.environ) -> Pengaturan:
         batas_gambar_byte=_angka(env, "CEKHOAKS_BATAS_GAMBAR_BYTE", int, bawaan.batas_gambar_byte),
         jeda_min_detik=_angka(env, "CEKHOAKS_JEDA_MIN", float, bawaan.jeda_min_detik),
         jeda_maks_detik=_angka(env, "CEKHOAKS_JEDA_MAKS", float, bawaan.jeda_maks_detik),
-        ambang_teks_karakter=_angka(env, "CEKHOAKS_AMBANG_TEKS", int, bawaan.ambang_teks_karakter),
+        ambang_teks_karakter=_angka(env, "CEKHOAKS_AMBANG_TEKS", int, profil["ambang_teks_karakter"]),
         paksa_tingkat=paksa or None,
     )
     if pengaturan.jeda_min_detik > pengaturan.jeda_maks_detik:
