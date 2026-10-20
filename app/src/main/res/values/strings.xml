@@ -22,7 +22,7 @@
     <string name="rekam_ditolak">Tombol cek belum bisa aktif. Izin rekam layar diperlukan agar tombol bisa mengambil gambar layar.</string>
 
     <!-- Tombol mengambang -->
-    <string name="tombol_cek_deskripsi">Cek informasi di layar ini</string>
+    <string name="tombol_cek_deskripsi">Cek konten di layar</string>
     <string name="tangkap_gagal">Gambar layar belum berhasil diambil. Coba ketuk tombol cek lagi.</string>
 
     <!-- Layar pilih area -->

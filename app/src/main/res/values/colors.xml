@@ -1,8 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="white">#FFFFFFFF</color>
-    <!-- Teal tombol mengambang (tidak diubah). Layar pilih area dan semua lembar memakai navy. #0F766E dengan opacity sekitar 93% (alpha 0xED) -->
-    <color name="tombol_cek_latar">#ED0F766E</color>
+    <!-- Tombol mengambang (rujukan: prototipe). Latar rgba(24,30,46,0.66), garis putih 14% -->
+    <color name="tombol_cek_latar">#A8181E2E</color>
+    <color name="tombol_cek_garis">#24FFFFFF</color>
+    <!-- Tiga lingkaran konsentris: putih 20%, 45%, 97% -->
+    <color name="tombol_cek_lingkaran_luar">#33FFFFFF</color>
+    <color name="tombol_cek_lingkaran_tengah">#73FFFFFF</color>
+    <color name="tombol_cek_lingkaran_dalam">#F7FFFFFF</color>
+    <!-- Warna bayangan rgba(8,18,38); kepekatannya diatur sistem -->
+    <color name="tombol_cek_bayangan">#FF081226</color>
 
     <!-- Layar pilih area (rujukan: docs/prototype/prototype.html) -->
     <!-- #080F1A dengan opacity 68% (alpha 0xAD) -->

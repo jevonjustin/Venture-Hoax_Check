@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="tombol_cek_ukuran">56dp</dimen>
-    <dimen name="tombol_cek_ikon">26dp</dimen>
+    <dimen name="tombol_cek_ukuran">58dp</dimen>
+    <dimen name="tombol_cek_garis">1dp</dimen>
     <dimen name="tombol_cek_jarak_tepi">14dp</dimen>
-    <dimen name="tombol_cek_bayangan">4dp</dimen>
-    <!-- Ruang kosong di sekeliling lingkaran agar bayangan tidak terpotong tepi jendela overlay -->
+    <dimen name="tombol_cek_bayangan">8dp</dimen>
+    <!-- Ruang kosong di sekeliling tombol agar bayangan tidak terpotong tepi jendela overlay -->
     <dimen name="tombol_cek_ruang_bayangan">8dp</dimen>
 
     <!-- Lembar overlay Tahap 6 (rujukan: docs/prototype/prototype.html) -->
