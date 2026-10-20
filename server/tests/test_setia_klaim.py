@@ -13,7 +13,7 @@ CFG = Pengaturan(periksa_kesetiaan_klaim=True)
 
 TEKS_GELANDANG = "Mantan bendahara yayasan digelandang petugas ke kantor polisi kemarin siang bersama dua pengurus"
 TEKS_PENIPU = "Waspada pesan berantai yang meminta transfer dana ke rekening baru atas nama yayasan peduli"
-TEKS_MENTERI = "Menteri Keuangan Suahasil menyatakan anggaran sekolah negeri naik pada tahun depan"
+TEKS_MENTERI = "Menteri Keuangan Fiktiwan menyatakan anggaran sekolah negeri naik pada tahun depan"
 
 
 def kode(klaim: str, teks: str, cfg: Pengaturan = CFG):
@@ -49,14 +49,14 @@ def test_toleransi_ocr_relevansi_tidak_berlaku_untuk_kesetiaan_profil_akhir():
 
 
 def test_jabatan_wakil_menteri_ditambahkan_gagal():
-    klaim = "Wakil Menteri Keuangan Suahasil menyatakan anggaran sekolah negeri naik"
+    klaim = "Wakil Menteri Keuangan Fiktiwan menyatakan anggaran sekolah negeri naik"
     assert kode(klaim, TEKS_MENTERI) == setia.KODE_ENTITAS
-    assert kode("Menteri Keuangan Suahasil menyatakan anggaran sekolah negeri naik", TEKS_MENTERI) is None
+    assert kode("Menteri Keuangan Fiktiwan menyatakan anggaran sekolah negeri naik", TEKS_MENTERI) is None
 
 
 def test_salah_eja_nama_oleh_ocr_lolos():
-    teks = "Menteri Keuangan Suhasasil menyatakan anggaran sekolah negeri naik pada tahun depan"
-    assert kode("Menteri Keuangan Suahasil menyatakan anggaran sekolah negeri naik", teks) is None
+    teks = "Menteri Keuangan Fiktlwam menyatakan anggaran sekolah negeri naik pada tahun depan"
+    assert kode("Menteri Keuangan Fiktiwan menyatakan anggaran sekolah negeri naik", teks) is None
     # nama yang benar-benar lain gagal
     assert kode("Menteri Keuangan Budiman menyatakan anggaran sekolah negeri naik", teks) == setia.KODE_ENTITAS
 
@@ -94,7 +94,7 @@ def test_kata_menempel_akibat_ocr_lolos():
 
 
 def test_laporan_alasan_hanya_kode_dan_jumlah():
-    hasil = setia.periksa_kesetiaan("Wakil Menteri Keuangan Suahasil menyatakan anggaran naik", TEKS_MENTERI, CFG)
+    hasil = setia.periksa_kesetiaan("Wakil Menteri Keuangan Fiktiwan menyatakan anggaran naik", TEKS_MENTERI, CFG)
     assert isinstance(hasil[0], str) and isinstance(hasil[1], int) and hasil[1] >= 1
 
 

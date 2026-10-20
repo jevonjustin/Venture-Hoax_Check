@@ -114,21 +114,21 @@ def test_lolos_menurun_ke_mirip_yang_relevan():
 
 # --- toleransi salah eja OCR pada relevansi ---
 
-IDF = {"menkeu": 3.0, "suahasil": 5.0, "korupsi": 1.0}
+IDF = {"menkeu": 3.0, "fiktiwan": 5.0, "korupsi": 1.0}
 TOLERAN = dataclasses.replace(BAWAAN, relevansi_toleransi_ocr=True)
 
 
 def test_bawaan_toleransi_mati():
-    kata = cocok.kata_isi("Menkeu Suhasasil korupsi")
+    kata = cocok.kata_isi("Menkeu Fiktlwam korupsi")
     assert BAWAAN.relevansi_toleransi_ocr is False
-    assert cocok.relevansi_judul(kata, "Menkeu Suahasil korupsi", IDF, 10, BAWAAN) == pytest.approx(4 / 9)
+    assert cocok.relevansi_judul(kata, "Menkeu Fiktiwan korupsi", IDF, 10, BAWAAN) == pytest.approx(4 / 9)
 
 
 def test_toleransi_menerima_salah_eja_nama():
-    kata = cocok.kata_isi("Menkeu Suhasasil korupsi")
-    assert cocok.relevansi_judul(kata, "Menkeu Suahasil korupsi", IDF, 10, TOLERAN) == pytest.approx(1.0)
-    assert cocok.kata_judul_di_teks(kata, "Menkeu Suahasil korupsi", TOLERAN) == 3
-    assert cocok.kata_judul_di_teks(kata, "Menkeu Suahasil korupsi", BAWAAN) == 2
+    kata = cocok.kata_isi("Menkeu Fiktlwam korupsi")
+    assert cocok.relevansi_judul(kata, "Menkeu Fiktiwan korupsi", IDF, 10, TOLERAN) == pytest.approx(1.0)
+    assert cocok.kata_judul_di_teks(kata, "Menkeu Fiktiwan korupsi", TOLERAN) == 3
+    assert cocok.kata_judul_di_teks(kata, "Menkeu Fiktiwan korupsi", BAWAAN) == 2
 
 
 @pytest.mark.parametrize(
@@ -160,9 +160,9 @@ def test_toleransi_batas_ditolak(judul, teks):
 def test_pencarian_memakai_toleransi_dari_pengaturan_global(monkeypatch):
     from app import konfigurasi
 
-    kata = cocok.kata_isi("Menkeu Suhasasil korupsi")
+    kata = cocok.kata_isi("Menkeu Fiktlwam korupsi")
     monkeypatch.setattr(konfigurasi.pengaturan, "relevansi_toleransi_ocr", True)
-    assert cocok.relevansi_judul(kata, "Menkeu Suahasil korupsi", IDF, 10) == pytest.approx(1.0)
+    assert cocok.relevansi_judul(kata, "Menkeu Fiktiwan korupsi", IDF, 10) == pytest.approx(1.0)
 
 
 # --- profil akhir: jalur server sama dengan alat evaluasi ---

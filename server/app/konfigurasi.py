@@ -93,7 +93,7 @@ class Pengaturan:
     relevansi_lolos_skor: float | None = None
     # Sesi 5.6, semua MATI di bawaan dataclass (profil "lama"); profil "akhir" (PROFIL_AMBANG) menyalakannya.
     # Toleransi salah eja OCR pada relevansi: kata isi judul (>= 5 huruf, tanpa angka) dianggap ada di teks bila
-    # berbeda paling banyak sekian huruf dari kata teks ("Suhasasil" untuk "Suahasil").
+    # berbeda paling banyak sekian huruf dari kata teks ("Fiktlwam" untuk "Fiktiwan").
     relevansi_toleransi_ocr: bool = False
     relevansi_edit_pendek: int = 1  # kata judul 5-6 huruf
     relevansi_edit_panjang: int = 2  # kata judul >= 7 huruf

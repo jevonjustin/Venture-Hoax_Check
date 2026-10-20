@@ -36,8 +36,8 @@ def putus(kandidat, ciri=()):
 # --- relevansi leksikal ---
 
 ARTIKEL_DB = [
-    {"judul": "[SALAH] Menkeu Suahasil Terlibat Korupsi Ratusan Triliun Rupiah", "narasi": "Beredar klaim Menkeu terlibat."},
-    {"judul": "Prabowo Terlibat Korupsi Pengadaan Alutsista di Kemenhan", "narasi": "Pengadaan alutsista."},
+    {"judul": "[SALAH] Menkeu Fiktiwan Terlibat Korupsi Ratusan Triliun Rupiah", "narasi": "Beredar klaim Menkeu terlibat."},
+    {"judul": "Pejabat Terlibat Korupsi Pengadaan Alutsista di Kemenhan", "narasi": "Pengadaan alutsista."},
     {"judul": "Korupsi proyek jalan di daerah", "narasi": "Korupsi terlibat banyak."},
     {"judul": "Korupsi dana desa terlibat kepala desa", "narasi": "Korupsi."},
     {"judul": "Indonesia negara termiskin", "narasi": "World Bank Indonesia negara."},
@@ -55,7 +55,7 @@ def test_kata_jarang_lebih_berbobot_dari_kata_umum():
 
 def test_relevansi_artikel_yang_dibicarakan_tinggi_dan_yang_tidak_berkaitan_rendah():
     idf = cocok.hitung_idf(ARTIKEL_DB)
-    teks = cocok.kata_isi("MenKeu Suhasasil Terlibat Korupsi 500 Triliun Senin 14 Sep 2026")
+    teks = cocok.kata_isi("MenKeu Fiktlwam Terlibat Korupsi 500 Triliun Senin 14 Sep 2026")
     sumber = cocok.relevansi_judul(teks, ARTIKEL_DB[0]["judul"], idf, len(ARTIKEL_DB))
     lain = cocok.relevansi_judul(teks, ARTIKEL_DB[1]["judul"], idf, len(ARTIKEL_DB))
     assert sumber > CFG.relevansi_minimum > lain
@@ -86,7 +86,7 @@ def test_pencarian_mengisi_relevansi_kandidat(tmp_path):
 
 
 def test_artikel_tidak_berkaitan_di_rentang_mirip_tidak_menaikkan_ke_hati_hati():
-    p = putus([art("salah", 0.855, relevansi=0.28, judul="Prabowo Terlibat Korupsi Alutsista")])
+    p = putus([art("salah", 0.855, relevansi=0.28, judul="Pejabat Terlibat Korupsi Alutsista")])
     assert p.tingkat is Tingkat.TIDAK_DITEMUKAN and p.cek_fakta == [] and len(p.tersaring) == 1
 
 

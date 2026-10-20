@@ -95,7 +95,7 @@ def _huruf_judul(kata: list[str]) -> bool:
 def _judul_terpecah(baris_semua: list[str], i: int, gabungan: str) -> bool:
     """Apakah baris ke-i dan berikutnya adalah dua bagian sebuah judul yang terpecah oleh lebar layar: keduanya
     pendek, baris pertama tanpa tanda akhir kalimat, dan keduanya berhuruf awal kapital (Title Case atau kapital
-    semua), misalnya "MenKeu Suhasasil Terlibat" + "Korupsi 500 Triliun". Baris metadata menghentikan."""
+    semua), misalnya "MenKeu Fiktlwam Terlibat" + "Korupsi 500 Triliun". Baris metadata menghentikan."""
     if i + 1 >= len(baris_semua):
         return False
     sekarang, berikut = baris_semua[i], baris_semua[i + 1]

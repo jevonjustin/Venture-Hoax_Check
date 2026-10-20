@@ -226,7 +226,7 @@ def test_https_diikuti_kalimat_biasa_tidak_digabung(monkeypatch, klien):
 # --- klaim heuristik yang diperbaiki ---
 
 GAMBAR_12 = "kebakaran hutan kalimantan\nmulai masuk negara brunei\ndan bakar rumah penduduk\nJabatan Bomba dan Penyelamat\nKementerian Hal Ehwal Dalam Negeri"
-GAMBAR_14 = "MenKeu Suhasasil Terlibat\nKorupsi 500 Triliun\nSenin, 14 Sep 2026 21:00 WIB\nBlm bekerja sdh terungkap\njg ke publik Hancurrr"
+GAMBAR_14 = "MenKeu Fiktlwam Terlibat\nKorupsi 500 Triliun\nSenin, 14 Sep 2026 21:00 WIB\nBlm bekerja sdh terungkap\njg ke publik Hancurrr"
 GAMBAR_16 = (
     "CUKUP VIRALKAN INI DAN DIKOPI KASIKAN KE\nRAKYAT PLOSOK PLOSOK DESA INSYA ALLAH\nPASTI TUMBANG DAN PASTI DIBENCI SAMA\n"
     "RAKYAT TERUTAMA RAKYAT KAUM PEDESAAN\nPERDALAMAN\nPDIP USUL KE PEMERINTAH AGAR\nPESANTREN DI TUTUP SELURUH INDONESIA\nAndebaNews"
@@ -242,7 +242,7 @@ def test_gambar_12_judul_huruf_kecil_mengalahkan_daftar_nama_lembaga():
 
 
 def test_gambar_14_judul_terpecah_dua_baris_digabung_dan_mengalahkan_komentar():
-    assert klaim.klaim_heuristik(GAMBAR_14) == "MenKeu Suhasasil Terlibat Korupsi 500 Triliun"
+    assert klaim.klaim_heuristik(GAMBAR_14) == "MenKeu Fiktlwam Terlibat Korupsi 500 Triliun"
 
 
 def test_gambar_16_kalimat_ajakan_tidak_mendapat_bonus_dan_klaim_yang_diviralkan_menang():

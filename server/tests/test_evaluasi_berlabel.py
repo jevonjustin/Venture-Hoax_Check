@@ -547,12 +547,12 @@ def test_urai_ambang_pengaturan_baru_sesi56():
 def test_relevansi_cache_selalu_dihitung_ulang_dengan_pengaturan_sekarang(monkeypatch):
     # Cache bisa dikumpulkan dengan profil lain, jadi nilai relevansi di cache tidak pernah dipakai apa adanya.
     p = alat.PencarianBerCache(object(), boleh=False)
-    hasil = [{"judul": "[SALAH] Menkeu Suahasil korupsi", "relevansi": 0.123}]
-    monkeypatch.setattr(p, "idf", lambda: ({"menkeu": 3.0, "suahasil": 5.0, "korupsi": 1.0}, 10))
-    lama = p.hitung_ulang_relevansi("Menkeu Suhasasil korupsi", hasil)
-    assert lama[0]["relevansi"] == pytest.approx(4.0 / 9.0)  # tanpa toleransi: "Suahasil" tidak ada
+    hasil = [{"judul": "[SALAH] Menkeu Fiktiwan korupsi", "relevansi": 0.123}]
+    monkeypatch.setattr(p, "idf", lambda: ({"menkeu": 3.0, "fiktiwan": 5.0, "korupsi": 1.0}, 10))
+    lama = p.hitung_ulang_relevansi("Menkeu Fiktlwam korupsi", hasil)
+    assert lama[0]["relevansi"] == pytest.approx(4.0 / 9.0)  # tanpa toleransi: "Fiktiwan" tidak ada
     with alat.terapkan_profil({"relevansi_toleransi_ocr": True}):
-        baru = p.hitung_ulang_relevansi("Menkeu Suhasasil korupsi", hasil)
+        baru = p.hitung_ulang_relevansi("Menkeu Fiktlwam korupsi", hasil)
     assert baru[0]["relevansi"] == pytest.approx(1.0) and hasil[0]["relevansi"] == 0.123
 
 

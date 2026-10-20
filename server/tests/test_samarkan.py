@@ -34,7 +34,7 @@ def test_angka_biasa_tidak_disamarkan(teks):
 
 
 def test_email_dan_akun_disamarkan():
-    assert samarkan_teks("kirim ke tolong.saya@mail.co.id atau @polres_merangin") == "kirim ke [EMAIL] atau [AKUN]"
+    assert samarkan_teks("kirim ke tolong.saya@mail.co.id atau @akun_contoh1") == "kirim ke [EMAIL] atau [AKUN]"
 
 
 def test_tautan_dan_nama_orang_tidak_disamarkan():
@@ -105,7 +105,7 @@ def test_deret_akun_disamarkan_per_token():
 
 # --- kutipan_ke_asli ---
 
-ASLI = "Hubungi +62 812-3456-7890 atau tolong.saya@mail.co.id\nSegera kirim kode ke @polres_merangin sebelum dihapus"
+ASLI = "Hubungi +62 812-3456-7890 atau tolong.saya@mail.co.id\nSegera kirim kode ke @akun_contoh1 sebelum dihapus"
 SAMAR = samarkan_teks(ASLI)
 
 
@@ -116,7 +116,7 @@ def test_kutipan_biasa_dipetakan_ke_teks_asli():
 
 def test_kutipan_bertoken_dipetakan_kembali_ke_data_asli():
     assert kutipan_ke_asli("Hubungi [NOMOR] atau [EMAIL]", SAMAR, ASLI) == "Hubungi +62 812-3456-7890 atau tolong.saya@mail.co.id"
-    assert kutipan_ke_asli("kode ke [AKUN] sebelum", SAMAR, ASLI) == "kode ke @polres_merangin sebelum"
+    assert kutipan_ke_asli("kode ke [AKUN] sebelum", SAMAR, ASLI) == "kode ke @akun_contoh1 sebelum"
 
 
 def test_kutipan_palsu_ditolak():

@@ -219,6 +219,10 @@ Rujukan desain satu-satunya untuk pengembangan adalah `docs/prototype/prototype.
 - **Batas waktu Groq tanpa cadangan.** Dengan `CEKHOAKS_LLM_CADANGAN=mati`, batas Groq naik dari 4 menjadi 7 detik (`LLM_TIMEOUT_GROQ_SENDIRI`), karena waktu yang biasanya disisakan untuk Gemini tidak terpakai. Anggaran total tetap 9 detik. Alasannya: pada uji HP 2026-10-19, satu panggilan butuh 3,5 detik. Kalau cadangan menyala, batasnya tetap 4 detik. Perubahan ini diuji dengan transport palsu, tanpa panggilan Groq.
 - **Lowongan Nestle.** Setelah database diperbarui, hasilnya `kuat` dengan artikel sumber di peringkat 1. Tanpa artikelnya di database, hasilnya `tidak_ditemukan` tanpa ciri.
 
+### Keputusan data rekaan
+
+- **Nama pejabat nyata dihapus dari data rekaan (D49).** Repo publik, jadi teks hoaks rekaan di tes dan komentar kode tidak memuat nama pejabat nyata. Nama wakil menteri keuangan (dan salah eja OCR-nya) diganti nama rekaan "Fiktiwan" (salah eja OCR "Fiktlwam", selisih 2 huruf seperti aslinya), dan judul korupsi yang menyebut presiden di `test_relevansi.py` diganti "Pejabat". Akun polres nyata dalam skenario penipuan di `test_samarkan.py` diganti `@akun_contoh1`. Nama dan akun rekaan ini tidak ada di `server/data_lokal/cek_fakta/artikel.jsonl`, sehingga tidak bisa cocok tak sengaja dengan artikel nyata. Makna dan hasil tes tidak berubah. `buat_data_evaluasi.py` tidak diubah: kelima @akun di dalamnya generik dan tidak jelas milik entitas nyata, sehingga 138 gambar di `server/data_lokal/evaluasi/` tetap sesuai dengan versi skrip di repo. Judul dan URL artikel cek fakta asli di tes alat `cek_fakta` dibiarkan karena memang data artikel nyata.
+
 ## 12. Proyek referensi open source
 
 | Repositori | Lisensi | Dipakai untuk | Tahap | Catatan |
