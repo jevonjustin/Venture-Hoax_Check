@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name">Cek Hoaks</string>
+    <string name="app_name">Veritas</string>
 
     <!-- Layar utama -->
     <string name="main_penjelasan">Ragu dengan informasi yang sedang dibaca? Ketuk tombol cek yang mengambang di layar untuk memeriksanya tanpa perlu pindah aplikasi.</string>
@@ -47,11 +47,11 @@
     <string name="hasil_tingkat_tidak_dikenal">Hasil Analisis</string>
 
     <!-- Galat pengecekan (dipakai uji koneksi di layar utama) -->
-    <string name="galat_url_belum_diatur">Alamat server belum diatur. Atur dulu di aplikasi Cek Hoaks, bagian Pengaturan server.</string>
+    <string name="galat_url_belum_diatur">Alamat server belum diatur. Atur dulu di aplikasi Veritas, bagian Pengaturan server.</string>
     <string name="galat_tidak_terjangkau">Server belum bisa dihubungi. Periksa alamat server di aplikasi, pastikan server di laptop sudah berjalan, dan HP terhubung ke jaringan yang sama.</string>
     <string name="galat_waktu_habis">Server terlalu lama menjawab. Coba lagi sebentar lagi.</string>
     <string name="galat_cleartext">Versi aplikasi ini tidak mengizinkan alamat http:// biasa. Pakai build debug atau alamat https://.</string>
-    <string name="galat_respons_tidak_dikenali">Jawaban server tidak dikenali. Pastikan alamat di pengaturan mengarah ke server Cek Hoaks.</string>
+    <string name="galat_respons_tidak_dikenali">Jawaban server tidak dikenali. Pastikan alamat di pengaturan mengarah ke server Veritas.</string>
     <string name="galat_teks_tidak_terbaca">Belum ada tulisan yang bisa dibaca di area ini. Coba pilih area dengan tulisan yang lebih jelas atau lebih besar.</string>
     <string name="galat_terlalu_besar">Gambar terlalu besar untuk dikirim. Coba pilih area yang lebih kecil.</string>
     <string name="galat_gambar_rusak">Gambar tidak terkirim dengan utuh. Coba ulangi pengecekan.</string>
@@ -219,7 +219,7 @@
     <string name="galat_judul_server">Server sedang bermasalah</string>
     <string name="galat_isi_server">Server mengalami masalah saat memeriksa. Coba lagi nanti.</string>
     <string name="galat_judul_respons">Jawaban server tidak dikenali</string>
-    <string name="galat_isi_respons">Pastikan alamat di pengaturan mengarah ke server Cek Hoaks.</string>
+    <string name="galat_isi_respons">Pastikan alamat di pengaturan mengarah ke server Veritas.</string>
     <string name="galat_judul_cleartext">Alamat server tidak bisa dipakai</string>
     <string name="galat_isi_cleartext">Versi aplikasi ini tidak mengizinkan alamat http:// biasa. Gunakan build debug atau alamat https://.</string>
     <string name="galat_aksi_pilih_ulang">Pilih Ulang</string>
@@ -242,9 +242,9 @@
     <string name="onboarding_2_judul">Tekan tombol melayang, pilih bagian yang ingin dicek</string>
     <string name="onboarding_2_isi">Tombol ini muncul di atas aplikasi apa pun yang sedang dibuka. Hanya bagian layar yang dipilih yang dikirim untuk diperiksa.</string>
     <string name="onboarding_3_judul">Dapatkan hasil analisis dan pelajari ciri-ciri hoaks</string>
-    <string name="onboarding_3_isi">Ciri yang mencurigakan ditampilkan lengkap dengan bukti dan penjelasannya. CekHoaks berperan sebagai pemandu, bukan hakim yang memberi putusan akhir.</string>
+    <string name="onboarding_3_isi">Ciri yang mencurigakan ditampilkan lengkap dengan bukti dan penjelasannya. Veritas berperan sebagai pemandu, bukan hakim yang memberi putusan akhir.</string>
     <string name="onboarding_4_judul">Apa saja yang dikirim</string>
-    <string name="onboarding_4_isi">• Hanya bagian layar yang dipilih yang dikirim ke server CekHoaks, yang berjalan di laptop pengembang.\n• Gambar tidak disimpan di HP maupun di server, dan tidak pernah dikirim ke pihak ketiga.\n• Teks hasil bacaan gambar dikirim ke penyedia AI pihak ketiga untuk dianalisis, setelah nomor telepon, alamat email, dan nama akun berawalan @ disamarkan.\n• Penyamaran dilakukan otomatis berdasarkan pola, jadi bisa ada yang terlewat. Nama orang, tautan, dan isi pesan itu sendiri tidak disamarkan. Sebaiknya jangan cek bagian yang memuat data pribadi.</string>
+    <string name="onboarding_4_isi">• Hanya bagian layar yang dipilih yang dikirim ke server Veritas, yang berjalan di laptop pengembang.\n• Gambar tidak disimpan di HP maupun di server, dan tidak pernah dikirim ke pihak ketiga.\n• Teks hasil bacaan gambar dikirim ke penyedia AI pihak ketiga untuk dianalisis, setelah nomor telepon, alamat email, dan nama akun berawalan @ disamarkan.\n• Penyamaran dilakukan otomatis berdasarkan pola, jadi bisa ada yang terlewat. Nama orang, tautan, dan isi pesan itu sendiri tidak disamarkan. Sebaiknya jangan cek bagian yang memuat data pribadi.</string>
     <string name="onboarding_lanjut">Lanjut</string>
     <string name="onboarding_mulai">Mulai</string>
     <string name="onboarding_lewati">Lewati</string>

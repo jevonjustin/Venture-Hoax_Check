@@ -223,6 +223,10 @@ Rujukan desain satu-satunya untuk pengembangan adalah `docs/prototype/prototype.
 
 - **Nama pejabat nyata dihapus dari data rekaan (D49).** Repo publik, jadi teks hoaks rekaan di tes dan komentar kode tidak memuat nama pejabat nyata. Nama wakil menteri keuangan (dan salah eja OCR-nya) diganti nama rekaan "Fiktiwan" (salah eja OCR "Fiktlwam", selisih 2 huruf seperti aslinya), dan judul korupsi yang menyebut presiden di `test_relevansi.py` diganti "Pejabat". Akun polres nyata dalam skenario penipuan di `test_samarkan.py` diganti `@akun_contoh1`. Nama dan akun rekaan ini tidak ada di `server/data_lokal/cek_fakta/artikel.jsonl`, sehingga tidak bisa cocok tak sengaja dengan artikel nyata. Makna dan hasil tes tidak berubah. `buat_data_evaluasi.py` tidak diubah: kelima @akun di dalamnya generik dan tidak jelas milik entitas nyata, sehingga 138 gambar di `server/data_lokal/evaluasi/` tetap sesuai dengan versi skrip di repo. Judul dan URL artikel cek fakta asli di tes alat `cek_fakta` dibiarkan karena memang data artikel nyata.
 
+### Keputusan nama produk
+
+- **Nama produk yang tampil ke pengguna menjadi Veritas (D50).** Nama teknis tetap `cekhoaks` (package, nama kelas, tema, tag log, variabel `CEKHOAKS_*`, User-Agent server, folder, dan repo).
+
 ## 12. Proyek referensi open source
 
 | Repositori | Lisensi | Dipakai untuk | Tahap | Catatan |
