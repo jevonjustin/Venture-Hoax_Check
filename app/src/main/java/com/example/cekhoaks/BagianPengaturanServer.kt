@@ -74,6 +74,7 @@ fun BagianPengaturanServer(
                 onValueChange = onUrlBerubah,
                 label = { Text(stringResource(R.string.server_label_url)) },
                 placeholder = { Text(stringResource(R.string.server_contoh_url)) },
+                supportingText = { Text(stringResource(R.string.server_bantuan_url)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { onUji() }),

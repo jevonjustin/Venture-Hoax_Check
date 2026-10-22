@@ -59,9 +59,10 @@
 
     <!-- Pengaturan server (layar utama) -->
     <string name="server_judul">Pengaturan server</string>
-    <string name="server_penjelasan">Alamat server analisis yang berjalan di laptop, misalnya http://192.168.1.5:8000. Alamat yang bisa dipakai tercetak saat server dijalankan.</string>
+    <string name="server_penjelasan">Alamat server analisis yang berjalan di laptop atau di server online, misalnya http://192.168.1.5:8000. Alamat yang bisa dipakai tercetak saat server dijalankan.</string>
     <string name="server_label_url">Alamat server</string>
-    <string name="server_contoh_url">http://192.168.1.5:8000</string>
+    <string name="server_contoh_url">http://192.168.x.x:8000</string>
+    <string name="server_bantuan_url">Alamat lokal: http://IP-laptop:8000. Alamat online: https://nama-server.hf.space.</string>
     <string name="server_tombol_uji">Uji koneksi</string>
     <string name="server_tombol_usb">USB (adb reverse)</string>
     <string name="server_petunjuk_usb">Untuk koneksi USB, jalankan dulu di laptop: adb reverse tcp:8000 tcp:8000</string>
