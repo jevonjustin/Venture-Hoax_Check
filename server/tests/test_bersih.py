@@ -142,7 +142,7 @@ def test_kalimat_sejajar_dengan_menu_tidak_ikut_dibuang():
 
 
 def test_nama_akun_dan_at_akun_tidak_disentuh():
-    hasil = jalankan(("Ema Tri Ratnasari", 30), ("@MasBRO_back", 60), ("MasBRO", 90))
+    hasil = jalankan(("Fiktiana Rekaan Putri", 30), ("@AkunREKAAN_back", 60), ("AkunREKAAN", 90))
     assert hasil.dibuang == []
 
 

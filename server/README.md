@@ -1,4 +1,4 @@
-# Server Cek Hoaks (pipeline analisis, Sesi 5.5)
+# Server Veritas (pipeline analisis, Sesi 5.5)
 
 Server FastAPI yang menerima potongan layar dari aplikasi dan mengembalikan hasil analisis sungguhan. Kontrak lengkapnya ada di [`docs/API.md`](../docs/API.md); rancangan dan keputusannya ada di [`docs/RANCANGAN_PROYEK.md`](../docs/RANCANGAN_PROYEK.md).
 
@@ -72,8 +72,8 @@ Saat server mulai, pesan `Memuat pembaca teks ...` dan `Memuat pencarian cek fak
 
 ```
 ============================================================
-Server Cek Hoaks 0.6.0
-Pencarian cek fakta: siap, 21.342 artikel (e5-base fp32), dimuat dalam 3,4 detik, RAM tambahan sekitar 1.472 MB
+Server Veritas 0.6.0
+Pencarian cek fakta: siap, 21.371 artikel (e5-base fp32), dimuat dalam 3,4 detik, RAM tambahan sekitar 1.472 MB
 Analisis teks (LLM): groq -> gemini
 Alamat yang bisa diketik di aplikasi:
   http://192.168.0.105:8000   <- Wi-Fi

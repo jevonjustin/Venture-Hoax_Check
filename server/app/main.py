@@ -1,4 +1,4 @@
-"""Server Cek Hoaks: lapisan HTTP.
+"""Server Veritas: lapisan HTTP.
 
 Menerima potongan gambar dari aplikasi, menyerahkannya ke pipeline (app/pipeline), dan mengembalikan
 hasilnya sesuai kontrak di docs/API.md. Pembaca teks RapidOCR dan pencarian cek fakta dimuat saat server menyala; LLM dipanggil lewat API per permintaan.
@@ -95,7 +95,7 @@ def _nama_adaptor() -> dict[str, str]:
 
 
 def _cetak_alamat() -> None:
-    baris = ["", "=" * 60, f"Server Cek Hoaks {VERSI}", f"Pencarian cek fakta: {cocok.pencarian.ringkasan()}", f"Analisis teks (LLM): {llm.ringkasan_status()}", "Alamat yang bisa diketik di aplikasi:"]
+    baris = ["", "=" * 60, f"Server Veritas {VERSI}", f"Pencarian cek fakta: {cocok.pencarian.ringkasan()}", f"Analisis teks (LLM): {llm.ringkasan_status()}", "Alamat yang bisa diketik di aplikasi:"]
     ip = alamat_ipv4_lokal()
     nama = _nama_adaptor()
     nyata = [a for a in ip if not adaptor_virtual(nama.get(a, ""))]
@@ -136,7 +136,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="Cek Hoaks", version=VERSI, lifespan=lifespan)
+app = FastAPI(title="Veritas", version=VERSI, lifespan=lifespan)
 
 
 # --- Penanganan galat: semua respons non-2xx memakai format {"galat": {...}} ---
