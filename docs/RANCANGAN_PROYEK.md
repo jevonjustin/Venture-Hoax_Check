@@ -510,6 +510,11 @@ Pengumpulan data dan fine-tuning classifier dikerjakan paralel mulai minggu 2 di
   - Profil jaringan laptop harus Private (`Set-NetConnectionProfile` lewat PowerShell Administrator). Kalau tidak, HP tidak bisa menghubungi server lewat Wi-Fi atau hotspot.
   - Alamat IP laptop di hotspot HP berubah setiap kali tersambung ulang (contoh: 10.248.150.58 lalu 10.190.18.58). Setiap kali server dijalankan, cek alamat yang dicetak dan perbarui di aplikasi.
   - `adb reverse` hilang setiap kali kabel dicabut atau HP di-restart.
+  - **Sesi 8.1 (server siap Hugging Face Spaces), status: kode selesai, menunggu unggah dan uji HP.** Server 0.7.0, kontrak tetap 0.5.
+    - Docker Space publik `jevonjustin/veritas` (CPU Basic, port 7860, satu worker, uid 1000). Data pencarian tidak ada di image: diunduh saat menyala dari dataset PRIVAT `jevonjustin/veritas-data` bila `CEKHOAKS_HF_DATASET` diisi (`app/data_hf.py`, token dari Secret `HF_TOKEN`). Daftar berkas yang diunduh dan diunggah berasal dari satu fungsi (`cocok.berkas_dibaca`): `artikel.jsonl`, vektor e5-base fp32 (`.npy` dan `.json`), `model.onnx` dan `tokenizer.json` e5-base, sekitar 1,1 GB. Unduhan gagal: server tetap menyala, pencarian `tidak_tersedia`, alasan di log tanpa token.
+    - Pembatas beban (`app/beban.py`): paling banyak `CEKHOAKS_MAKS_BERSAMAAN` (2) analisis bersamaan, antrean paling lama `CEKHOAKS_ANTRE_MAKS_DETIK` (20) detik, lalu 503 `server_sibuk`. Tidak per IP (pengunjung berbagi Wi-Fi kampus). `/health` tidak dibatasi. OCR (thread pekerja tunggal) dan e5 (`asyncio.to_thread`) sudah tidak memblokir event loop; tes memastikan `/health` tetap cepat.
+    - Pesan khusus `server_sibuk` di Android dikerjakan di Sesi 8.3; sampai itu tampil sebagai kartu galat umum.
+    - Terbuka untuk Sesi 8.2: jumlah thread onnxruntime belum diatur (bawaan mengikuti jumlah inti yang terlihat, yang di container bisa jumlah inti host, bukan 2 vCPU). Ukur latensi dan atur `intra_op_num_threads` untuk OCR dan e5.
 - **Umum:** sistem atau aplikasi tertentu (misalnya halaman pengaturan izin dan aplikasi perbankan) dapat menyembunyikan overlay. Ini perilaku normal.
 
 ### Catatan terbuka

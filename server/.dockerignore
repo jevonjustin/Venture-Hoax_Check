@@ -1,0 +1,8 @@
+# Konteks build hanya berisi berkas yang disalin Dockerfile. Semua yang lain (.env, data_lokal, data_hf, .venv,
+# tests, alat) tidak pernah masuk image.
+*
+!app/
+!requirements.txt
+!requirements-space.txt
+**/__pycache__
+**/*.pyc

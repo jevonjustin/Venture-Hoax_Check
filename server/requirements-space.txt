@@ -1,0 +1,3 @@
+# Dependensi server di Hugging Face Spaces (Dockerfile). Server lokal cukup requirements.txt.
+-r requirements.txt
+huggingface_hub==1.33.0

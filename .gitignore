@@ -34,3 +34,6 @@ __pycache__/
 
 # State /orkestrasi (lokal, tidak masuk repo)
 /.orkestrasi/
+
+# Unduhan dataset Hugging Face bila server lokal dijalankan dengan CEKHOAKS_HF_DATASET (Sesi 8.1)
+/server/data_hf/

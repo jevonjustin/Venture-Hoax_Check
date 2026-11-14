@@ -1,6 +1,6 @@
-# Kontrak API Server Cek Hoaks
+# Kontrak API Server Veritas
 
-Versi kontrak: **0.5** (ditetapkan di tahap 4, diperluas di Sesi 5.5 dengan `pemeriksaan_terbatas`, `url_format_lama`, dan id ciri baru `permintaan_data_rahasia`). Versi server: 0.6.0. Kalau kontrak berubah, perbarui dokumen ini, `server/app/skema.py`, dan `app/src/main/java/com/example/cekhoaks/KontrakApi.kt` sekaligus.
+Versi kontrak: **0.5** (ditetapkan di tahap 4, diperluas di Sesi 5.5 dengan `pemeriksaan_terbatas`, `url_format_lama`, dan id ciri baru `permintaan_data_rahasia`). Versi server: 0.7.0 (Sesi 8.1 menambah kode galat `server_sibuk`; penambahan kode galat kompatibel karena aplikasi menampilkan kode yang tidak dikenalnya sebagai kartu galat umum, jadi versi kontrak tetap). Kalau kontrak berubah, perbarui dokumen ini, `server/app/skema.py`, dan `app/src/main/java/com/example/cekhoaks/KontrakApi.kt` sekaligus.
 
 - Semua field memakai Bahasa Indonesia dengan gaya `snake_case`.
 - Respons berformat JSON UTF-8.
@@ -9,10 +9,10 @@ Versi kontrak: **0.5** (ditetapkan di tahap 4, diperluas di Sesi 5.5 dengan `pem
 
 ## `GET /health`
 
-Dipakai tombol "Uji koneksi" di aplikasi.
+Dipakai tombol "Uji koneksi" di aplikasi. Tidak terkena pembatas beban, jadi tetap menjawab saat analisis sedang penuh.
 
 ```json
-{"status": "ok", "versi": "0.6.0"}
+{"status": "ok", "versi": "0.7.0"}
 ```
 
 ## `POST /analisis`
@@ -138,6 +138,7 @@ Semua respons dengan status selain 2xx memakai format berikut:
 | `metode_salah` | 405 | Metode HTTP salah untuk rute ini |
 | `galat_http` | sesuai galat aslinya (selain 404 dan 405) | Galat HTTP lain yang dihasilkan kerangka server dan tidak punya kode khusus di tabel ini. Aplikasi menampilkannya sebagai kartu galat umum |
 | `galat_server` | 500 | Galat internal yang tidak terduga di server |
+| `server_sibuk` | 503 | Sudah ada `CEKHOAKS_MAKS_BERSAMAAN` analisis berjalan (bawaan 2) dan permintaan ini mengantre lebih dari `CEKHOAKS_ANTRE_MAKS_DETIK` detik (bawaan 20). Batasnya untuk seluruh server, tidak per alamat IP. Aplikasi saat ini menampilkannya sebagai kartu galat umum |
 
 Kalau aplikasi memutus koneksi (tombol Batal), server menghentikan pemrosesan dan mencatat `Permintaan <id> dibatalkan klien` di log.
 

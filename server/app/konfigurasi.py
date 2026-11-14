@@ -15,7 +15,7 @@ from .skema import Tingkat
 DATA_LOKAL = Path(__file__).resolve().parents[1] / "data_lokal"
 
 # Versi server: dipakai /status, banner, dan User-Agent permintaan ke penyedia LLM.
-VERSI_SERVER = "0.6.0"
+VERSI_SERVER = "0.7.0"
 
 PAKSA_TEKS_TIDAK_TERBACA = "teks_tidak_terbaca"
 # Satu-satunya sumber daftar nilai sah PAKSA_TINGKAT dan query ?paksa= (selaras dengan docs/API.md).
@@ -142,6 +142,15 @@ class Pengaturan:
     ciri_llm_seru_min: int = 2  # atau sekian tanda seru
     # Nama profil ambang yang diterapkan (lihat PROFIL_AMBANG); hanya untuk banner dan log alat.
     profil_ambang: str = "lama"
+    # Pembatas beban (Sesi 8.1): paling banyak sekian analisis berjalan bersamaan; permintaan lain menunggu paling
+    # lama antre_maks_detik, lalu dijawab 503 server_sibuk. Tidak per alamat IP (pengunjung berbagi satu Wi-Fi).
+    maks_bersamaan: int = 2
+    antre_maks_detik: float = 20.0
+    # Dataset Hugging Face berisi data pencarian (Sesi 8.1, server di Spaces). None = data lokal seperti biasa.
+    # Bila diisi, isi dataset diunduh ke hf_folder saat server menyala, lalu cek_fakta_folder dan model_folder
+    # diarahkan ke hf_folder/cek_fakta dan hf_folder/model (lihat app/data_hf.py).
+    hf_dataset: str | None = None
+    hf_folder: Path = DATA_LOKAL.parent / "data_hf"
 
 
 # Profil ambang Sesi 5.6. "lama" = nilai bawaan dataclass di atas (perilaku commit 7742a73); "akhir" = hasil
@@ -221,6 +230,7 @@ def muat(env: Mapping[str, str] = os.environ) -> Pengaturan:
     profil = nilai_profil(nama_profil)
     folder_cek = env.get("CEKHOAKS_CEKFAKTA_FOLDER", "").strip()
     folder_model = env.get("CEKHOAKS_MODEL_FOLDER", "").strip()
+    folder_hf = env.get("CEKHOAKS_HF_FOLDER", "").strip()
     pengaturan = Pengaturan(
         **{k: v for k, v in profil.items() if k != "ambang_teks_karakter"},
         cek_fakta_aktif=sakelar != "mati",
@@ -236,7 +246,13 @@ def muat(env: Mapping[str, str] = os.environ) -> Pengaturan:
         jeda_maks_detik=_angka(env, "CEKHOAKS_JEDA_MAKS", float, bawaan.jeda_maks_detik),
         ambang_teks_karakter=_angka(env, "CEKHOAKS_AMBANG_TEKS", int, profil["ambang_teks_karakter"]),
         paksa_tingkat=paksa or None,
+        maks_bersamaan=_angka(env, "CEKHOAKS_MAKS_BERSAMAAN", int, bawaan.maks_bersamaan),
+        antre_maks_detik=_angka(env, "CEKHOAKS_ANTRE_MAKS_DETIK", float, bawaan.antre_maks_detik),
+        hf_dataset=env.get("CEKHOAKS_HF_DATASET", "").strip() or None,
+        hf_folder=Path(folder_hf) if folder_hf else bawaan.hf_folder,
     )
+    if pengaturan.maks_bersamaan < 1:
+        raise KonfigurasiTidakValid("CEKHOAKS_MAKS_BERSAMAAN minimal 1")
     if pengaturan.jeda_min_detik > pengaturan.jeda_maks_detik:
         raise KonfigurasiTidakValid("CEKHOAKS_JEDA_MIN tidak boleh lebih besar dari CEKHOAKS_JEDA_MAKS")
     return pengaturan

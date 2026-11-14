@@ -2,12 +2,15 @@
 
 Menerima potongan gambar dari aplikasi, menyerahkannya ke pipeline (app/pipeline), dan mengembalikan
 hasilnya sesuai kontrak di docs/API.md. Pembaca teks RapidOCR dan pencarian cek fakta dimuat saat server menyala; LLM dipanggil lewat API per permintaan.
+Di Hugging Face Spaces, data pencarian diunduh dulu dari dataset (app/data_hf.py). Analisis yang berjalan bersamaan
+dibatasi app/beban.py; /health tidak ikut dibatasi.
 
 Privasi: gambar hanya dibaca di memori. Body permintaan dibaca sendiri dan di-parse dengan
 parser multipart tingkat rendah, karena UploadFile bawaan Starlette menyimpan unggahan di atas
 1 MB ke file sementara di disk. Log hanya mencatat ukuran, dimensi, dan durasi.
 """
 
+import asyncio
 import logging
 import re
 import socket
@@ -23,6 +26,7 @@ from python_multipart.exceptions import MultipartParseError
 from python_multipart.multipart import MultipartParser, parse_options_header
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from . import beban, data_hf
 from .galat import DibatalkanKlien, GalatApi, respons_galat as _respons_galat
 from . import konfigurasi
 from .konfigurasi import NILAI_PAKSA, pengaturan
@@ -116,6 +120,12 @@ def _cetak_alamat() -> None:
     else:
         baris.append("Tingkat hasil: dari analisis sungguhan (PAKSA_TINGKAT tidak diisi)")
     baris.append(f"Profil ambang: {pengaturan.profil_ambang} (CEKHOAKS_PROFIL_AMBANG)")
+    if pengaturan.hf_dataset:
+        baris.append(f"Data pencarian dari dataset Hugging Face: {pengaturan.hf_dataset} (CEKHOAKS_HF_DATASET)")
+    baris.append(
+        f"Analisis bersamaan: paling banyak {pengaturan.maks_bersamaan}, antrean paling lama "
+        f"{pengaturan.antre_maks_detik:g} detik (CEKHOAKS_MAKS_BERSAMAAN, CEKHOAKS_ANTRE_MAKS_DETIK)"
+    )
     baris.append(f"Ambang teks: minimal {pengaturan.ambang_teks_karakter} karakter huruf-angka")
     baris.append("=" * 60)
     print("\n".join(baris), flush=True)
@@ -129,8 +139,15 @@ async def lifespan(_: FastAPI):
     detik = await baca.pembaca.siapkan()
     lama = f"{detik:.1f}".replace(".", ",")
     print(f"Pembaca teks siap ({baca.versi_mesin()}), dimuat dalam {lama} detik", flush=True)
-    print("Memuat pencarian cek fakta ...", flush=True)
-    await cocok.pencarian.siapkan()
+    hasil_unduh = None
+    if pengaturan.hf_dataset and pengaturan.cek_fakta_aktif:
+        print(f"Mengunduh data pencarian dari dataset {pengaturan.hf_dataset} ...", flush=True)
+        hasil_unduh = await asyncio.to_thread(data_hf.siapkan_atau_tandai, pengaturan)
+        if hasil_unduh is not None and hasil_unduh.berhasil:
+            print(f"Data pencarian terunduh dalam {hasil_unduh.detik:.1f} detik".replace(".", ","), flush=True)
+    if hasil_unduh is None or hasil_unduh.berhasil:
+        print("Memuat pencarian cek fakta ...", flush=True)
+        await cocok.pencarian.siapkan()
     print(f"Pencarian cek fakta {cocok.pencarian.ringkasan()}", flush=True)
     _cetak_alamat()
     yield
@@ -275,7 +292,7 @@ _SKEMA_UNGGAHAN = {
 @app.post(
     "/analisis",
     response_model=HasilAnalisis,
-    responses={code: {"model": ResponsGalat} for code in (400, 413, 415, 422, 500)},
+    responses={code: {"model": ResponsGalat} for code in (400, 413, 415, 422, 500, 503)},
     openapi_extra=_SKEMA_UNGGAHAN,
 )
 async def analisis(request: Request, paksa: str | None = None):
@@ -301,6 +318,14 @@ async def analisis(request: Request, paksa: str | None = None):
         mulai=mulai,
     )
     try:
-        return await orkestrator.jalankan(data, ctx)
+        async with beban.pembatas.giliran():
+            if await request.is_disconnected():  # klien menekan Batal selama mengantre
+                log.info("Permintaan %s dibatalkan klien saat mengantre", id_permintaan)
+                raise DibatalkanKlien
+            return await orkestrator.jalankan(data, ctx)
     except DibatalkanKlien:
         return Response(status_code=499)
+    except GalatApi as e:
+        if e.kode == "server_sibuk":
+            log.info("Permintaan %s ditolak: server_sibuk (antrean %g detik habis)", id_permintaan, beban.pembatas.antre_maks_detik)
+        raise

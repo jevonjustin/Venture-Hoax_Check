@@ -143,9 +143,22 @@ class EmbedderE5:
         return vek.astype(np.float32)
 
 
+def berkas_dibaca(cfg: Pengaturan) -> dict[str, list[str]]:
+    """Berkas yang dibaca pencarian, relatif ke cek_fakta_folder ("cek_fakta") dan model_folder ("model"), dengan
+    garis miring "/". Satu-satunya sumber daftar ini: dipakai _muat, _embedder_e5, pengunduhan dataset Hugging Face
+    (app/data_hf.py), dan alat unggah (alat/hf/unggah_data.py). Tidak memuat berkas alat evaluasi (e5_*_berkas)."""
+    vektor = f"vektor_{cfg.cek_fakta_ukuran}_{cfg.cek_fakta_varian}"
+    model = f"e5-{cfg.cek_fakta_ukuran}"
+    return {
+        "cek_fakta": ["artikel.jsonl", f"{vektor}.npy", f"{vektor}.json"],
+        "model": [f"{model}/{BERKAS_MODEL[cfg.cek_fakta_varian]}", f"{model}/tokenizer.json"],
+    }
+
+
 def _embedder_e5(cfg: Pengaturan, maks_token: int) -> EmbedderE5:
-    model = cfg.e5_model_berkas or cfg.model_folder / f"e5-{cfg.cek_fakta_ukuran}" / BERKAS_MODEL[cfg.cek_fakta_varian]
-    tokenizer = cfg.model_folder / f"e5-{cfg.cek_fakta_ukuran}" / "tokenizer.json"
+    model_berkas, tokenizer_berkas = berkas_dibaca(cfg)["model"]
+    model = cfg.e5_model_berkas or cfg.model_folder / model_berkas
+    tokenizer = cfg.model_folder / tokenizer_berkas
     for berkas in (model, tokenizer):
         if not berkas.exists():
             raise PencarianTidakTersedia(f"berkas model tidak ditemukan: {berkas}")
@@ -204,9 +217,9 @@ class Pencarian:
         import numpy as np
 
         folder = cfg.cek_fakta_folder
-        jalur_artikel = folder / "artikel.jsonl"
-        nama = f"vektor_{cfg.cek_fakta_ukuran}_{cfg.cek_fakta_varian}"
-        jalur_vektor = cfg.e5_vektor_berkas or folder / f"{nama}.npy"
+        nama_artikel, nama_vektor, _ = berkas_dibaca(cfg)["cek_fakta"]
+        jalur_artikel = folder / nama_artikel
+        jalur_vektor = cfg.e5_vektor_berkas or folder / nama_vektor
         jalur_meta = jalur_vektor.with_suffix(".json")
         for berkas in (jalur_artikel, jalur_vektor, jalur_meta):
             if not berkas.exists():
@@ -227,6 +240,10 @@ class Pencarian:
         self._cfg = cfg  # relevansi memakai pengaturan yang sama dengan saat dimuat (profil ambang)
         self.jumlah = len(artikel)
         self.nama_model = f"e5-{cfg.cek_fakta_ukuran} {cfg.cek_fakta_varian}"
+
+    def tandai_tidak_tersedia(self, alasan: str) -> None:
+        """Dipakai bila data tidak bisa disiapkan sebelum dimuat (misalnya unduhan dataset Hugging Face gagal)."""
+        self.status, self.alasan = STATUS_TIDAK_TERSEDIA, alasan
 
     async def siapkan(self) -> float:
         """Memuat di thread terpisah. Mengembalikan lama pemuatan (detik)."""

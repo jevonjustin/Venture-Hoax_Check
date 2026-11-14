@@ -1,3 +1,5 @@
 -r requirements.txt
 pytest==9.1.1
 httpx2==2.13.0
+# Alat unggah ke Hugging Face (alat/hf/) dan uji jalur unduhan dataset
+huggingface_hub==1.33.0

@@ -72,7 +72,7 @@ Saat server mulai, pesan `Memuat pembaca teks ...` dan `Memuat pencarian cek fak
 
 ```
 ============================================================
-Server Veritas 0.6.0
+Server Veritas 0.7.0
 Pencarian cek fakta: siap, 21.371 artikel (e5-base fp32), dimuat dalam 3,4 detik, RAM tambahan sekitar 1.472 MB
 Analisis teks (LLM): groq -> gemini
 Alamat yang bisa diketik di aplikasi:
@@ -108,6 +108,10 @@ $env:CEKHOAKS_LLM = "mati"                 # contoh; hapus dengan: Remove-Item E
 | `CEKHOAKS_BATAS_GAMBAR_BYTE` | `8388608` | Ukuran gambar maksimal (8 MB) |
 | `CEKHOAKS_JEDA_MIN`, `CEKHOAKS_JEDA_MAKS` | `0`, `0` | Rentang jeda buatan (detik), untuk menguji Batal; misalnya `3` dan `3` |
 | `CEKHOAKS_AMBANG_TEKS` | `20` | Jumlah minimum karakter huruf-angka agar teks dianggap terbaca |
+| `CEKHOAKS_MAKS_BERSAMAAN` | `2` | Analisis yang boleh berjalan bersamaan. Permintaan lain mengantre. Batasnya untuk seluruh server, tidak per alamat IP |
+| `CEKHOAKS_ANTRE_MAKS_DETIK` | `20` | Lama antrean paling lama (detik); lewat dari itu dijawab 503 `server_sibuk`. `/health` tidak ikut antre |
+| `CEKHOAKS_HF_DATASET` | kosong | Dataset Hugging Face berisi data pencarian (dipakai di Spaces). Bila diisi, data diunduh saat server menyala lalu `CEKHOAKS_CEKFAKTA_FOLDER` dan `CEKHOAKS_MODEL_FOLDER` diarahkan ke unduhan. Token dari `HF_TOKEN` |
+| `CEKHOAKS_HF_FOLDER` | `server\data_hf` | Folder tujuan unduhan dataset (di image Docker: `/home/user/data_hf`) |
 
 Angka lain (ambang skor, batas waktu LLM, dan seterusnya) ada di `app/konfigurasi.py`.
 
@@ -171,9 +175,24 @@ Test tidak memanggil jaringan dan tidak membaca kunci asli maupun `data_lokal`: 
 
 Halaman dokumentasi interaktif tersedia di `http://127.0.0.1:8000/docs` selama server berjalan.
 
+## Server di Hugging Face Spaces (Sesi 8.1)
+
+Untuk showcase, server juga berjalan sebagai Docker Space publik `jevonjustin/veritas` (https://jevonjustin-veritas.hf.space, CPU Basic). Berkasnya:
+
+| Berkas | Fungsi |
+|---|---|
+| `Dockerfile`, `.dockerignore` | Image Python 3.12.4, pengguna uid 1000, port 7860, satu worker. `.dockerignore` hanya mengizinkan `app/` dan berkas requirements |
+| `requirements-space.txt` | `requirements.txt` ditambah `huggingface_hub` (hanya dipakai jalur unduhan dataset) |
+| `space/README.md` | README Space (header YAML: `sdk: docker`, `app_port: 7860`) |
+| `app/data_hf.py` | Mengunduh data pencarian dari dataset privat `jevonjustin/veritas-data` saat menyala, bila `CEKHOAKS_HF_DATASET` diisi |
+| `alat/hf/unggah_data.py` | Mengunggah hanya berkas yang dibaca pencarian (artikel, vektor e5-base fp32, model dan tokenizer e5-base) ke dataset privat; menolak jalan bila dataset tidak privat |
+| `alat/hf/unggah_space.py` | Mengunggah `Dockerfile`, README Space, requirements, dan `app/*.py` ke Space, lalu mengatur variabel Space non-rahasia |
+
+Kedua alat unggah membaca token dari `HF_TOKEN` di jendela PowerShell dan punya opsi `--periksa` (hanya daftar berkas, tanpa jaringan). Secrets Space (`HF_TOKEN` baca-saja, `GROQ_API_KEY`, `GEMINI_API_KEY`) diisi sendiri di Settings Space. Bila unduhan dataset gagal, server tetap menyala tanpa cek fakta dan alasannya tercatat di log tanpa token.
+
 ## Tiga cara menghubungkan HP ke laptop
 
-Di aplikasi, buka bagian **Pengaturan server**, isi alamat, lalu tekan **Uji koneksi**. Hasilnya harus "Tersambung. Versi server: 0.6.0".
+Di aplikasi, buka bagian **Pengaturan server**, isi alamat, lalu tekan **Uji koneksi**. Hasilnya harus "Tersambung. Versi server: 0.7.0".
 
 ### 1. USB (`adb reverse`), paling stabil
 

@@ -57,6 +57,9 @@ class PencarianPalsu:
     def ringkasan(self) -> str:
         return "siap, 0 artikel (palsu)"
 
+    def tandai_tidak_tersedia(self, alasan: str) -> None:
+        self.status, self.alasan = cocok.STATUS_TIDAK_TERSEDIA, alasan
+
     def cari(self, teks: str, k: int):
         self.kueri.append(teks)
         return self.kandidat[:k]
