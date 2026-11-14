@@ -25,6 +25,7 @@ from fastapi.responses import JSONResponse, Response
 from python_multipart.exceptions import MultipartParseError
 from python_multipart.multipart import MultipartParser, parse_options_header
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.requests import ClientDisconnect
 
 from . import beban, data_hf
 from .galat import DibatalkanKlien, GalatApi, respons_galat as _respons_galat
@@ -187,16 +188,27 @@ async def _tangani_tak_terduga(_: Request, e: Exception) -> JSONResponse:
 # --- Pembacaan gambar di memori ---
 
 
+class KlienTerputusSaatUnggah(Exception):
+    """Klien memutus koneksi sebelum body selesai terkirim (misalnya sinyal seluler hilang atau Batal)."""
+
+    def __init__(self, diterima: int):
+        super().__init__(diterima)
+        self.diterima = diterima
+
+
 async def _baca_body_terbatas(request: Request) -> bytes:
     panjang = request.headers.get("content-length")
     batas_body = pengaturan.batas_gambar_byte + RUANG_MULTIPART_BYTE
     if panjang and panjang.isdigit() and int(panjang) > batas_body:
         raise GalatApi(413, "terlalu_besar", f"Body {panjang} byte melebihi batas")
     body = bytearray()
-    async for potongan in request.stream():
-        body += potongan
-        if len(body) > batas_body:
-            raise GalatApi(413, "terlalu_besar", "Body melebihi batas")
+    try:
+        async for potongan in request.stream():
+            body += potongan
+            if len(body) > batas_body:
+                raise GalatApi(413, "terlalu_besar", "Body melebihi batas")
+    except ClientDisconnect:
+        raise KlienTerputusSaatUnggah(len(body)) from None
     return bytes(body)
 
 
@@ -309,6 +321,10 @@ async def analisis(request: Request, paksa: str | None = None):
     except GalatApi as e:
         log.info("Permintaan %s ditolak: %s", id_permintaan, e.kode)
         raise
+    except KlienTerputusSaatUnggah as e:
+        # Kejadian normal di jaringan seluler: belum ada slot analisis yang dipakai, jadi tidak ada yang dilepas.
+        log.info("Permintaan %s: klien terputus saat mengunggah, %d byte diterima", id_permintaan, e.diterima)
+        return Response(status_code=499)
 
     ctx = Konteks(
         id_permintaan=id_permintaan,

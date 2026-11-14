@@ -10,12 +10,23 @@ object PengaturanServer {
     /** Alamat untuk koneksi USB setelah `adb reverse tcp:8000 tcp:8000`. */
     const val URL_USB = "http://127.0.0.1:8000"
 
+    /** Alamat server showcase (laptop developer lewat ngrok), bawaan varian release. */
+    const val URL_SHOWCASE = "https://skewer-bundle-viral.ngrok-free.dev"
+
+    /** Alamat bawaan bila belum ada yang tersimpan: alamat showcase di release, kosong di debug. */
+    val URL_BAWAAN: String = if (BuildConfig.PAKAI_URL_SHOWCASE) URL_SHOWCASE else ""
+
     private const val NAMA_PREFS = "pengaturan_server"
     private const val KUNCI_URL = "url"
 
-    /** Alamat tersimpan, atau string kosong jika belum diatur. */
-    fun baca(context: Context): String =
-        context.getSharedPreferences(NAMA_PREFS, Context.MODE_PRIVATE).getString(KUNCI_URL, "").orEmpty()
+    /** Alamat tersimpan, atau [URL_BAWAAN] jika belum pernah diatur (kosong berarti belum diatur). */
+    fun baca(context: Context): String = pilih(
+        context.getSharedPreferences(NAMA_PREFS, Context.MODE_PRIVATE).getString(KUNCI_URL, null),
+        URL_BAWAAN,
+    )
+
+    /** Alamat tersimpan menang atas alamat bawaan; alamat tersimpan yang kosong dianggap belum diatur. */
+    fun pilih(tersimpan: String?, bawaan: String): String = tersimpan?.takeIf { it.isNotBlank() } ?: bawaan
 
     fun simpan(context: Context, url: String) {
         context.getSharedPreferences(NAMA_PREFS, Context.MODE_PRIVATE).edit { putString(KUNCI_URL, url) }

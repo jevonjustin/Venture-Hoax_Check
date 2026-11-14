@@ -79,4 +79,17 @@ class TampilanGalatTest {
         assertEquals(umum, server("kode_baru_dari_masa_depan"))
         assertEquals(umum, server(null))
     }
+
+    @Test
+    fun serverSibukPunyaKartuSendiriDenganTombolCobaLagi() {
+        val t = tampilanGalat(JenisGagal.GalatServer(503, KodeGalat.SERVER_SIBUK))
+        assertEquals(R.string.galat_judul_sibuk, t.judul)
+        assertEquals(R.string.galat_isi_sibuk, t.isi)
+        assertEquals(AksiGalat.COBA_LAGI, t.aksiUtama)
+        assertFalse(t.tampilkanPengaturanKedua)
+        assertEquals("server_sibuk", KodeGalat.SERVER_SIBUK)
+        assertEquals(R.string.galat_server_sibuk, JenisGagal.GalatServer(503, KodeGalat.SERVER_SIBUK).pesan())
+        // 503 tanpa kode kontrak (misalnya dari perantara) tetap memakai kartu galat server umum.
+        assertEquals(R.string.galat_judul_server, tampilanGalat(JenisGagal.GalatServer(503, null)).judul)
+    }
 }

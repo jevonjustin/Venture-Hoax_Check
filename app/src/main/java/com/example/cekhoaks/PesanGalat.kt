@@ -14,6 +14,7 @@ fun JenisGagal.pesan(): Int = when (this) {
         KodeGalat.TEKS_TIDAK_TERBACA -> R.string.galat_teks_tidak_terbaca
         KodeGalat.TERLALU_BESAR -> R.string.galat_terlalu_besar
         KodeGalat.GAMBAR_KOSONG, KodeGalat.BUKAN_GAMBAR -> R.string.galat_gambar_rusak
+        KodeGalat.SERVER_SIBUK -> R.string.galat_server_sibuk
         else -> R.string.galat_server
     }
 }

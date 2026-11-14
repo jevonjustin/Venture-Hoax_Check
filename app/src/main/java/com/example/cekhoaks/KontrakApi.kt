@@ -92,6 +92,9 @@ object KodeGalat {
     const val TEKS_TIDAK_TERBACA = "teks_tidak_terbaca"
     const val GALAT_SERVER = "galat_server"
     const val GALAT_HTTP = "galat_http"
+
+    /** 503: server sedang penuh (batas analisis bersamaan dan antrean terlampaui). */
+    const val SERVER_SIBUK = "server_sibuk"
 }
 
 /** Field baru dari server diabaikan, supaya versi server yang lebih baru tidak membuat aplikasi gagal. */

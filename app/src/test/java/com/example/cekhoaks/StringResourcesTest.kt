@@ -199,4 +199,17 @@ class StringResourcesTest {
         assertTrue(benarTanpaBukanJaminan("Informasi ini benar"))
         assertFalse(benarTanpaBukanJaminan("Bukan jaminan informasi ini benar"))
     }
+
+    /**
+     * Butir daftar dipisah escape Android backslash-n (dua karakter di XML). Baris baru biasa di dalam
+     * string XML dilebur Android menjadi spasi, sehingga semua butir menyatu dalam satu paragraf.
+     */
+    @Test
+    fun teksPrivasiOnboardingEmpatButirTerpisah() {
+        val mentah = semuaTeks().getValue("onboarding_4_isi")
+        val butir = mentah.split("\\n")
+        assertEquals(4, butir.size)
+        assertTrue(butir.all { it.startsWith("• ") })
+        assertFalse(mentah.contains('\n'))
+    }
 }

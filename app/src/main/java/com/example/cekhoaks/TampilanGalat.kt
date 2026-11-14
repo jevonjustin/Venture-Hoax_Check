@@ -52,6 +52,9 @@ fun tampilanGalat(jenis: JenisGagal): TampilanGalat = when (jenis) {
             R.string.galat_judul_besar, R.string.galat_isi_besar, AksiGalat.PILIH_ULANG,
         )
         KodeGalat.GAMBAR_KOSONG, KodeGalat.BUKAN_GAMBAR -> GAMBAR_TIDAK_UTUH
+        KodeGalat.SERVER_SIBUK -> TampilanGalat(
+            R.string.galat_judul_sibuk, R.string.galat_isi_sibuk, AksiGalat.COBA_LAGI,
+        )
         // galat_server, galat_http, kode tak dikenal, dan null (isi bukan format galat kontrak).
         else -> TampilanGalat(
             R.string.galat_judul_server, R.string.galat_isi_server, AksiGalat.COBA_LAGI,

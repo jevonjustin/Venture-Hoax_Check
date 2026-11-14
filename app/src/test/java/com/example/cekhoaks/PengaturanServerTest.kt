@@ -93,4 +93,25 @@ class PengaturanServerTest {
         listOf("192.168.1.5", "localhost", "veritas.hf.space", "http://192.168.1.5:80", "http://contoh.com")
             .forEach { val sekali = normal(it)!!; assertEquals(sekali, normal(sekali)) }
     }
+
+    @Test
+    fun alamatShowcaseSudahBaku() {
+        assertEquals(PengaturanServer.URL_SHOWCASE, normal(PengaturanServer.URL_SHOWCASE))
+        assertEquals("https://skewer-bundle-viral.ngrok-free.dev", PengaturanServer.URL_SHOWCASE)
+    }
+
+    @Test
+    fun alamatBawaanDipakaiHanyaBilaBelumAdaYangTersimpan() {
+        val bawaan = PengaturanServer.URL_SHOWCASE
+        assertEquals(bawaan, PengaturanServer.pilih(null, bawaan))
+        assertEquals(bawaan, PengaturanServer.pilih("", bawaan))
+        assertEquals(PengaturanServer.URL_USB, PengaturanServer.pilih(PengaturanServer.URL_USB, bawaan))
+        // Varian debug: tanpa alamat tersimpan tetap kosong, jadi keadaan "server belum diatur" muncul.
+        assertEquals("", PengaturanServer.pilih(null, ""))
+    }
+
+    @Test
+    fun unitTestMemakaiVarianDebugTanpaAlamatBawaan() {
+        assertEquals("", PengaturanServer.URL_BAWAAN)
+    }
 }

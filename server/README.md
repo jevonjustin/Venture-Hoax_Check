@@ -175,9 +175,28 @@ Test tidak memanggil jaringan dan tidak membaca kunci asli maupun `data_lokal`: 
 
 Halaman dokumentasi interaktif tersedia di `http://127.0.0.1:8000/docs` selama server berjalan.
 
-## Server di Hugging Face Spaces (Sesi 8.1)
+## Showcase lewat ngrok (Sesi 8.2)
 
-Untuk showcase, server juga berjalan sebagai Docker Space publik `jevonjustin/veritas` (https://jevonjustin-veritas.hf.space, CPU Basic). Berkasnya:
+Saat showcase, server berjalan di laptop dan dibuka ke internet lewat ngrok dengan dev domain tetap `https://skewer-bundle-viral.ngrok-free.dev` (keputusan D51 di `docs/RANCANGAN_PROYEK.md`). APK release memakai alamat ini sebagai alamat bawaan. Jalankan di dua jendela PowerShell terpisah:
+
+```powershell
+# Jendela 1: server (cadangan Gemini dimatikan, sesuai teks privasi aplikasi yang hanya menyebut Groq)
+Set-Location C:\Users\User\AndroidStudioProjects\CekHoaks\server; $env:CEKHOAKS_LLM_CADANGAN = "mati"; .venv\Scripts\python.exe -m app
+# Jendela 2: ngrok, inspector lokal dimatikan supaya isi permintaan (gambar) tidak disimpan di memori agen
+ngrok http 8000 --url https://skewer-bundle-viral.ngrok-free.dev --inspect=false
+```
+
+- Setiap baris log server diawali jam (`HH:MM:SS`), supaya kejadian di HP bisa dicocokkan dengan log. Klien yang terputus saat mengunggah tercatat satu baris "klien terputus saat mengunggah, N byte diterima" tanpa traceback.
+- Kecepatan di data seluler bergantung pada sinyal pengunjung: unggahan 120-170 KB bisa lambat atau terputus. Aplikasi menunggu sambungan paling lama 15 detik, mencoba menyambung sekali lagi bila koneksi belum terbentuk, dan berhenti setelah 60 detik.
+- `--inspect=false` wajib. Tanpa opsi ini agen ngrok menyimpan permintaan beserta isinya (gambar) untuk inspector di `http://127.0.0.1:4040`.
+- Di dashboard ngrok (https://dashboard.ngrok.com/settings#observability), Full Capture harus tetap mati. Traffic Inspector bawaannya hanya menyimpan metadata (waktu, jalur, status, ukuran; 24 jam di paket gratis), bukan isi gambar.
+- Kuota paket gratis: 1 GB data keluar dan 20.000 permintaan per bulan. Aplikasi hanya bisa dipakai pengunjung selama laptop, server, dan ngrok menyala dan tersambung internet.
+- Bila cadangan Gemini ingin dinyalakan, hapus `$env:CEKHOAKS_LLM_CADANGAN = "mati"` dan ubah dulu butir ketiga teks privasi aplikasi menjadi "(Groq, dengan Google Gemini sebagai cadangan)".
+- Bila `ngrok` tidak dikenali di PowerShell, pakai jalur lengkap hasil instalasi winget: `& "C:\Users\User\AppData\Local\Microsoft\WinGet\Packages\Ngrok.Ngrok_Microsoft.Winget.Source_8wekyb3d8bbwe\ngrok.exe" http 8000 --url https://skewer-bundle-viral.ngrok-free.dev --inspect=false`.
+
+## Server di Hugging Face Spaces (Sesi 8.1, tidak dipakai)
+
+Space ditolak saat dibuat (402: Docker Space di CPU Basic gratis kini butuh HF PRO), jadi showcase memakai ngrok (lihat di atas). Berkas di bawah dibiarkan untuk dipakai nanti. Rencananya server berjalan sebagai Docker Space publik `jevonjustin/veritas` (https://jevonjustin-veritas.hf.space, CPU Basic). Berkasnya:
 
 | Berkas | Fungsi |
 |---|---|
@@ -235,4 +254,7 @@ Cara cepat memeriksa dari HP: buka `http://<alamat>:8000/health` di browser HP. 
 
 ## Catatan build aplikasi
 
-Alamat `http://` (tanpa TLS) hanya diizinkan di **build debug**. Build release memblokirnya sesuai aturan Android. Jadi saat showcase, pakai build debug, atau pakai tunnel HTTPS (ngrok/Cloudflare Tunnel) kalau harus memakai build release.
+Alamat `http://` (tanpa TLS) hanya diizinkan di **build debug**. Build release memblokirnya sesuai aturan Android, jadi release memakai alamat ngrok `https://` (lihat "Showcase lewat ngrok").
+
+- Debug: paket `com.example.cekhoaks.debug`, nama "Veritas (debug)", alamat bawaan kosong. Bisa terpasang berdampingan dengan release.
+- Release: paket `com.example.cekhoaks`, versi 1.0, alamat bawaan `https://skewer-bundle-viral.ngrok-free.dev`. Tanda tangan dari `C:\Users\User\kunci_android\veritas-rilis.properties` (di luar repo). Tanpa berkas itu, `assembleRelease` tetap jalan, tetapi APK tidak bertanda tangan dan Gradle mencetak peringatan. Salinan APK bernama `app\build\outputs\veritas\veritas-1.0.apk`.

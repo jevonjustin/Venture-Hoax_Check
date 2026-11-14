@@ -56,6 +56,7 @@
     <string name="galat_terlalu_besar">Gambar terlalu besar untuk dikirim. Coba pilih area yang lebih kecil.</string>
     <string name="galat_gambar_rusak">Gambar tidak terkirim dengan utuh. Coba ulangi pengecekan.</string>
     <string name="galat_server">Server sedang mengalami masalah. Coba lagi nanti.</string>
+    <string name="galat_server_sibuk">Server sedang melayani banyak pengecekan. Coba lagi dalam beberapa saat.</string>
 
     <!-- Pengaturan server (layar utama) -->
     <string name="server_judul">Pengaturan server</string>
@@ -219,6 +220,8 @@
     <string name="galat_isi_waktu_habis">Server belum memberi jawaban dalam batas waktu. Coba lagi sebentar lagi.</string>
     <string name="galat_judul_server">Server sedang bermasalah</string>
     <string name="galat_isi_server">Server mengalami masalah saat memeriksa. Coba lagi nanti.</string>
+    <string name="galat_judul_sibuk">Server sedang sibuk</string>
+    <string name="galat_isi_sibuk">Server sedang melayani banyak pengecekan. Coba lagi dalam beberapa saat.</string>
     <string name="galat_judul_respons">Jawaban server tidak dikenali</string>
     <string name="galat_isi_respons">Pastikan alamat di pengaturan mengarah ke server Veritas.</string>
     <string name="galat_judul_cleartext">Alamat server tidak bisa dipakai</string>
@@ -245,7 +248,7 @@
     <string name="onboarding_3_judul">Dapatkan hasil analisis dan pelajari ciri-ciri hoaks</string>
     <string name="onboarding_3_isi">Ciri yang mencurigakan ditampilkan lengkap dengan bukti dan penjelasannya. Veritas berperan sebagai pemandu, bukan hakim yang memberi putusan akhir.</string>
     <string name="onboarding_4_judul">Apa saja yang dikirim</string>
-    <string name="onboarding_4_isi">• Hanya bagian layar yang dipilih yang dikirim ke server Veritas, yang berjalan di laptop pengembang.\n• Gambar tidak disimpan di HP maupun di server, dan tidak pernah dikirim ke pihak ketiga.\n• Teks hasil bacaan gambar dikirim ke penyedia AI pihak ketiga untuk dianalisis, setelah nomor telepon, alamat email, dan nama akun berawalan @ disamarkan.\n• Penyamaran dilakukan otomatis berdasarkan pola, jadi bisa ada yang terlewat. Nama orang, tautan, dan isi pesan itu sendiri tidak disamarkan. Sebaiknya jangan cek bagian yang memuat data pribadi.</string>
+    <string name="onboarding_4_isi">• Hanya bagian layar yang dipilih yang dikirim ke server Veritas, yang berjalan di laptop pengembang dan terhubung ke internet lewat layanan terowongan ngrok.\n• Gambar melewati ngrok dalam perjalanan ke server, tetapi tidak disimpan di HP maupun di server dan tidak dikirim ke penyedia AI.\n• Teks hasil bacaan gambar dikirim ke penyedia AI pihak ketiga (Groq) untuk dianalisis, setelah nomor telepon, alamat email, dan nama akun berawalan @ disamarkan.\n• Penyamaran dilakukan otomatis berdasarkan pola, jadi bisa ada yang terlewat. Nama orang, tautan, dan isi pesan itu sendiri tidak disamarkan. Sebaiknya jangan cek bagian yang memuat data pribadi.</string>
     <string name="onboarding_lanjut">Lanjut</string>
     <string name="onboarding_mulai">Mulai</string>
     <string name="onboarding_lewati">Lewati</string>

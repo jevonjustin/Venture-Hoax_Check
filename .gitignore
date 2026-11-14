@@ -37,3 +37,9 @@ __pycache__/
 
 # Unduhan dataset Hugging Face bila server lokal dijalankan dengan CEKHOAKS_HF_DATASET (Sesi 8.1)
 /server/data_hf/
+
+# Kunci tanda tangan dan APK rilis (Sesi 8.2): tidak boleh masuk repo
+*.jks
+*.keystore
+*.apk
+veritas-rilis.properties

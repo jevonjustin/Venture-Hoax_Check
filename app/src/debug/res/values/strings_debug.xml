@@ -4,6 +4,8 @@
     ke build release (alat ini hanya ada di debug).
 -->
 <resources>
+    <!-- Menimpa app_name di main supaya ikon debug bisa dibedakan dari release saat terpasang berdampingan. -->
+    <string name="app_name">Veritas (debug)</string>
     <string name="fixture_judul">Fixture tampilan</string>
     <string name="fixture_petunjuk">Ketuk salah satu nama untuk menampilkan lembar hasil atau galat tanpa server.</string>
     <string name="fixture_izin_belum">Izin tampil di atas aplikasi lain belum diberikan. Berikan izin lalu ketuk fixture lagi.</string>
