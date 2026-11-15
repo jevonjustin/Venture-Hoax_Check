@@ -212,4 +212,30 @@ class StringResourcesTest {
         assertTrue(butir.all { it.startsWith("• ") })
         assertFalse(mentah.contains('\n'))
     }
+
+    private fun teksDebug(): Map<String, String> {
+        val berkas = listOf("src/debug/res/values/strings_debug.xml", "app/src/debug/res/values/strings_debug.xml")
+            .map(::File).first { it.exists() }
+        val strings = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(berkas)
+            .getElementsByTagName("string")
+        return (0 until strings.length).associate {
+            val e = strings.item(it) as Element
+            e.getAttribute("name") to e.textContent
+        }
+    }
+
+    @Test
+    fun teksTidakTerjangkauReleaseUntukPengunjungDebugUntukDeveloper() {
+        val nama = listOf("galat_isi_tidak_terjangkau", "galat_tidak_terjangkau")
+        val main = semuaTeks()
+        val debug = teksDebug()
+        nama.forEach { n ->
+            val rilis = main.getValue(n)
+            assertFalse("$n (release) masih menyebut USB", rilis.contains("USB"))
+            assertFalse("$n (release) masih menyebut jaringan yang sama", rilis.contains("jaringan yang sama"))
+            assertTrue("$n (release) harus menyarankan cek internet", rilis.contains("internet"))
+            assertTrue("$n harus ditimpa di debug", debug.getValue(n).contains("jaringan yang sama"))
+            assertTrue("$n (debug) kata ganti orang kedua", kataGantiOrangKedua(debug.getValue(n)).isEmpty())
+        }
+    }
 }

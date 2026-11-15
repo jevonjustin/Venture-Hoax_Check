@@ -33,8 +33,8 @@ android {
         applicationId = "com.example.cekhoaks"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -76,15 +76,24 @@ android {
     }
 }
 
-// Salinan APK release dengan nama yang mudah dikenali: app/build/outputs/veritas/veritas-<versi>.apk.
+// Salinan APK release dengan nama yang mudah dikenali: app/build/outputs/veritas/veritas-<versi>.apk,
+// ditambah veritas.apk (nama tetap) untuk link .../releases/latest/download/veritas.apk.
 val versiRilis: String = android.defaultConfig.versionName.orEmpty()
 val salinApkRilis = tasks.register<Sync>("salinApkRilis") {
     // Disalin ke variabel lokal: configuration cache menolak lambda yang merujuk objek skrip.
     val versi = versiRilis
     val bertandaTangan = kunciRilisLengkap
-    from(layout.buildDirectory.dir("outputs/apk/release")) { include("*.apk") }
     into(layout.buildDirectory.dir("outputs/veritas"))
-    rename { nama -> if ("unsigned" in nama) "veritas-$versi-tanpa-tanda-tangan.apk" else "veritas-$versi.apk" }
+    from(layout.buildDirectory.dir("outputs/apk/release")) {
+        include("*.apk")
+        rename { nama -> if ("unsigned" in nama) "veritas-$versi-tanpa-tanda-tangan.apk" else "veritas-$versi.apk" }
+    }
+    // Nama tetap hanya untuk APK bertanda tangan, supaya APK yang tidak bisa dipasang tidak ikut terunggah.
+    from(layout.buildDirectory.dir("outputs/apk/release")) {
+        include("*.apk")
+        exclude("*unsigned*")
+        rename { "veritas.apk" }
+    }
     doLast {
         if (!bertandaTangan) {
             logger.warn("PERINGATAN: APK release TIDAK bertanda tangan dan tidak bisa dipasang. Isi berkas kunci rilis dulu.")

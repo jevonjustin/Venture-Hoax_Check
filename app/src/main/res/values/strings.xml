@@ -48,7 +48,8 @@
 
     <!-- Galat pengecekan (dipakai uji koneksi di layar utama) -->
     <string name="galat_url_belum_diatur">Alamat server belum diatur. Atur dulu di aplikasi Veritas, bagian Pengaturan server.</string>
-    <string name="galat_tidak_terjangkau">Server belum bisa dihubungi. Periksa alamat server di aplikasi, pastikan server di laptop sudah berjalan, dan HP terhubung ke jaringan yang sama.</string>
+    <!-- Teks untuk pengunjung (release). Build debug menimpanya di src/debug/res/values/strings_debug.xml. -->
+    <string name="galat_tidak_terjangkau">Server belum bisa dihubungi. Periksa koneksi internet HP, lalu coba lagi. Bila tetap gagal, server Veritas mungkin sedang tidak aktif.</string>
     <string name="galat_waktu_habis">Server terlalu lama menjawab. Coba lagi sebentar lagi.</string>
     <string name="galat_cleartext">Versi aplikasi ini tidak mengizinkan alamat http:// biasa. Pakai build debug atau alamat https://.</string>
     <string name="galat_respons_tidak_dikenali">Jawaban server tidak dikenali. Pastikan alamat di pengaturan mengarah ke server Veritas.</string>
@@ -56,6 +57,7 @@
     <string name="galat_terlalu_besar">Gambar terlalu besar untuk dikirim. Coba pilih area yang lebih kecil.</string>
     <string name="galat_gambar_rusak">Gambar tidak terkirim dengan utuh. Coba ulangi pengecekan.</string>
     <string name="galat_server">Server sedang mengalami masalah. Coba lagi nanti.</string>
+    <string name="galat_server_tidak_aktif">Server Veritas sedang tidak aktif. Coba lagi nanti.</string>
     <string name="galat_server_sibuk">Server sedang melayani banyak pengecekan. Coba lagi dalam beberapa saat.</string>
 
     <!-- Pengaturan server (layar utama) -->
@@ -213,11 +215,14 @@
     <string name="galat_judul_gambar">Gambar belum terkirim utuh</string>
     <string name="galat_isi_gambar">Gambar belum sampai ke server dengan utuh. Coba pilih area sekali lagi.</string>
     <string name="galat_judul_tidak_terjangkau">Server tidak bisa dihubungi</string>
-    <string name="galat_isi_tidak_terjangkau">Pastikan server menyala dan HP berada di jaringan yang sama, atau gunakan sambungan USB.</string>
+    <!-- Teks untuk pengunjung (release). Build debug menimpanya di src/debug/res/values/strings_debug.xml. -->
+    <string name="galat_isi_tidak_terjangkau">Periksa koneksi internet HP, lalu coba lagi. Bila tetap gagal, server Veritas mungkin sedang tidak aktif.</string>
     <string name="galat_judul_url">Alamat server belum diatur</string>
     <string name="galat_isi_url">Alamat server diperlukan agar analisis bisa berjalan. Atur dulu di aplikasi, bagian Pengaturan server.</string>
     <string name="galat_judul_waktu_habis">Server terlalu lama menjawab</string>
     <string name="galat_isi_waktu_habis">Server belum memberi jawaban dalam batas waktu. Coba lagi sebentar lagi.</string>
+    <string name="galat_judul_tidak_aktif">Server sedang tidak aktif</string>
+    <string name="galat_isi_tidak_aktif">Server Veritas sedang tidak aktif. Coba lagi nanti.</string>
     <string name="galat_judul_server">Server sedang bermasalah</string>
     <string name="galat_isi_server">Server mengalami masalah saat memeriksa. Coba lagi nanti.</string>
     <string name="galat_judul_sibuk">Server sedang sibuk</string>

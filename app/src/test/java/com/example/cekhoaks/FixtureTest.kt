@@ -41,6 +41,7 @@ class FixtureTest {
             "pemeriksaan_terbatas_ai", "panjang", "tak_dikenal", "galat_teks_tidak_terbaca",
             "galat_terlalu_besar", "galat_server", "galat_kode_tak_dikenal", "galat_tidak_terjangkau",
             "galat_waktu_habis", "galat_url_belum_diatur", "galat_respons_tidak_dikenali", "galat_cleartext",
+            "galat_server_tidak_aktif",
         )
         assertTrue("fixture hilang: ${wajib - nama}", nama.containsAll(wajib))
     }

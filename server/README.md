@@ -192,6 +192,7 @@ ngrok http 8000 --url https://skewer-bundle-viral.ngrok-free.dev --inspect=false
 - Di dashboard ngrok (https://dashboard.ngrok.com/settings#observability), Full Capture harus tetap mati. Traffic Inspector bawaannya hanya menyimpan metadata (waktu, jalur, status, ukuran; 24 jam di paket gratis), bukan isi gambar.
 - Kuota paket gratis: 1 GB data keluar dan 20.000 permintaan per bulan. Aplikasi hanya bisa dipakai pengunjung selama laptop, server, dan ngrok menyala dan tersambung internet.
 - Bila cadangan Gemini ingin dinyalakan, hapus `$env:CEKHOAKS_LLM_CADANGAN = "mati"` dan ubah dulu butir ketiga teks privasi aplikasi menjadi "(Groq, dengan Google Gemini sebagai cadangan)".
+- Urutan lengkap hari showcase (daya laptop, cek `/health` lewat ngrok, cadangan USB) ada di `docs/showcase/CEK_HARI_H.md`. Bila ngrok mati, aplikasi menampilkan "Server sedang tidak aktif" (header `Ngrok-Error-Code` `ERR_NGROK_3200`, atau `ERR_NGROK_8012` bila server yang mati).
 - Bila `ngrok` tidak dikenali di PowerShell, pakai jalur lengkap hasil instalasi winget: `& "C:\Users\User\AppData\Local\Microsoft\WinGet\Packages\Ngrok.Ngrok_Microsoft.Winget.Source_8wekyb3d8bbwe\ngrok.exe" http 8000 --url https://skewer-bundle-viral.ngrok-free.dev --inspect=false`.
 
 ## Server di Hugging Face Spaces (Sesi 8.1, tidak dipakai)

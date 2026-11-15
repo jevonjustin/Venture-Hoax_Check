@@ -44,6 +44,9 @@ fun tampilanGalat(jenis: JenisGagal): TampilanGalat = when (jenis) {
     JenisGagal.ResponsTidakDikenali -> TampilanGalat(
         R.string.galat_judul_respons, R.string.galat_isi_respons, AksiGalat.BUKA_PENGATURAN,
     )
+    JenisGagal.ServerTidakAktif -> TampilanGalat(
+        R.string.galat_judul_tidak_aktif, R.string.galat_isi_tidak_aktif, AksiGalat.COBA_LAGI,
+    )
     is JenisGagal.GalatServer -> when (jenis.kode) {
         KodeGalat.TEKS_TIDAK_TERBACA -> TampilanGalat(
             R.string.galat_judul_teks, R.string.galat_isi_teks, AksiGalat.PILIH_ULANG,

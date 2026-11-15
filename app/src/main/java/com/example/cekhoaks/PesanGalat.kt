@@ -10,6 +10,7 @@ fun JenisGagal.pesan(): Int = when (this) {
     JenisGagal.WaktuHabis -> R.string.galat_waktu_habis
     JenisGagal.CleartextDiblokir -> R.string.galat_cleartext
     JenisGagal.ResponsTidakDikenali -> R.string.galat_respons_tidak_dikenali
+    JenisGagal.ServerTidakAktif -> R.string.galat_server_tidak_aktif
     is JenisGagal.GalatServer -> when (kode) {
         KodeGalat.TEKS_TIDAK_TERBACA -> R.string.galat_teks_tidak_terbaca
         KodeGalat.TERLALU_BESAR -> R.string.galat_terlalu_besar

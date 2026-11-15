@@ -215,4 +215,58 @@ class KlienApiTest {
             while (http.dispatcher.runningCallsCount() > 0) delay(20)
         }
     }
+
+    // ---------- Halaman galat ngrok (Sesi 8.3) ----------
+
+    private fun halamanNgrok(status: Int, kode: String?, isi: String = "<!DOCTYPE html><html>$kode</html>") =
+        MockResponse().setResponseCode(status).setHeader("Content-Type", "text/html").setBody(isi)
+            .apply { if (kode != null) setHeader("Ngrok-Error-Code", kode) }
+
+    @Test
+    fun ngrokEndpointOffline3200MenjadiServerTidakAktif() = runBlocking {
+        // Bentuk yang teramati 2026-11-15: 404, text/html, header Ngrok-Error-Code: ERR_NGROK_3200.
+        server.enqueue(halamanNgrok(404, "ERR_NGROK_3200"))
+        assertEquals(HasilPanggilan.Gagal(JenisGagal.ServerTidakAktif), klien.analisis(urlDasar, byteArrayOf(1)))
+        server.enqueue(halamanNgrok(404, "ERR_NGROK_3200"))
+        assertEquals(HasilPanggilan.Gagal(JenisGagal.ServerTidakAktif), klien.cekKesehatan(urlDasar))
+    }
+
+    @Test
+    fun ngrokGagalKeServerLokal8012MenjadiServerTidakAktif() = runBlocking {
+        server.enqueue(halamanNgrok(502, "ERR_NGROK_8012"))
+        assertEquals(HasilPanggilan.Gagal(JenisGagal.ServerTidakAktif), klien.analisis(urlDasar, byteArrayOf(1)))
+    }
+
+    @Test
+    fun kodeNgrokDariIsiBilaHeaderTidakAda() = runBlocking {
+        server.enqueue(halamanNgrok(404, null, "<html><p>ERR_NGROK_3200</p></html>"))
+        assertEquals(HasilPanggilan.Gagal(JenisGagal.ServerTidakAktif), klien.analisis(urlDasar, byteArrayOf(1)))
+    }
+
+    @Test
+    fun kodeNgrokLainTetapGalatServer() = runBlocking {
+        server.enqueue(halamanNgrok(502, "ERR_NGROK_3004"))
+        assertEquals(HasilPanggilan.Gagal(JenisGagal.GalatServer(502, null)), klien.analisis(urlDasar, byteArrayOf(1)))
+    }
+
+    @Test
+    fun galatServerVeritasTanpaHeaderNgrokTidakBerubah() = runBlocking {
+        server.enqueue(json(500, """{"galat": {"kode": "galat_server", "pesan": "x"}}"""))
+        assertEquals(
+            HasilPanggilan.Gagal(JenisGagal.GalatServer(500, KodeGalat.GALAT_SERVER)),
+            klien.analisis(urlDasar, byteArrayOf(1)),
+        )
+        // 404 biasa (misalnya alamat mengarah ke server lain) bukan "server tidak aktif".
+        server.enqueue(MockResponse().setResponseCode(404).setBody("Not Found"))
+        assertEquals(HasilPanggilan.Gagal(JenisGagal.GalatServer(404, null)), klien.cekKesehatan(urlDasar))
+    }
+
+    @Test
+    fun kodeGalatNgrokMengutamakanHeader() {
+        assertEquals("ERR_NGROK_3200", KlienApi.kodeGalatNgrok(" err_ngrok_3200 ", ""))
+        assertEquals("ERR_NGROK_8012", KlienApi.kodeGalatNgrok(null, "...ERR_NGROK_8012..."))
+        assertEquals("ERR_NGROK_3200", KlienApi.kodeGalatNgrok("ERR_NGROK_3200", "ERR_NGROK_8012"))
+        assertEquals(null, KlienApi.kodeGalatNgrok(null, """{"galat": {"kode": "galat_server"}}"""))
+        assertEquals(null, KlienApi.kodeGalatNgrok("", ""))
+    }
 }

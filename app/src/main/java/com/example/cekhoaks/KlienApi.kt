@@ -46,6 +46,12 @@ sealed interface JenisGagal {
 
     /** Status 2xx, tetapi isinya tidak sesuai kontrak (misalnya alamat mengarah ke server lain). */
     data object ResponsTidakDikenali : JenisGagal
+
+    /**
+     * Terowongan ngrok menjawab, tetapi server Veritas tidak aktif: agen ngrok di laptop mati
+     * (ERR_NGROK_3200, 404) atau server di laptop mati (ERR_NGROK_8012, 502).
+     */
+    data object ServerTidakAktif : JenisGagal
 }
 
 /**
@@ -85,7 +91,7 @@ class KlienApi(
     ): HasilPanggilan<T> {
         val tenggat = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(batasTotalMs)
         var percobaan = 0
-        var jawaban: Pair<Int, String>? = null
+        var jawaban: Jawaban? = null
         while (jawaban == null) {
             percobaan++
             // Penanda apakah koneksi sempat terbentuk, untuk membedakan "server tidak terjangkau"
@@ -110,9 +116,12 @@ class KlienApi(
             if (bisaDiulang) continue
             return HasilPanggilan.Gagal(jenisGagal(gagal, pemantau.tersambung))
         }
-        val (status, isi) = jawaban
+        val (status, isi, kodeNgrok) = jawaban
 
         if (status !in 200..299) {
+            if (kodeGalatNgrok(kodeNgrok, isi) in KODE_NGROK_SERVER_TIDAK_AKTIF) {
+                return HasilPanggilan.Gagal(JenisGagal.ServerTidakAktif)
+            }
             val kode = try {
                 jsonApi.decodeFromString(ResponsGalat.serializer(), isi).galat.kode
             } catch (_: SerializationException) {
@@ -135,7 +144,7 @@ class KlienApi(
      * Menjalankan permintaan di thread milik OkHttp lalu menunggu jawabannya.
      * Jika coroutine dibatalkan, call.cancel() memutus koneksi saat itu juga.
      */
-    private suspend fun Call.tunggu(): Pair<Int, String> = suspendCancellableCoroutine { lanjutan ->
+    private suspend fun Call.tunggu(): Jawaban = suspendCancellableCoroutine { lanjutan ->
         lanjutan.invokeOnCancellation { cancel() }
         enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -144,7 +153,7 @@ class KlienApi(
 
             override fun onResponse(call: Call, response: Response) {
                 val hasil = try {
-                    response.use { it.code to it.body.string() }
+                    response.use { Jawaban(it.code, it.body.string(), it.header(HEADER_KODE_GALAT_NGROK)) }
                 } catch (e: IOException) {
                     lanjutan.resumeWithException(e)
                     return
@@ -153,6 +162,9 @@ class KlienApi(
             }
         })
     }
+
+    /** Status, isi, dan header kode galat ngrok (null bila tidak ada). */
+    private data class Jawaban(val status: Int, val isi: String, val kodeNgrok: String?)
 
     // Pesan ini dilempar OkHttp saat network security config melarang HTTP biasa.
     private fun cleartextDiblokir(e: IOException) =
@@ -210,6 +222,24 @@ class KlienApi(
          * peringatan HTML sebagai pengganti respons JSON. Nilainya bebas, dan server lain mengabaikannya.
          */
         const val HEADER_LEWATI_PERINGATAN_NGROK = "ngrok-skip-browser-warning"
+
+        /**
+         * Halaman galat ngrok membawa header ini, misalnya `Ngrok-Error-Code: ERR_NGROK_3200`
+         * (teramati langsung 2026-11-15; arti kode di https://ngrok.com/docs/errors/).
+         */
+        const val HEADER_KODE_GALAT_NGROK = "Ngrok-Error-Code"
+
+        /** 3200: endpoint offline (agen ngrok mati). 8012: agen ngrok gagal menyambung ke server lokal. */
+        val KODE_NGROK_SERVER_TIDAK_AKTIF = setOf("ERR_NGROK_3200", "ERR_NGROK_8012")
+
+        private val POLA_KODE_NGROK = Regex("ERR_NGROK_[0-9]+")
+
+        /**
+         * Kode galat ngrok dari header; bila header tidak ada (misalnya dibuang proksi), dicari di
+         * isi halaman HTML galat ngrok. Isi JSON galat dari server Veritas tidak memuat pola ini.
+         */
+        internal fun kodeGalatNgrok(header: String?, isi: String): String? =
+            header?.trim()?.uppercase()?.takeIf { it.isNotEmpty() } ?: POLA_KODE_NGROK.find(isi)?.value
 
         private fun permintaan(url: HttpUrl) =
             Request.Builder().url(url).header(HEADER_LEWATI_PERINGATAN_NGROK, "1")

@@ -174,6 +174,7 @@ class AktivitasFixture : Activity() {
                 "url_belum_diatur" -> JenisGagal.UrlBelumDiatur
                 "respons_tidak_dikenali" -> JenisGagal.ResponsTidakDikenali
                 "cleartext" -> JenisGagal.CleartextDiblokir
+                "server_tidak_aktif" -> JenisGagal.ServerTidakAktif
                 else -> error("_jenis tidak dikenal: $jenis")
             }
         }

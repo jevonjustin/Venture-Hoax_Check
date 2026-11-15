@@ -92,4 +92,14 @@ class TampilanGalatTest {
         // 503 tanpa kode kontrak (misalnya dari perantara) tetap memakai kartu galat server umum.
         assertEquals(R.string.galat_judul_server, tampilanGalat(JenisGagal.GalatServer(503, null)).judul)
     }
+
+    @Test
+    fun serverTidakAktifPunyaKartuSendiri() {
+        val t = tampilanGalat(JenisGagal.ServerTidakAktif)
+        assertEquals(R.string.galat_judul_tidak_aktif, t.judul)
+        assertEquals(R.string.galat_isi_tidak_aktif, t.isi)
+        assertEquals(AksiGalat.COBA_LAGI, t.aksiUtama)
+        assertFalse(t.tampilkanPengaturanKedua)
+        assertEquals(R.string.galat_server_tidak_aktif, JenisGagal.ServerTidakAktif.pesan())
+    }
 }
