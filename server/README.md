@@ -53,7 +53,7 @@ Pencarian membutuhkan berkas berikut di `server\data_lokal\` (folder ini diabaik
 
 | Berkas | Isi |
 |---|---|
-| `cek_fakta\artikel.jsonl` | Database artikel cek fakta (21.342 artikel) |
+| `cek_fakta\artikel.jsonl` | Database artikel cek fakta (21.474 artikel, diperbarui 2026-11-18) |
 | `cek_fakta\vektor_base_fp32.npy` dan `vektor_base_fp32.json` | Embedding seluruh artikel dan metadatanya; harus berasal dari `artikel.jsonl` yang sama |
 | `model\e5-base\model.onnx` dan `tokenizer.json` | Model dan tokenizer e5-base |
 
@@ -73,7 +73,7 @@ Saat server mulai, pesan `Memuat pembaca teks ...` dan `Memuat pencarian cek fak
 ```
 ============================================================
 Server Veritas 0.7.0
-Pencarian cek fakta: siap, 21.371 artikel (e5-base fp32), dimuat dalam 3,4 detik, RAM tambahan sekitar 1.472 MB
+Pencarian cek fakta: siap, 21.474 artikel (e5-base fp32), dimuat dalam 3,4 detik, RAM tambahan sekitar 1.472 MB
 Analisis teks (LLM): groq -> gemini
 Alamat yang bisa diketik di aplikasi:
   http://192.168.0.105:8000   <- Wi-Fi

@@ -557,6 +557,13 @@ Pengumpulan data dan fine-tuning classifier dikerjakan paralel mulai minggu 2 di
       - Mode pesawat: di Samsung, Wi-Fi tetap menyala saat mode pesawat dinyalakan (pengecekan tetap berhasil); setelah Wi-Fi juga dimatikan, kartu "Server tidak bisa dihubungi" dengan teks pengunjung baru, tombol Coba Lagi dan Buka pengaturan.
       - ngrok dimatikan (`/health`: 404 `ERR_NGROK_3200`): kartu "Server sedang tidak aktif".
       - ngrok menyala dan server dimatikan (`/health`: 502, `Ngrok-Error-Code: ERR_NGROK_8012`, `text/html`; header 8012 baru teramati langsung di sini): kartu "Server sedang tidak aktif".
+  - **Sesi 8.4 (pembaruan database cek fakta menjelang showcase), status: selesai 2026-11-18.** Tidak ada perubahan kode; hanya data lokal dan dokumen.
+    - Cadangan sebelum pembaruan: `data_lokal/cadangan_db_20261118/` (artikel.jsonl, laporan_gabung.txt, tbh_artikel.jsonl beserta checkpoint dan status, vektor_base_fp32, uji/hasil_base_fp32.json, `sha256.txt`). Untuk kembali, salin berkas itu ke `cek_fakta/` (dan `cek_fakta/uji/`) saat server mati.
+    - Developer menjalankan `kumpul_tbh.py pembaruan` (12 halaman daftar, 5,4 menit, 103 artikel baru, 0 galat), `bangun.py`, `evaluasi.py vektor --ukuran base --varian fp32` (1.912 detik), dan `evaluasi.py ukur --ukuran base --varian fp32`.
+    - Database: **21.371 → 21.474 artikel** (+103, tidak ada artikel yang hilang). Artikel baru bertanggal 2026-10-17 sampai 2026-11-18, semuanya dari situs TurnBackHoax dan semuanya bernarasi (salah 80, penipuan 22, satir 1). Tanggal artikel terbaru: 2026-11-18 (sebelumnya 2026-10-17). `teks_sha1` vektor base fp32 kini `d18f086179056ec6`. Vektor small dan int8 tidak dibangun ulang, sehingga tidak cocok dengan database baru dan akan ditolak bila dipakai; server hanya memakai base fp32. Salinan untuk Hugging Face (`alat/hf/unggah_data.py`) tidak diperbarui karena showcase memakai ngrok.
+    - Evaluasi (`evaluasi.py ukur`, 21.474 artikel) sama persis dengan catatan Sesi 5.3 (21.342 artikel): recall@1 parafrase 0,68, recall@5 0,94, OCR benar peringkat 1 pada 6 dari 6, skor top-1 cocok median 0,876, skor negatif median/p90/maks 0,837/0,874/0,892. Per kueri 29 ms (sebelumnya 24 ms), RAM tambahan 1,53 GB (sebelumnya 1,49 GB).
+    - Gambar demo 1-4 lewat `/analisis` (TestClient, `CEKHOAKS_LLM=mati`, fungsi dari `alat/uji_analisis/ukur_ngrok.py`) sebelum dan sesudah pembaruan: tingkat, ciri, serta artikel dan skornya identik, dan tingkatnya sama dengan `daftar.txt` (tidak_ditemukan, kuat, hati_hati, hati_hati). Hasilnya disimpan di folder cadangan (`demo_tanpa_llm_db_lama.txt`, `demo_tanpa_llm_db_baru.txt`).
+    - pytest tanpa rapidocr: 889 lulus (5 deselected).
 - **Umum:** sistem atau aplikasi tertentu (misalnya halaman pengaturan izin dan aplikasi perbankan) dapat menyembunyikan overlay. Ini perilaku normal.
 
 ### Catatan terbuka
@@ -585,7 +592,6 @@ Daftar ini dikumpulkan dari sesi 5.1-5.6 supaya tidak hilang antar sesi. Hapus b
 - Banner server sudah menyembunyikan adaptor virtual.
 - Hotspot HP bisa memberi alamat `10.x`, jadi Wi-Fi kampus tetap perlu diuji sendiri.
 - Laptop butuh internet untuk LLM; tanpa internet, `pemeriksaan_terbatas` berisi `"ai"` (uji dengan memutus internet, bukan hanya `CEKHOAKS_LLM=mati`).
-- Jalankan `kumpul_tbh.py` mode pembaruan menjelang showcase.
 - **Batas token Groq saat beberapa pengunjung berdekatan.** Kuota gratis: 8.000 token per menit per model, sekitar 1.100 token per permintaan, jadi sekitar 7 permintaan per menit (kuota harian 200.000 token, sekitar 180 permintaan). Permintaan yang kena 429 pindah ke cadangan atau kehilangan pemeriksaan AI. Pilihan untuk demo (keputusan di developer):
   - Cadangan Gemini tetap aktif (bawaan): kualitas ciri LLM tetap ada, tetapi teks (setelah penyamaran) bisa sampai ke Google, yang pada kuota gratis boleh memakai dan meninjau isi permintaan.
   - `CEKHOAKS_LLM_CADANGAN=mati`: teks pasti tidak ke Google, tetapi pemeriksaan AI bisa dilewati saat Groq penuh (`pemeriksaan_terbatas` berisi `"ai"`); regex dan cek fakta tetap berjalan.
