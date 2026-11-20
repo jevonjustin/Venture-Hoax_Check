@@ -2,6 +2,7 @@ package com.example.cekhoaks
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PengaturanServerTest {
@@ -101,17 +102,25 @@ class PengaturanServerTest {
     }
 
     @Test
-    fun alamatBawaanDipakaiHanyaBilaBelumAdaYangTersimpan() {
-        val bawaan = PengaturanServer.URL_SHOWCASE
-        assertEquals(bawaan, PengaturanServer.pilih(null, bawaan))
-        assertEquals(bawaan, PengaturanServer.pilih("", bawaan))
-        assertEquals(PengaturanServer.URL_USB, PengaturanServer.pilih(PengaturanServer.URL_USB, bawaan))
-        // Varian debug: tanpa alamat tersimpan tetap kosong, jadi keadaan "server belum diatur" muncul.
-        assertEquals("", PengaturanServer.pilih(null, ""))
+    fun releaseSelaluMemakaiAlamatShowcase() {
+        val showcase = PengaturanServer.URL_SHOWCASE
+        assertEquals(showcase, PengaturanServer.pilih(null, bisaDiatur = false))
+        assertEquals(showcase, PengaturanServer.pilih("", bisaDiatur = false))
+        // Alamat tersimpan dari 1.0.1 (misalnya USB atau Wi-Fi) diabaikan.
+        assertEquals(showcase, PengaturanServer.pilih(PengaturanServer.URL_USB, bisaDiatur = false))
+        assertEquals(showcase, PengaturanServer.pilih("http://192.168.1.5:8000", bisaDiatur = false))
     }
 
     @Test
-    fun unitTestMemakaiVarianDebugTanpaAlamatBawaan() {
-        assertEquals("", PengaturanServer.URL_BAWAAN)
+    fun debugMemakaiAlamatTersimpanTanpaAlamatBawaan() {
+        assertEquals(PengaturanServer.URL_USB, PengaturanServer.pilih(PengaturanServer.URL_USB, bisaDiatur = true))
+        // Tanpa alamat tersimpan tetap kosong, jadi keadaan "server belum diatur" muncul.
+        assertEquals("", PengaturanServer.pilih(null, bisaDiatur = true))
+        assertEquals("", PengaturanServer.pilih("  ", bisaDiatur = true))
+    }
+
+    @Test
+    fun unitTestMemakaiVarianDebugYangBisaDiatur() {
+        assertTrue(PengaturanServer.BISA_DIATUR)
     }
 }

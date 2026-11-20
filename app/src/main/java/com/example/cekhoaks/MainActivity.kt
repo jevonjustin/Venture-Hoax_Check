@@ -158,7 +158,8 @@ class MainActivity : ComponentActivity() {
                         },
                         modifier = Modifier.padding(innerPadding),
                     ) {
-                        BagianPengaturanServer(
+                        // Release: alamat dikunci ke server showcase, jadi bagian ini tidak ditampilkan.
+                        if (PengaturanServer.BISA_DIATUR) BagianPengaturanServer(
                             urlMasukan = urlMasukan,
                             urlTersimpan = urlTersimpan,
                             statusUji = statusUji,

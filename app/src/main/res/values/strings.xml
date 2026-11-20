@@ -229,6 +229,8 @@
     <string name="galat_isi_sibuk">Server sedang melayani banyak pengecekan. Coba lagi dalam beberapa saat.</string>
     <string name="galat_judul_respons">Jawaban server tidak dikenali</string>
     <string name="galat_isi_respons">Pastikan alamat di pengaturan mengarah ke server Veritas.</string>
+    <!-- Varian release tidak punya pengaturan server, jadi sarannya untuk pengunjung. -->
+    <string name="galat_isi_respons_rilis">Server Veritas sedang tidak menjawab dengan semestinya. Coba lagi beberapa saat lagi.</string>
     <string name="galat_judul_cleartext">Alamat server tidak bisa dipakai</string>
     <string name="galat_isi_cleartext">Versi aplikasi ini tidak mengizinkan alamat http:// biasa. Gunakan build debug atau alamat https://.</string>
     <string name="galat_aksi_pilih_ulang">Pilih Ulang</string>

@@ -2,6 +2,7 @@ package com.example.cekhoaks
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -48,6 +49,30 @@ class TampilanGalatTest {
         assertEquals(R.string.galat_judul_url, t.judul)
         assertEquals(AksiGalat.BUKA_PENGATURAN, t.aksiUtama)
         assertFalse(t.tampilkanPengaturanKedua)
+    }
+
+    @Test
+    fun releaseTidakPernahMenyuruhMembukaPengaturan() {
+        val semua = listOf(
+            JenisGagal.UrlBelumDiatur, JenisGagal.TidakTerjangkau("x"), JenisGagal.WaktuHabis,
+            JenisGagal.CleartextDiblokir, JenisGagal.ResponsTidakDikenali, JenisGagal.ServerTidakAktif,
+            JenisGagal.GalatServer(500, KodeGalat.GALAT_SERVER), JenisGagal.GalatServer(503, KodeGalat.SERVER_SIBUK),
+            JenisGagal.GalatServer(422, KodeGalat.TEKS_TIDAK_TERBACA), JenisGagal.GalatServer(500, null),
+        )
+        semua.forEach { jenis ->
+            val t = tampilanGalat(jenis, alamatBisaDiatur = false)
+            assertNotEquals(jenis.toString(), AksiGalat.BUKA_PENGATURAN, t.aksiUtama)
+            assertFalse(jenis.toString(), t.tampilkanPengaturanKedua)
+            assertNotEquals(jenis.toString(), R.string.galat_isi_url, t.isi)
+            assertNotEquals(jenis.toString(), R.string.galat_isi_respons, t.isi)
+            assertNotEquals(jenis.toString(), R.string.galat_isi_cleartext, t.isi)
+        }
+        val r = tampilanGalat(JenisGagal.ResponsTidakDikenali, alamatBisaDiatur = false)
+        assertEquals(R.string.galat_isi_respons_rilis, r.isi)
+        assertEquals(AksiGalat.COBA_LAGI, r.aksiUtama)
+        val t = tampilanGalat(JenisGagal.TidakTerjangkau("x"), alamatBisaDiatur = false)
+        assertEquals(R.string.galat_judul_tidak_terjangkau, t.judul)
+        assertEquals(AksiGalat.COBA_LAGI, t.aksiUtama)
     }
 
     @Test

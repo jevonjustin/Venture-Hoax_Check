@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ikon monochrome untuk themed icons Android 13+: hanya bentuknya yang dipakai sistem.
+     Dibuat oleh docs/showcase/logo/buat_logo.py; ubah lewat skrip itu. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M31.00,33.21 L45.20,33.21 L55.80,60.66 L66.40,33.21 L77.00,33.21 L59.54,74.79 L52.06,74.79 L38.34,42.18 L31.00,42.18 Z" />
+</vector>

@@ -33,8 +33,8 @@ android {
         applicationId = "com.example.cekhoaks"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -56,14 +56,14 @@ android {
                 enable = false
             }
             if (kunciRilisLengkap) signingConfig = signingConfigs.getByName("rilis")
-            // Alamat server showcase (ngrok) dipakai bila belum ada alamat tersimpan.
-            buildConfigField("boolean", "PAKAI_URL_SHOWCASE", "true")
+            // Alamat server dikunci ke alamat showcase (ngrok); pengaturan server tidak ditampilkan.
+            buildConfigField("boolean", "KUNCI_URL_SHOWCASE", "true")
         }
         debug {
             // Paket berbeda supaya debug dan release bisa terpasang berdampingan di satu HP.
             // Nama "Veritas (debug)" ada di src/debug/res/values/strings_debug.xml.
             applicationIdSuffix = ".debug"
-            buildConfigField("boolean", "PAKAI_URL_SHOWCASE", "false")
+            buildConfigField("boolean", "KUNCI_URL_SHOWCASE", "false")
         }
     }
     compileOptions {

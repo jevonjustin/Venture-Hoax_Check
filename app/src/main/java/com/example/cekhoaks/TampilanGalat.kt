@@ -26,8 +26,31 @@ private val GAMBAR_TIDAK_UTUH = TampilanGalat(
     R.string.galat_judul_gambar, R.string.galat_isi_gambar, AksiGalat.PILIH_ULANG,
 )
 
-/** Teks dari server (field "pesan") tidak pernah ditampilkan; yang dipakai hanya kode galatnya. */
-fun tampilanGalat(jenis: JenisGagal): TampilanGalat = when (jenis) {
+private val SERVER_BERMASALAH = TampilanGalat(
+    R.string.galat_judul_server, R.string.galat_isi_server, AksiGalat.COBA_LAGI,
+)
+
+/**
+ * Teks dari server (field "pesan") tidak pernah ditampilkan; yang dipakai hanya kode galatnya.
+ *
+ * @param alamatBisaDiatur false di release: pengaturan server tidak ada, jadi tidak ada kartu yang
+ *   menyuruh membuka pengaturan; galat yang hanya bisa diperbaiki lewat alamat diganti saran umum.
+ */
+fun tampilanGalat(
+    jenis: JenisGagal,
+    alamatBisaDiatur: Boolean = PengaturanServer.BISA_DIATUR,
+): TampilanGalat = if (alamatBisaDiatur) tampilanGalatDebug(jenis) else tampilanGalatRilis(jenis)
+
+private fun tampilanGalatRilis(jenis: JenisGagal): TampilanGalat = when (jenis) {
+    // Alamat release selalu https:// bawaan, jadi dua galat ini praktis tidak terjadi.
+    JenisGagal.UrlBelumDiatur, JenisGagal.CleartextDiblokir -> SERVER_BERMASALAH
+    JenisGagal.ResponsTidakDikenali -> TampilanGalat(
+        R.string.galat_judul_respons, R.string.galat_isi_respons_rilis, AksiGalat.COBA_LAGI,
+    )
+    else -> tampilanGalatDebug(jenis).copy(tampilkanPengaturanKedua = false)
+}
+
+private fun tampilanGalatDebug(jenis: JenisGagal): TampilanGalat = when (jenis) {
     JenisGagal.UrlBelumDiatur -> TampilanGalat(
         R.string.galat_judul_url, R.string.galat_isi_url, AksiGalat.BUKA_PENGATURAN,
     )
@@ -59,9 +82,7 @@ fun tampilanGalat(jenis: JenisGagal): TampilanGalat = when (jenis) {
             R.string.galat_judul_sibuk, R.string.galat_isi_sibuk, AksiGalat.COBA_LAGI,
         )
         // galat_server, galat_http, kode tak dikenal, dan null (isi bukan format galat kontrak).
-        else -> TampilanGalat(
-            R.string.galat_judul_server, R.string.galat_isi_server, AksiGalat.COBA_LAGI,
-        )
+        else -> SERVER_BERMASALAH
     }
 }
 

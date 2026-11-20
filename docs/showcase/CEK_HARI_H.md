@@ -59,7 +59,7 @@ try { $r = Invoke-WebRequest -UseBasicParsing -TimeoutSec 15 -Headers @{'ngrok-s
 ## 4. Siapkan HP demo
 
 - [ ] HP terisi daya (bawa charger atau power bank) dan tersambung internet.
-- [ ] Veritas yang terpasang versi 1.0.1: Settings > Apps > Veritas, versi di bagian bawah.
+- [ ] Veritas yang terpasang versi 1.0.2 (ikon V merah): Settings > Apps > Veritas, versi di bagian bawah.
 - [ ] Buka Veritas: izin tampil di atas aplikasi lain "Sudah diizinkan", lalu **Aktifkan tombol cek** dan pilih **Seluruh layar**.
 - [ ] Cek satu gambar demo dari galeri sampai hasil muncul (gambar demo 1, `tidak_ditemukan`).
 - [ ] Kecerahan layar tinggi dan layar tidak cepat mati (Settings > Display > Screen timeout, misalnya 10 menit).

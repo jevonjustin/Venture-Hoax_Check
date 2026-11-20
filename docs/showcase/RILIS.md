@@ -1,8 +1,8 @@
-# Teks rilis Veritas 1.0.1
+# Teks rilis Veritas 1.0.2
 
 Berkas ini berisi dua teks siap pakai:
 
-1. **Deskripsi GitHub Release**: salin semua isi di antara garis `BATAS AWAL` dan `BATAS AKHIR` ke kolom deskripsi rilis `v1.0.1`.
+1. **Deskripsi GitHub Release**: salin semua isi di antara garis `BATAS AWAL` dan `BATAS AKHIR` ke kolom deskripsi rilis `v1.0.2`.
 2. **Kartu cetak di samping QR**: maksimal 6 langkah, dipasang bersama `qr_veritas.png` atau `qr_veritas.svg`.
 
 Teks privasi di bawah sama dengan butir onboarding aplikasi (`onboarding_4_isi` di `app/src/main/res/values/strings.xml`). Bila teks onboarding berubah, ubah juga di sini.
@@ -11,7 +11,7 @@ Teks privasi di bawah sama dengan butir onboarding aplikasi (`onboarding_4_isi` 
 
 <!-- BATAS AWAL: deskripsi GitHub Release -->
 
-## Veritas 1.0.1
+## Veritas 1.0.2
 
 Veritas membantu memeriksa informasi yang meragukan di layar HP. Ketuk tombol cek yang melayang, pilih bagian layar yang ingin dicek, lalu Veritas menampilkan ciri-ciri hoaks yang ditemukan beserta bukti, penjelasan, dan artikel cek fakta yang relevan. Hasilnya berupa petunjuk, bukan putusan akhir.
 
@@ -27,7 +27,7 @@ Veritas membantu memeriksa informasi yang meragukan di layar HP. Ketuk tombol ce
 6. **Izin rekam layar.** Ketuk **Aktifkan tombol cek**, lalu **Lanjutkan**. Di dialog Android, pilih **Seluruh layar** (bukan satu aplikasi), lalu mulai.
 7. **Mulai mengecek.** Buka aplikasi lain, ketuk tombol cek yang melayang, atur kotak pada bagian yang ingin dicek, lalu ketuk **Cek Sekarang**.
 
-Sudah memasang versi 1.0? Versi 1.0.1 bisa langsung dipasang di atasnya tanpa menghapus aplikasi lama.
+Sudah memasang versi 1.0 atau 1.0.1? Versi 1.0.2 bisa langsung dipasang di atasnya tanpa menghapus aplikasi lama.
 
 ### Penting diketahui
 
@@ -41,6 +41,11 @@ Sudah memasang versi 1.0? Versi 1.0.1 bisa langsung dipasang di atasnya tanpa me
 - Gambar melewati ngrok dalam perjalanan ke server, tetapi tidak disimpan di HP maupun di server dan tidak dikirim ke penyedia AI.
 - Teks hasil bacaan gambar dikirim ke penyedia AI pihak ketiga (Groq) untuk dianalisis, setelah nomor telepon, alamat email, dan nama akun berawalan @ disamarkan.
 - Penyamaran dilakukan otomatis berdasarkan pola, jadi bisa ada yang terlewat. Nama orang, tautan, dan isi pesan itu sendiri tidak disamarkan. Sebaiknya jangan cek bagian yang memuat data pribadi.
+
+### Perubahan dari 1.0.1
+
+- Logo dan ikon aplikasi baru, termasuk ikon bertema (themed icon) di Android 13 ke atas.
+- Bagian Pengaturan server dihapus dari layar utama. Veritas langsung tersambung ke server showcase tanpa perlu diatur.
 
 ### Perubahan dari 1.0
 
