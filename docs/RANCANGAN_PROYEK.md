@@ -564,6 +564,19 @@ Pengumpulan data dan fine-tuning classifier dikerjakan paralel mulai minggu 2 di
     - Evaluasi (`evaluasi.py ukur`, 21.474 artikel) sama persis dengan catatan Sesi 5.3 (21.342 artikel): recall@1 parafrase 0,68, recall@5 0,94, OCR benar peringkat 1 pada 6 dari 6, skor top-1 cocok median 0,876, skor negatif median/p90/maks 0,837/0,874/0,892. Per kueri 29 ms (sebelumnya 24 ms), RAM tambahan 1,53 GB (sebelumnya 1,49 GB).
     - Gambar demo 1-4 lewat `/analisis` (TestClient, `CEKHOAKS_LLM=mati`, fungsi dari `alat/uji_analisis/ukur_ngrok.py`) sebelum dan sesudah pembaruan: tingkat, ciri, serta artikel dan skornya identik, dan tingkatnya sama dengan `daftar.txt` (tidak_ditemukan, kuat, hati_hati, hati_hati). Hasilnya disimpan di folder cadangan (`demo_tanpa_llm_db_lama.txt`, `demo_tanpa_llm_db_baru.txt`).
     - pytest tanpa rapidocr: 889 lulus (5 deselected).
+  - **Sesi 8.5 (logo baru dan release tanpa pengaturan server, 1.0.2), status: selesai dan teruji HP 2026-11-20; rilis GitHub v1.0.2 diunggah developer setelah commit.** Kode di commit 5c14345.
+    - Ikon: huruf V krem di latar merah `#A22020` (adaptive icon), ikon monochrome untuk themed icons Android 13+, mipmap diperbarui. Varian debug memakai foreground berpita DEBUG di `src/debug/res/drawable/ic_launcher_foreground.xml`. Logo SVG/PNG dan pembuatnya (`buat_logo.py`) ada di `docs/showcase/logo/`. Gambar acuan `referensi_logo.*` (dari WhatsApp) tidak masuk repo (`.gitignore`).
+    - Release: alamat server dikunci ke domain ngrok (`KUNCI_URL_SHOWCASE`), alamat tersimpan diabaikan, dan bagian Pengaturan server hanya tampil di debug. Kartu galat release tidak lagi menyuruh membuka pengaturan. Kontrak API tidak berubah.
+    - Versi: `versionCode` 3, `versionName` 1.0.2; `veritas.apk` dan `veritas-1.0.2.apk` identik. `RILIS.md` dan `CEK_HARI_H.md` diperbarui ke 1.0.2.
+    - **Ikon release dan debug tampak sama saat themed icons aktif.** Launcher memakai ikon monochrome yang sama untuk kedua varian, dan pita DEBUG hanya ada di foreground. Keputusan developer: tidak diubah, karena label "Veritas (debug)" sudah cukup membedakan dan pengunjung hanya memakai release.
+    - Uji laptop (dijalankan ulang dari commit 5c14345): tes unit Android 190 lulus (0 gagal), assembleDebug dan assembleRelease berhasil, apksigner `veritas.apk` Verifies dengan sertifikat yang sama dengan 1.0 dan 1.0.1 (SHA-256 `431f9560...c208d`). `/health` lewat ngrok: 200, versi 0.7.0.
+    - Uji HP Galaxy A55 lewat adb (2026-11-20, Wi-Fi rumah, server 21.474 artikel, Groq saja; 2 panggilan LLM):
+      - `adb install -r veritas-1.0.2.apk` di atas 1.0.1: Success, versionCode 3 / 1.0.2, `firstInstallTime` tetap 2026-11-14 17:59:04 (pembaruan), onboarding tidak tampil lagi, izin overlay tetap.
+      - Laci aplikasi: ikon V baru tampil (HP memakai themed icons, jadi yang tampil versi monochrome).
+      - Halaman utama release hanya memuat izin overlay, tombol cek, dan "Cara kerja dan privasi"; tidak ada bagian server.
+      - Gambar demo 1 (album `cek_hoaks_demo`) lewat ngrok: Tidak Ditemukan Indikasi Hoaks, tanpa ciri dan tanpa artikel, sesuai `daftar.txt`.
+      - Debug 1.0.2 (`adb install -r`, pembaruan dari 1.0): bagian Pengaturan server tetap ada; `adb reverse tcp:8000 tcp:8000`, alamat `http://127.0.0.1:8000`, Uji koneksi "Tersambung. Versi server: 0.7.0"; gambar demo 1 lewat USB: Tidak Ditemukan Indikasi Hoaks, sekitar 5 detik dari Cek Sekarang sampai layar penilaian awal.
+      - Setelah uji: tombol cek release dan debug dimatikan, `adb reverse` dilepas, release dibiarkan terbuka sebagai aplikasi utama.
 - **Umum:** sistem atau aplikasi tertentu (misalnya halaman pengaturan izin dan aplikasi perbankan) dapat menyembunyikan overlay. Ini perilaku normal.
 
 ### Catatan terbuka

@@ -43,3 +43,6 @@ __pycache__/
 *.keystore
 *.apk
 veritas-rilis.properties
+
+# Gambar acuan logo (dari WhatsApp, Sesi 8.5): tidak masuk repo
+/docs/showcase/logo/referensi_logo.*
